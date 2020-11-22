@@ -58,7 +58,6 @@ function moduleAPI($db) {
 
   if ($execute_query) {
     $sql = $select.WHEREclause($where);
-    $notes[] = $sql;
     $result = $db->query($sql);
     if ($result) {
       while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
