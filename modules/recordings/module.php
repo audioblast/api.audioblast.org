@@ -7,7 +7,7 @@ function recordings_info() {
         "category" => "data",
         "table" => "recordings",
         "hname" => "Recordings",
-        "desc" => "Put info here...",
+        "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST!",
         "params" => array(
             "source" => array(
               "desc" => "Filter by source",
@@ -112,7 +112,7 @@ function recordings_info() {
               "op" => "range"
             ),
             "output" => array(
-              "desc" => "At present just an array",
+              "desc" => "The format of the returned data",
               "type" => "string",
               "allowed" => array(
                 "JSON"
