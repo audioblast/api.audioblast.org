@@ -208,9 +208,11 @@ function modulesHTML($modules) {
     $out .= "<h4>Endpoints</h4>";
     $out .= "<ul>";
     $out .= "<li><strong>https://api.audioblast.org/".$info["category"]."/".$name."/</strong></li>";
-    foreach ($info["params"] as $pname => $pinfo) {
-      if (isset($pinfo["autocomplete"]) && $pinfo["autocomplete"]) {
-        $out .= "<li>https://api.audioblast.org/".$info["category"]."/".$name."/autocomplete/".$pname."/</li>";
+    if (isset($info["params"])) {
+      foreach ($info["params"] as $pname => $pinfo) {
+        if (isset($pinfo["autocomplete"]) && $pinfo["autocomplete"]) {
+          $out .= "<li>https://api.audioblast.org/".$info["category"]."/".$name."/autocomplete/".$pname."/</li>";
+        }
       }
     }
     $out .= "</ul>";
