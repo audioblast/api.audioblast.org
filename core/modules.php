@@ -20,6 +20,13 @@ function moduleAPI($db) {
   $params = array();
   $notes = array();
 
+  if (isset($parts[3]) && $parts[3] != "autocomplete") {
+    $ep = $parts[3];
+    $execute_query = FALSE;
+    $module["params"] = $module["endpoints"][$ep]["params"];
+  }
+
+
   //Validate parameters
   foreach ($module["params"] as $pname => $pinfo) {
     if (isset($_GET[$pname])) {
@@ -30,7 +37,6 @@ function moduleAPI($db) {
       }
     }
   }
-
   if (isset($parts[3]) && $parts[3] == "autocomplete") {
     $field= $parts[4];
     if (!isset($module["params"][$field])) {
@@ -60,9 +66,11 @@ function moduleAPI($db) {
       "value" => $value,
       "type" => "string"
     );
-  } else {
+  } else if (!isset($parts[3])) {
     $select = SELECTclause($module);
     $where = generateParams($module, $params);
+  } else {
+    $ret["data"] = call_user_func($module["endpoints"][$ep]["callback"], $params);
   }
 
   if ($execute_query) {
@@ -217,7 +225,20 @@ function modulesHTML($modules) {
 
     $out .= "<h4>Endpoints</h4>";
     $out .= "<ul>";
-    $out .= "<li><strong>https://api.audioblast.org/".$info["category"]."/".$name."/</strong></li>";
+    if (isset($info["params"])) {
+      $out .= "<li><strong>https://api.audioblast.org/".$info["category"]."/".$name."/</strong>";
+      $out .= printParams($info["params"])."</li>";
+    }
+    if (isset($info["endpoints"])) {
+      foreach ($info["endpoints"] as $path => $einfo) {
+        $out .= "<li>";
+        $out .= "<strong>https://api.audioblast.org/".$info["category"]."/".$name."/".$path."/</strong>";
+        $out .= "<br>";
+        $out .= $einfo["desc"];
+        $out .= printParams($einfo["params"]);
+        $out .= "</li>";
+      }
+    }
     if (isset($info["params"])) {
       foreach ($info["params"] as $pname => $pinfo) {
         if (isset($pinfo["autocomplete"]) && $pinfo["autocomplete"]) {
@@ -227,14 +248,33 @@ function modulesHTML($modules) {
     }
     $out .= "</ul>";
 
-    $out .= "<h4>Parameters</h4>";
-    $out .= "<table class='stripe'>";
+    switch($info["category"]) {
+      case "data":
+        $data .= $out;
+        break;
+      case "analysis":
+        $analysis .= $out;
+        break;
+      case "standalone":
+        $standalone .= $out;
+        break;
+    }
+  }
+
+  $data = "<h2>Data</h2>".modulesHTML_printlinks($links, "data").$data;
+  $analysis = "<h2>Analysis</h2>".modulesHTML_printlinks($links, "analysis").$analysis;
+  $standalone = "<h2>Standalone</h2>".modulesHTML_printlinks($links, "standalone").$standalone;
+  return($data.$analysis.$standalone);
+}
+
+function printParams($params) {
+    $out  = "<table class='stripe'>";
     $out .= "<tr><th>Name</th><th>Can filter?</th><th>Can autocomplete?</th><th>Description</th><th>Type</th><th>Default filter value</th><th>Allowed values</th></tr>";
 
-    foreach ($info["params"] as $pname => $pinfo) {
+    foreach ($params as $pname => $pinfo) {
       $out .= "<tr>";
       $out .= "<td>".$pname."</td>";
-      if ($pinfo["op"] == "none") {
+      if (!isset($pinfo["op"]) || $pinfo["op"] == "none") {
         $out.= "<td></td>";
       } else {
         $out .= "<td class='tdcent'>Y</td>";
@@ -254,25 +294,8 @@ function modulesHTML($modules) {
       $out .= "<td class='tdcent'>".modulesHTML_allowedvalues($pinfo)."</td>";
       $out .= "</tr>";
     }
-
     $out .= "</table>";
-    switch($info["category"]) {
-      case "data":
-        $data .= $out;
-        break;
-      case "analysis":
-        $analysis .= $out;
-        break;
-      case "standalone":
-        $standalone .= $out;
-        break;
-    }
-  }
-
-  $data = "<h2>Data</h2>".modulesHTML_printlinks($links, "data").$data;
-  $analysis = "<h2>Analysis</h2>".modulesHTML_printlinks($links, "analysis").$analysis;
-  $standalone = "<h2>Standalone</h2>".modulesHTML_printlinks($links, "standalone").$standalone;
-  return($data.$analysis.$standalone);
+  return($out);
 }
 
 function modulesHTML_allowedvalues($pinfo) {
