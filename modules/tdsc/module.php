@@ -1,51 +1,50 @@
 <?php
 
 function tdsc_info() {
-    $info = array(
-        "mname" => "tdsc",
-        "version" => 1.0,
-        "category" => "analysis",
-        "hname" => "Time Domain Signal Coding",
-        "desc" => "Time domain signal coding is...",
-	"code" => array(
-	  "type" => "package",
-          "language" => "R",
-          "name" => "tdsc",
-          "source" => "CRAN",
-          "function" => "tdsc()"
+  $info = array(
+    "mname" => "tdsc",
+    "version" => 1.0,
+    "category" => "analysis",
+    "hname" => "Time Domain Signal Coding",
+    "desc" => "Time domain signal coding is...",
+    "code" => array(
+    "type" => "package",
+      "language" => "R",
+      "name" => "tdsc",
+      "source" => "CRAN",
+      "function" => "tdsc()"
+    ),
+    "params" => array(
+      "source" => array(
+        "desc" => "Filter by source",
+        "type" => "string",
+        "default" => "",
+        "column" => "source",
+        "op" => "=",
+      ),
+      "id" => array(
+        "desc" => "filter by id within source",
+        "type" => "string",
+        "default" => "",
+        "column" => "id",
+        "op" => "="
+      ),
+      "startTime" => array(
+        "desc" => "start time(s) to return",
+        "type" => "integer",
+        "default" => 0,
+        "column" => "startTime",
+        "op" => "range"
+      ),
+      "output" => array(
+        "desc" => "At present just an array",
+        "type" => "string",
+        "allowed" => array(
+          "JSON"
         ),
-        "params" => array(
-            "source" => array(
-              "desc" => "Filter by source",
-              "type" => "string",
-              "default" => "",
-              "column" => "source",
-              "op" => "=",
-            ),
-            "id" => array(
-              "desc" => "filter by id within source",
-              "type" => "string",
-              "default" => "",
-              "column" => "id",
-              "op" => "="
-            ),
-            "startTime" => array(
-              "desc" => "start time(s) to return",
-              "type" => "integer",
-              "default" => 0,
-              "column" => "startTime",
-              "op" => "range"
-            ),
-            "output" => array(
-              "desc" => "At present just an array",
-              "type" => "string",
-              "allowed" => array(
-                "JSON"
-              ),
-              "default" => "JSON"
-            )
-        ),
-
-    );
-    return($info);
+        "default" => "JSON"
+      )
+    ),
+  );
+  return($info);
 }

@@ -2,11 +2,11 @@
 
 function listModuleTypes() {
   return(array(
-                "source",
-                "data",
-                "analysis",
-                "standalone"
-              ));
+    "source",
+    "data",
+    "analysis",
+    "standalone"
+  ));
 }
 
 function parseType($type) {
@@ -42,7 +42,6 @@ function moduleAPI($db) {
     if (!isset($module["params"][$field])) {
       $execute_query = FALSE;
       $notes[] = "Autocomplete field does not exist.";
-    } else {
     }
     if (!isset($module["params"][$field]["autocomplete"]) || $module["params"][$field]["autocomplete"] == FALSE) {
       $execute_query = FALSE;
@@ -113,7 +112,7 @@ function loadModules_analysisDefaultParams() {
 }
 
 /*
-Load all module info
+Load single module info
 */
 function loadModule($mod) {
     $modfile = "modules/".$mod."/module.php";
