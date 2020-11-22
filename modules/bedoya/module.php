@@ -1,19 +1,28 @@
 <?php
 
-function tdsc_info() {
+function bedoya_info() {
     $info = array(
-        "mname" => "tdsc",
+        "mname" => "bedoya",
         "version" => 1.0,
         "category" => "analysis",
-        "hname" => "Time Domain Signal Coding",
-        "desc" => "Time domain signal coding is...",
-	"code" => array(
-	  "type" => "package",
+        "hname" => "Rainfall analysis using the bedoya method",
+        "desc" => "Explain how this works...",
+        "code" => array(
+          "type" => "package",
           "language" => "R",
-          "name" => "tdsc",
+          "name" => "sonicscrewdriver",
           "source" => "CRAN",
-          "function" => "tdsc()"
+          "function" => "rainfallDetection(method=\"bedoya2017\")"
         ),
+        "references" => array(
+          array(
+            "title" => "Automatic identification of rainfall in acoustic recordings",
+            "year" => 2017,
+            "authors" => "Bedoya et al",
+            "doi" => "10.1016/j.ecolind.2016.12.018"
+          )
+        ),
+        "table" => "analysis-bedoya",
         "params" => array(
             "source" => array(
               "desc" => "Filter by source",
@@ -43,8 +52,7 @@ function tdsc_info() {
                 "JSON"
               ),
               "default" => "JSON"
-            )
-        ),
+            )        ),
 
     );
     return($info);
