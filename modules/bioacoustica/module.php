@@ -6,7 +6,6 @@ function bioacoustica_info() {
         "version" => 1.0,
         "category" => "source",
         "hname" => "BioAcoustica",
-        "desc" => "Time domain signal coding is...",
         "url" => "http://bio.acousti.ca",
         "sources" => array(
           array(
