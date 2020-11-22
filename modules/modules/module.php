@@ -9,14 +9,14 @@ function modules_info() {
         "desc" => "Provide information about loaded modules",
         "endpoints" => array(
           array(
-            "path" => "list",
-            "callback" => "modules_list"
+            "path" => "list_types",
+            "callback" => "modules_list_types"
           )
         )
     );
     return($info);
 }
 
-function modules_list() {
+function modules_list_types() {
   print("OK");exit;
 }

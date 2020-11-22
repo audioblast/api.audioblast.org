@@ -1,5 +1,14 @@
 <?php
 
+function listModuleTypes() {
+  return(array(
+                "source",
+                "data",
+                "analysis",
+                "standalone"
+              ));
+}
+
 function parseType($type) {
   if ($type == "range") { return("string");} else {return($type);}
 }
@@ -179,6 +188,7 @@ Print all module info
 function modulesHTML($modules) {
   $data = "";
   $analysis = "";
+  $standalone = "";
   $sources = array();
   $links = array();
   foreach ($modules as $name => $info) {
@@ -253,12 +263,16 @@ function modulesHTML($modules) {
       case "analysis":
         $analysis .= $out;
         break;
+      case "standalone":
+        $standalone .= $out;
+        break;
     }
   }
 
   $data = "<h2>Data</h2>".modulesHTML_printlinks($links, "data").$data;
   $analysis = "<h2>Analysis</h2>".modulesHTML_printlinks($links, "analysis").$analysis;
-  return($data.$analysis);
+  $standalone = "<h2>Standalone</h2>".modulesHTML_printlinks($links, "standalone").$standalone;
+  return($data.$analysis.$standalone);
 }
 
 function modulesHTML_allowedvalues($pinfo) {
