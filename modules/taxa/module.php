@@ -7,7 +7,7 @@ function taxa_info() {
         "category" => "data",
         "table" => "taxa",
         "hname" => "Taxa",
-        "desc" => "Put info here...",
+        "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST!",
         "params" => array(
             "taxon" => array(
               "desc" => "Taxonomic name",
