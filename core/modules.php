@@ -19,8 +19,9 @@ function moduleAPI($db) {
   $module = loadModule($parts[2]);
   $params = array();
   $notes = array();
+  $special = array("autocomplete", "columns");
 
-  if (isset($parts[3]) && $parts[3] != "autocomplete" && !in_array(substr($parts[3],0, 1), array("", "?"))) {
+  if (isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
     $ep = $parts[3];
     $execute_query = FALSE;
     $module["params"] = $module["endpoints"][$ep]["params"];
@@ -65,6 +66,26 @@ function moduleAPI($db) {
       "value" => $value,
       "type" => "string"
     );
+  } else if (isset($parts[3]) && $parts[3] == "columns") {
+    $execute_query = FALSE;
+    foreach ($module["params"] as $name => $info) {
+      if ($name == "output") {continue;}
+      $col = array(
+        "title" => $name,
+        "field" => $name
+      );
+      if (isset($info["op"]) && $info["op"] != "none") {
+        switch($info["type"]) {
+          case "string":
+            $col["headerFilter"] = "input";
+            break;
+          case "range":
+            $col["headerFilter"] = "range";
+            break;
+        }
+      }
+      $ret["data"][] = $col;
+    }
   } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
     $select = SELECTclause($module);
     $where = generateParams($module, $params);
@@ -89,8 +110,11 @@ function moduleAPI($db) {
   $ret["notes"] = $notes;
 
   switch($params["output"]) {
-    case "JSON";
+    case "JSON":
       print(json_encode($ret));
+      break;
+    case "nakedJSON":
+      print(json_encode($ret["data"]));
       break;
   }
 }
@@ -204,7 +228,7 @@ function modulesHTML($modules) {
       "text" => $info["mname"],
       "href" => "#".$info["mname"]
     );
-    $out = "";
+    $out = "<div class='module'>";
     $out .= "<h3 id='".$info["mname"]."'>".$info["hname"]."</h3>";
     $out .= "<p>".$info["desc"]."</p>";
 
@@ -246,6 +270,7 @@ function modulesHTML($modules) {
       }
     }
     $out .= "</ul>";
+    $out.="</div>";
 
     switch($info["category"]) {
       case "data":

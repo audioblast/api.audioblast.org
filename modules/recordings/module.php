@@ -115,7 +115,8 @@ function recordings_info() {
         "desc" => "The format of the returned data",
         "type" => "string",
         "allowed" => array(
-          "JSON"
+          "JSON",
+          "nakedJSON"
         ),
         "default" => "JSON"
       )

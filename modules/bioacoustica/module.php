@@ -10,18 +10,21 @@ function bioacoustica_info() {
     "sources" => array(
       array(
         "type" => "recordings",
-        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/recordings.csv"
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/recordings.csv",
+        "process" => array(
+          "sourceR"
+        )
       ),
       array(
         "type" => "taxa",
         "url" => "https://github.com/BioAcoustica/audioblast_ingest/raw/main/taxa.txt",
         "process" => array(
-          "taxonomiseR"
+          "sourceR"
         )
       )
     ),
     "references" => array(
-      "title" => "BBioAcoustica: a free and open repository and analysis platform for bioacoustics",
+      "title" => "BioAcoustica: a free and open repository and analysis platform for bioacoustics",
       "authors" => "Baker et al",
       "year" => 2015,
       "doi" => "10.1093/database/bav054"
