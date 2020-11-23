@@ -41,6 +41,20 @@ function modules_info() {
             "default" => "JSON"
           )
         )
+      ),
+      "list_sources" => array(
+        "callback" => "modules_list_sources",
+        "desc" => "Returns a list of sources for data ingest",
+        "params" => array(
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
       )
     )
   );
@@ -57,6 +71,17 @@ function modules_list_modules($params) {
   foreach ($modules as $name => $info) {
     if (isset($params["category"]) && $info["category"] != $params["category"]) {continue;}
     $ret[] = array("name" => $name, "category" => $info["category"]);
+  }
+  return($ret);
+}
+
+function modules_list_sources($params) {
+  $modules = loadModules();
+  $ret = array();
+  foreach ($modules as $name => $info) {
+    if (isset($info["sources"])) {
+      $ret[$info["mname"]] = $info["sources"];
+    }
   }
   return($ret);
 }
