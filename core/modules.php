@@ -20,7 +20,7 @@ function moduleAPI($db) {
   $params = array();
   $notes = array();
 
-  if (isset($parts[3]) && substr($parts[3],0, 1) != "?") {
+  if (isset($parts[3]) && $parts[3] != "autocomplete" && !in_array(substr($parts[3],0, 1), array("", "?"))) {
     $ep = $parts[3];
     $execute_query = FALSE;
     $module["params"] = $module["endpoints"][$ep]["params"];
@@ -65,7 +65,7 @@ function moduleAPI($db) {
       "value" => $value,
       "type" => "string"
     );
-  } else if (substr($parts[3], 0, 1) == "?") {
+  } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
     $select = SELECTclause($module);
     $where = generateParams($module, $params);
   } else {
