@@ -21,6 +21,13 @@ function bioacoustica_info() {
         "process" => array(
           "sourceR"
         )
+      ),
+      array(
+        "type" => "traits",
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/traits.txt",
+        "process" => array(
+          "sourceR"
+        )
       )
     ),
     "references" => array(
