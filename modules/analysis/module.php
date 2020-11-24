@@ -36,6 +36,21 @@ function analysis_info() {
             "op" => "="
           )
         )
+      ),
+      "list_analysis" => array(
+        "callback" => "analysis_list",
+        "desc" => "Returns a list of analysis types.",
+        "returns" => "data",
+        "params" => array(
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
       )
     )
   );
@@ -54,5 +69,15 @@ function analysis_counts($params) {
     $i++;
   }
   $ret .= " FROM DUAL;";
+  return($ret);
+}
+
+function analysis_list($params) {
+  $modules = loadModules();
+  $ret = array();
+  foreach ($modules as $name => $info) {
+    if ($info["category"] != "analysis") {continue;}
+    $ret[] = $name;
+  }
   return($ret);
 }
