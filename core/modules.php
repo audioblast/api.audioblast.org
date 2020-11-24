@@ -27,7 +27,6 @@ function moduleAPI($db) {
     $module["params"] = $module["endpoints"][$ep]["params"];
   }
 
-
   //Validate parameters
   foreach ($module["params"] as $pname => $pinfo) {
     if (isset($_GET[$pname])) {
@@ -38,6 +37,7 @@ function moduleAPI($db) {
       }
     }
   }
+
   if (isset($parts[3]) && $parts[3] == "autocomplete") {
     $field= $parts[4];
     if (!isset($module["params"][$field])) {
@@ -90,7 +90,23 @@ function moduleAPI($db) {
     $select = SELECTclause($module);
     $where = generateParams($module, $params);
   } else {
-    $ret["data"] = call_user_func($module["endpoints"][$ep]["callback"], $params);
+    switch ($module["endpoints"][$ep]["returns"]) {
+      case "data":
+        $ret["data"] = call_user_func($module["endpoints"][$ep]["callback"], $params);
+        break;
+      case "sql":
+        $sql = call_user_func($module["endpoints"][$ep]["callback"], $params);
+        $result = $db->query($sql);
+        if ($result) {
+          while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
+            $ret["data"][] = $row;
+          }
+          $result->close();
+        } else {
+          $notes[] = "Query failed on database.";
+        }
+        break;
+    }
   }
 
   if ($execute_query) {
