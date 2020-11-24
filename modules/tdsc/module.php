@@ -7,6 +7,7 @@ function tdsc_info() {
     "category" => "analysis",
     "hname" => "Time Domain Signal Coding",
     "desc" => "Time domain signal coding is...",
+    "table" => "analysis-tdsc",
     "code" => array(
     "type" => "package",
       "language" => "R",
