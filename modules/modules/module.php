@@ -11,6 +11,7 @@ function modules_info() {
       "list_types" => array(
         "callback" => "modules_list_types",
         "desc" => "Returns a list of module types.",
+        "returns" => "data",
         "params" => array(
           "output" => array(
             "desc" => "At present just an array",
@@ -25,6 +26,7 @@ function modules_info() {
       "list_modules" => array(
         "callback" => "modules_list_modules",
         "desc" => "Returns a list of modules",
+        "returns" => "data",
         "params" => array(
           "category" => array(
             "desc" => "Filter by module category",
@@ -45,6 +47,7 @@ function modules_info() {
       "list_sources" => array(
         "callback" => "modules_list_sources",
         "desc" => "Returns a list of sources for data ingest",
+        "returns" => "data",
         "params" => array(
           "output" => array(
             "desc" => "At present just an array",
