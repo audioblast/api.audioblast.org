@@ -37,6 +37,13 @@ function tdsc_info() {
         "column" => "startTime",
         "op" => "range"
       ),
+      "value" => array(
+        "desc" => "Output of analysis",
+        "type" => "integer",
+        "default" => 0,
+        "column" => "tdsc",
+        "op" => "range"
+      ),
       "output" => array(
         "desc" => "At present just an array",
         "type" => "string",

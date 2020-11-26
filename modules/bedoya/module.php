@@ -7,6 +7,7 @@ function bedoya_info() {
     "category" => "analysis",
     "hname" => "Rainfall analysis using the bedoya method",
     "desc" => "Explain how this works...",
+    "ab-plugin" => TRUE,
     "code" => array(
       "type" => "package",
       "language" => "R",
@@ -43,6 +44,13 @@ function bedoya_info() {
         "type" => "integer",
         "default" => 0,
         "column" => "startTime",
+        "op" => "range"
+      ),
+      "value" => array(
+        "desc" => "Output of analysis",
+        "type" => "integer",
+        "default" => 0,
+        "column" => "value",
         "op" => "range"
       ),
       "output" => array(

@@ -22,7 +22,8 @@ function recordings_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "autocomplete" => TRUE
       ),
       "name" => array(
         "desc" => "filter by recording name",

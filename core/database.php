@@ -54,7 +54,7 @@ function SELECTclause($module, $field=NULL, $mode="table") {
   }
 
   $ret .= " FROM ";
-  $ret .= "`".$module["table"]."`";
+  $ret .= "`audioblast`.`".$module["table"]."`";
   return($ret);
 }
 
