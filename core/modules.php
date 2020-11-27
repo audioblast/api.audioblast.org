@@ -38,6 +38,22 @@ function moduleAPI($db) {
     }
   }
 
+
+  //Vaidate and insert parameters in the Tabulator format
+  if (isset($_GET["filters"])) {
+    foreach ($_GET["filters"] as $filter) {
+      if ($filter["type"] == "function") {
+        //Dealing with a range
+        if ($filter["value"]["start"] != "" && $filter["value"]["end"] != "") {$range = $filter["value"]["start"].":".$filter["value"]["end"];}
+        if ($filter["value"]["start"] == "" && $filter["value"]["end"] != "") {$range = "<".$filter["value"]["end"];}
+        if ($filter["value"]["start"] != "" && $filter["value"]["end"] == "") {$range = ">".$filter["value"]["start"];}
+        $params[mysqli_real_escape_string($db, $filter["field"])] = mysqli_real_escape_string($db, $range);
+      } else {
+        $params[mysqli_real_escape_string($db, $filter["field"])] = mysqli_real_escape_string($db, $filter["value"]); 
+      }
+    }
+  }
+
   if (isset($parts[3]) && $parts[3] == "autocomplete") {
     $field= $parts[4];
     if (!isset($module["params"][$field])) {
@@ -88,7 +104,7 @@ function moduleAPI($db) {
       $ret["data"][] = $col;
     }
   } else if (isset($parts[3]) && $parts[3] == "js") {
-    //header('Content-type: application/javascript')
+    header('Content-Type: application/javascript');
     print(file_get_contents("modules/".$parts[2]."/component.js", TRUE));
     return;
   } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
@@ -115,8 +131,17 @@ function moduleAPI($db) {
   }
 
   if ($execute_query) {
+    if (isset($_GET['page'])) {
+      //Pagination
+      $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : 100;
+      $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
+      $startAt = $perPage * ($page - 1);
+    }
     $sql = $select.WHEREclause($where);
-$notes[] = $sql;
+    if (isset($_GET['page'])) {
+      $sql .= " LIMIT ".$startAt.", ".$perPage.";";
+    }
+    $notes[] = $sql;
     $result = $db->query($sql);
     if ($result) {
       while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
@@ -126,6 +151,15 @@ $notes[] = $sql;
     } else {
       $notes[] = "Query failed on database.";
     }
+
+    if (isset($_GET['page'])) {
+      $sql = SELECTcount($module).WHEREclause($where).";";
+      $res = mysqli_fetch_assoc(mysqli_query($db, $sql));
+      $totalPages = ceil($res['total'] / $perPage);
+      $ret["last_page"] = $totalPages;
+    }
+
+    $notes[] = $sql;
   }
 
   $ret["params"] = $params;

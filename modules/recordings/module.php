@@ -30,7 +30,7 @@ function recordings_info() {
         "type" => "string",
         "default" => "",
         "column" => "Title",
-        "op" => "=",
+        "op" => "contains",
         "autocomplete" => TRUE
       ),
       "taxon" => array(

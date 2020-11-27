@@ -58,6 +58,13 @@ function SELECTclause($module, $field=NULL, $mode="table") {
   return($ret);
 }
 
+function SELECTcount($module) {
+  $ret = "SELECT COUNT(*) as `total`";
+  $ret .= " FROM ";
+  $ret .= "`audioblast`.`".$module["table"]."`";
+  return($ret);
+}
+
 function WHEREclause($filters) {
   $i = 0;
   $wc = "";
