@@ -44,6 +44,26 @@ function modules_info() {
           )
         )
       ),
+      "module_info" => array(
+        "callback" => "modules_module_info",
+        "desc" => "Returns information about a module",
+        "returns" => "data",
+        "params" => array(
+          "module" => array(
+            "desc" => "Filter by module shortname",
+            "type" => "string",
+            "op" => "="
+          ),
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
+      ),
       "list_sources" => array(
         "callback" => "modules_list_sources",
         "desc" => "Returns a list of sources for data ingest",
@@ -68,12 +88,17 @@ function modules_list_types($params) {
   return(listModuleTypes());
 }
 
+function modules_module_info($params) {
+  $module = loadModule($params["module"]);
+  return($module);
+}
+
 function modules_list_modules($params) {
   $modules = loadModules();
   $ret = array();
   foreach ($modules as $name => $info) {
     if (isset($params["category"]) && $info["category"] != $params["category"]) {continue;}
-    $ret[] = array("name" => $name, "category" => $info["category"]);
+    $ret[] = array("name" => $name, "hname" => $info["hname"], "category" => $info["category"]);
   }
   return($ret);
 }
