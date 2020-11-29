@@ -10,6 +10,7 @@ error_reporting(E_ALL);
     ?>
     <html>
     <head>
+      <title>audioBLAST! API</title>
       <link rel="stylesheet" href="https://cdn.audioblast.org/ab-api.css">
     </head>
     <body>
