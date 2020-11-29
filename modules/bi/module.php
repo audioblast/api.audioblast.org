@@ -16,6 +16,7 @@ function bi_info() {
       "function" => "bioacoustic_index()"
     ),
     "table" => "analysis-bi",
+    "histogram" => "hist-bi",
     "params" => array(
       "source" => array(
         "desc" => "Filter by source",

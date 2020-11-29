@@ -7,6 +7,7 @@ function unp_info() {
     "category" => "source",
     "hname" => "Urban Nature Project",
     "url" => "https://www.nhm.ac.uk/about-us/urban-nature-project.html",
+    "web_files" => "https://cdn.audioblast.org/files/unp/",
     "sources" => array(
       array(
         "type" => "recordings",

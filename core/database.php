@@ -66,6 +66,7 @@ function SELECTcount($module) {
 }
 
 function WHEREclause($filters) {
+  if ($filters == "") {return("");}
   $i = 0;
   $wc = "";
   foreach ($filters as $filter) {

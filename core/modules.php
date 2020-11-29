@@ -19,7 +19,7 @@ function moduleAPI($db) {
   $module = loadModule($parts[2]);
   $params = array();
   $notes = array();
-  $special = array("autocomplete", "columns", "js");
+  $special = array("autocomplete", "columns", "js", "histogram", "files");
 
   if (isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
     $ep = $parts[3];
@@ -107,6 +107,9 @@ function moduleAPI($db) {
     header('Content-Type: application/javascript');
     print(file_get_contents("modules/".$parts[2]."/component.js", TRUE));
     return;
+  } else if (isset($parts[3]) && $parts[3] == "histogram") {
+    $select = "CALL `audioblast`.`".$module["histogram"]."`(1000)";
+    $where = '';
   } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
     $select = SELECTclause($module);
     $where = generateParams($module, $params);
@@ -118,7 +121,7 @@ function moduleAPI($db) {
       case "sql":
         $sql = call_user_func($module["endpoints"][$ep]["callback"], $params);
         $result = $db->query($sql);
-        if ($result) {
+        if ( $result) {
           while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
             $ret["data"][] = $row;
           }
@@ -142,6 +145,7 @@ function moduleAPI($db) {
       $sql .= " LIMIT ".$startAt.", ".$perPage.";";
     }
     $notes[] = $sql;
+
     $result = $db->query($sql);
     if ($result) {
       while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
@@ -158,8 +162,6 @@ function moduleAPI($db) {
       $totalPages = ceil($res['total'] / $perPage);
       $ret["last_page"] = $totalPages;
     }
-
-    $notes[] = $sql;
   }
 
   $ret["params"] = $params;
