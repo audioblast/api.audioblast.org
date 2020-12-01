@@ -106,13 +106,13 @@ const bedoyaAB = {
        }
       }
     },
-    setCurrentTime: function(t) {
-      this.currentTime = t;
+    setCurrentTime: function(new_t, new_range) {
+      this.currentTime = new_t;
+      this.axisX = new_range;
       if (this.activeTab == "chart") {
         var element = document.getElementById(this.renderDiv);
         if (element != null && element.classList.contains("js-plotly-plot")) {
-          Plotly.relayout(this.renderDiv, {'shapes[0].x0':this.currentTime});
-          Plotly.relayout(this.renderDiv, {'shapes[0].x1':this.currentTime});
+          Plotly.relayout(this.renderDiv, {'shapes[0].x0':this.currentTime, 'shapes[0].x1':this.currentTime, 'xaxis.range': this.axisX}, [0,1]);
         }
       }
       if (this.activeTab == "table") {
@@ -120,14 +120,6 @@ const bedoyaAB = {
         if (table !== undefined && this.axisX != null) {
           table.scrollToRow(parseInt(this.currentTime-this.currentTime%30));
         }
-      }
-    },
-    setAxisX: function(range) {
-      if (range != null && !isNaN(range[0]) && !isNaN(range[1])) {
-        this.axisX = range;
-      }
-      if (this.activeTab == "chart") {
-         Plotly.relayout(this.renderDiv, {'xaxis.range': this.axisX});
       }
     }
   }
