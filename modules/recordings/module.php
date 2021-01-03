@@ -14,7 +14,7 @@ function recordings_info() {
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "=",
+        "op" => "contains",
         "autocomplete" => TRUE
       ),
       "id" => array(
