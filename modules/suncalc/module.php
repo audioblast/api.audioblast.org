@@ -7,6 +7,13 @@ function suncalc_info() {
     "category" => "standalone",
     "hname" => "Sun calculations",
     "desc" => "Provides information about dawn, dusk, day, night, etc.",
+    "code" => array(
+      "type" => "package",
+      "language" => "R",
+      "name" => "sonicscrewdriver",
+      "source" => "CRAN",
+      "function" => "daysPhases()"
+    ),
     "endpoints" => array(
       "days_phases" => array(
         "callback" => "suncalc_daysphases",
