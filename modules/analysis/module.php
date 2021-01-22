@@ -5,7 +5,7 @@ function analysis_info() {
     "mname" => "analysis",
     "version" => 1.0,
     "category" => "standalone",
-    "hname" => "Gneric access to analysis information",
+    "hname" => "Generic access to analysis information",
     "desc" => "Provide information about analyses perfomed",
     "endpoints" => array(
       "fetch_analysis_counts" => array(
