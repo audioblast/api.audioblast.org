@@ -337,7 +337,7 @@ function modulesHTML($modules) {
 
     if (isset($info["see_also"])) {
       $out .= "<h4>See also</h4>";
-      $out .= "<ul">;
+      $out .= "<ul>";
       foreach ($info["see_also"] as $sa) {
         $out .= "<li>".$sa."</li>";
       }
