@@ -133,56 +133,64 @@ function recordingstaxa_info() {
         "type" => "string",
         "default" => "",
         "column" => "Genus",
-        "op" => "="
+        "op" => "=",
+        "autocomplete" => TRUE
       ), 
       "tribe" => array(
         "desc" => "Tribe name",
         "type" => "string",
         "default" => "",
         "column" => "Tribe",
-        "op" => "="  
+        "op" => "="  ,
+        "autocomplete" => TRUE
       ), 
       "subfamily" => array(
         "desc" => "Subfamily name",
         "type" => "string",
         "default" => "",
         "column" => "Subfamily",
-        "op" => "="  
+        "op" => "=",
+        "autocomplete" => TRUE
       ), 
       "family" => array(
         "desc" => "Family name",
         "type" => "string",
         "default" => "",
         "column" => "Family",
-        "op" => "="  
+        "op" => "=",
+        "autocomplete" => TRUE
       ), 
       "suborder" => array(
         "desc" => "Suborder name",
         "type" => "string",
         "default" => "",
         "column" => "Suborder",
-        "op" => "="  
+        "op" => "=",
+        "autocomplete" => TRUE
       ), 
       "order" => array(
         "desc" => "Order name",
         "type" => "string",
         "default" => "",
         "column" => "Order",
-        "op" => "="  
+        "op" => "=",
+        "autocomplete" => TRUE
       ), 
       "class" => array(
         "desc" => "Class name",
         "type" => "string",
         "default" => "",
         "column" => "Class",
-        "op" => "="  
+        "op" => "=",
+        "autocomplete" => TRUE
       ), 
       "kingdom" => array(
         "desc" => "Kingdom name",
         "type" => "string",
         "default" => "",
         "column" => "Kingdom",
-        "op" => "="  
+        "op" => "=",
+        "autocomplete" => TRUE
       ),
       "output" => array(
         "desc" => "The format of the returned data",
