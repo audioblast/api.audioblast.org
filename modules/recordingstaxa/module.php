@@ -10,7 +10,7 @@ function recordingstaxa_info() {
     "desc" => "Recordings linked to taxa. This is a join between the recordings and taxa tables, primarily of use in filtering recordings by taxonomic ranks hgher than species.",
     "params" => array(
       "source" => array(
-        "desc" => "Filter by source",
+        "desc" => "Source",
         "type" => "string",
         "default" => "",
         "column" => "source",
@@ -18,7 +18,7 @@ function recordingstaxa_info() {
         "autocomplete" => TRUE
       ),
       "id" => array(
-        "desc" => "Filter by id within source",
+        "desc" => "ID",
         "type" => "string",
         "default" => "",
         "column" => "id",
@@ -26,7 +26,7 @@ function recordingstaxa_info() {
         "autocomplete" => TRUE
       ),
       "name" => array(
-        "desc" => "Filter by recording name",
+        "desc" => "Recording name",
         "type" => "string",
         "default" => "",
         "column" => "Title",
@@ -34,7 +34,7 @@ function recordingstaxa_info() {
         "autocomplete" => TRUE
       ),
       "taxon" => array(
-        "desc" => "Filter by recording taxon",
+        "desc" => "Taxon",
         "type" => "string",
         "default" => "",
         "column" => "taxon",
@@ -42,7 +42,7 @@ function recordingstaxa_info() {
         "autocomplete" => TRUE
       ),
       "filename" => array(
-        "desc" => "Filter by file name",
+        "desc" => "File name",
         "type" => "string",
         "default" => "",
         "column" => "file",
@@ -69,7 +69,7 @@ function recordingstaxa_info() {
         "op" => "none"
       ),
       "bytes" => array(
-        "desc" => "Filter by file size",
+        "desc" => "File size",
         "type" => "range",
         "default" => "",
         "column" => "size_raw",
@@ -106,7 +106,7 @@ function recordingstaxa_info() {
         "op" => "none"
       ),
       "duration" => array(
-        "desc" => "Filter by duration",
+        "desc" => "Duration",
         "type" => "range",
         "default" => "",
         "column" => "Duration",
@@ -125,7 +125,8 @@ function recordingstaxa_info() {
         "type" => "string",
         "default" => "",
         "column" => "Species",
-        "op" => "="
+        "op" => "=",
+        "autocomplete" => TRUE
       ),
       "genus" => array(
         "desc" => "Genus name",
