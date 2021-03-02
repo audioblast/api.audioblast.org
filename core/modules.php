@@ -334,11 +334,14 @@ function modulesHTML($modules) {
     }
     $out .= "</ul>";
     
-    $out .= "<h4>See also</h4>";
+
     if (isset($info["see_also"])) {
+      $out .= "<h4>See also</h4>";
+      $out .= "<ul">;
       foreach ($info["see_also"] as $sa) {
-        $out .= $sa;
+        $out .= "<li>".$sa."</li>";
       }
+      $out .= "</ul>";
     }
     
     $out.="</div>";
