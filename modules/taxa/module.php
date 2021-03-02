@@ -95,7 +95,8 @@ function taxa_info() {
         "desc" => "At present just an array",
         "type" => "string",
         "allowed" => array(
-          "JSON"
+          "JSON",
+          "nakedJSON"
         ),
         "default" => "JSON"
       )
