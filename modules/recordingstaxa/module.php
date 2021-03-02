@@ -6,7 +6,7 @@ function recordingstaxa_info() {
     "version" => 1.0,
     "category" => "data",
     "table" => "recordings-taxa",
-    "hname" => "Recordings-taxa",
+    "hname" => "Recordings-Taxa",
     "desc" => "Recordings linked to taxa. This is a join between the recordings and taxa tables, primarily of use in filtering recordings by taxonomic ranks hgher than species.",
     "params" => array(
       "source" => array(
@@ -18,7 +18,7 @@ function recordingstaxa_info() {
         "autocomplete" => TRUE
       ),
       "id" => array(
-        "desc" => "filter by id within source",
+        "desc" => "Filter by id within source",
         "type" => "string",
         "default" => "",
         "column" => "id",
@@ -26,7 +26,7 @@ function recordingstaxa_info() {
         "autocomplete" => TRUE
       ),
       "name" => array(
-        "desc" => "filter by recording name",
+        "desc" => "Filter by recording name",
         "type" => "string",
         "default" => "",
         "column" => "Title",
@@ -34,7 +34,7 @@ function recordingstaxa_info() {
         "autocomplete" => TRUE
       ),
       "taxon" => array(
-        "desc" => "filter by recording taxon",
+        "desc" => "Filter by recording taxon",
         "type" => "string",
         "default" => "",
         "column" => "taxon",
@@ -42,14 +42,14 @@ function recordingstaxa_info() {
         "autocomplete" => TRUE
       ),
       "filename" => array(
-        "desc" => "filter by file name",
+        "desc" => "Filter by file name",
         "type" => "string",
         "default" => "",
         "column" => "file",
         "op" => "contains"
       ),
       "author" => array(
-        "desc" => "author",
+        "desc" => "Author",
         "type" => "string",
         "default" => "",
         "column" => "author",
@@ -69,7 +69,7 @@ function recordingstaxa_info() {
         "op" => "none"
       ),
       "bytes" => array(
-        "desc" => "filter by file size",
+        "desc" => "Filter by file size",
         "type" => "range",
         "default" => "",
         "column" => "size_raw",
@@ -106,7 +106,7 @@ function recordingstaxa_info() {
         "op" => "none"
       ),
       "duration" => array(
-        "desc" => "filter by duration",
+        "desc" => "Filter by duration",
         "type" => "range",
         "default" => "",
         "column" => "Duration",
