@@ -10,7 +10,7 @@ function recordings_info() {
     "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST!",
     "params" => array(
       "source" => array(
-        "desc" => "Filter by source",
+        "desc" => "Source",
         "type" => "string",
         "default" => "",
         "column" => "source",
@@ -18,7 +18,7 @@ function recordings_info() {
         "autocomplete" => TRUE
       ),
       "id" => array(
-        "desc" => "filter by id within source",
+        "desc" => "ID",
         "type" => "string",
         "default" => "",
         "column" => "id",
@@ -26,7 +26,7 @@ function recordings_info() {
         "autocomplete" => TRUE
       ),
       "name" => array(
-        "desc" => "filter by recording name",
+        "desc" => "Recording name",
         "type" => "string",
         "default" => "",
         "column" => "Title",
@@ -34,7 +34,7 @@ function recordings_info() {
         "autocomplete" => TRUE
       ),
       "taxon" => array(
-        "desc" => "filter by recording taxon",
+        "desc" => "Taxon",
         "type" => "string",
         "default" => "",
         "column" => "taxon",
@@ -42,14 +42,14 @@ function recordings_info() {
         "autocomplete" => TRUE
       ),
       "filename" => array(
-        "desc" => "filter by file name",
+        "desc" => "File name",
         "type" => "string",
         "default" => "",
         "column" => "file",
         "op" => "contains"
       ),
       "author" => array(
-        "desc" => "author",
+        "desc" => "Author",
         "type" => "string",
         "default" => "",
         "column" => "author",
@@ -69,7 +69,7 @@ function recordings_info() {
         "op" => "none"
       ),
       "bytes" => array(
-        "desc" => "filter by file size",
+        "desc" => "File size",
         "type" => "range",
         "default" => "",
         "column" => "size_raw",
@@ -106,7 +106,7 @@ function recordings_info() {
         "op" => "none"
       ),
       "duration" => array(
-        "desc" => "filter by duration",
+        "desc" => "Duration",
         "type" => "range",
         "default" => "",
         "column" => "Duration",
