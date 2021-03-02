@@ -8,6 +8,9 @@ function taxa_info() {
     "table" => "taxa",
     "hname" => "Taxa",
     "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST!",
+    "see_also" => array(
+      "<a href='#recordingstaxa'>Recordings-Taxa</a> provides autocompletes on taxon ranks with recordings.</a>"
+    ),
     "params" => array(
       "taxon" => array(
         "desc" => "Taxonomic name",
