@@ -258,6 +258,9 @@ function refsLink($info) {
 
 function printSources($modules, $type) {
   $ret  = "<h4>Data Sources</h4>";
+  if (isset($modules[$type]["source_notes"])) {
+    $ret .= "<p>".$modules[$type]["source_notes"]."</p>";
+  }
   $ret .= "<ul>";
   foreach ($modules as $name => $info) {
     if ($info["category"] == "source") {
