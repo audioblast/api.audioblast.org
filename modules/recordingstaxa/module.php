@@ -7,7 +7,7 @@ function recordingstaxa_info() {
     "category" => "data",
     "table" => "recordings-taxa",
     "hname" => "Recordings-taxa",
-    "desc" => "Link recordings to taxa",
+    "desc" => "Recordings linked to taxa. This is a join between the recordings and taxa tables, primarily of use in filtering recordings by taxonomic ranks hgher than species.",
     "params" => array(
       "source" => array(
         "desc" => "Filter by source",
