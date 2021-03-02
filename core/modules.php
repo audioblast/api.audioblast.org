@@ -325,7 +325,7 @@ function modulesHTML($modules) {
       foreach ($info["params"] as $pname => $pinfo) {
         if (isset($pinfo["autocomplete"]) && $pinfo["autocomplete"]) {
           $out .= "<li>".$pname." starts: https://api.audioblast.org/".$info["category"]."/".$name."/autocomplete/".$pname."/?s=[query]</li>";
-          $out .= "<li>".$pname." contains: https://api.audioblast.org/".$info["category"]."/".$name."/autocomplete/".$pname."/?s=[query]</li>";
+          $out .= "<li>".$pname." contains: https://api.audioblast.org/".$info["category"]."/".$name."/autocomplete/".$pname."/?c=[query]</li>";
         }
       }
     }
