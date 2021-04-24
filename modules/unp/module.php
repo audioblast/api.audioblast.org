@@ -13,6 +13,11 @@ function unp_info() {
         "type" => "recordings",
         "url" => "https://raw.githubusercontent.com/NaturalHistoryMuseum/audioblast_ingest/master/recordings.csv",
         "process" => array()
+      ),
+      array(
+        "type" => "deployments",
+        "url" => "https://raw.githubusercontent.com/NaturalHistoryMuseum/audioblast_ingest/master/deployments.csv",
+        "process" => array()
       )
     )
   );
