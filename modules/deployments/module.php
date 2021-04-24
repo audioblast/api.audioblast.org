@@ -62,10 +62,10 @@ function deployments_info() {
       ),
       "end" => array(
         "desc" => "End of deployment",
-        "type" => "string",
+        "type" => "range",
         "default" => "",
         "column" => "end",
-        "op" => "contains",
+        "op" => "range",
         "autocomplete" => FALSE
       ),
       "continues_from" => array(
