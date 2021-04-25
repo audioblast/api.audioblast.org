@@ -55,6 +55,17 @@ function sensors_info() {
         "op" => "contains",
         "autocomplete" => FALSE
       ),
+      "property" => array(
+        "desc" => "Property measured",
+        "type" => "string",
+        "column" => "property",
+        "op" => "=",
+        "autocomplete" => TRUE,
+        "allowed" => array(
+          "air_temperature",
+          "air_relative_humidity"
+        )
+      ),
       "output" => array(
         "desc" => "The format of the returned data",
         "type" => "string",
