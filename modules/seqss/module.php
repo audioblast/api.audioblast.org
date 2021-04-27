@@ -69,8 +69,9 @@ function seqss_info() {
 }
 
 function seqss_recording_nearest_start_time($f) {
+  $ret = array();
   if (!isset($f["date"]) || !isset($f["time"])) {
-    $ret["notes"] = "Must set date and time";
+    $ret["notes"][] = "Must set date and time";
     return($ret);
   }
   $dt_string = $f["date"]." ".substr($f["time"],0,2).":".substr($f["time"],2,2);
@@ -83,8 +84,10 @@ function seqss_recording_nearest_start_time($f) {
   }
   $sql .= "HAVING `diff` <= ".$f["window"]." ORDER BY `diff`;";
 
+  $query_start_time = microtime(true);
   $res = $db->query($sql);
-  $ret = $res->fetch_all(MYSQLI_ASSOC);
+  $ret["notes"]["query_execution_time"] = microtime(true) - $query_start_time;
+  $ret["data"] = $res->fetch_all(MYSQLI_ASSOC);
   return($ret);
 }
 
@@ -97,10 +100,11 @@ function seqss_deployment_latest($f) {
   }
 
   global $db;
+  $query_start_time = microtime(true);
   $sql = "SELECT * FROM `audioblast`.`deployments` WHERE `deployments`.`id` = '".$f["deployment"]."';";
   $res = $db->query($sql);
   if (mysqli_num_rows($res) == 1) {
-    $output["deployment"] = $res->fetch_assoc();
+    $output["data"]["deployment"] = $res->fetch_assoc();
   } else {
     $output["notes"][] = "Non atomic return from deployment query.";
     return($output);
@@ -110,16 +114,17 @@ function seqss_deployment_latest($f) {
   $sql = "SELECT * FROM `audioblast`.`devices` WHERE `devices`.`id` = '".$output["deployment"]["device"]."';";
   $res = $db->query($sql);
   if (mysqli_num_rows($res) == 1) {
-    $output["deployment"]["device"] = $res->fetch_assoc();
+    $output["data"]["deployment"]["device"] = $res->fetch_assoc();
   } else {
-    $output["notes"] = "Non atomic return form device query.";
+    $output["notes"][] = "Non atomic return form device query.";
     return($output);
   }
   $res-> close();
 
   $sql = "SELECT * FROM `audioblast`.`sensors` WHERE `device` = '".$output["deployment"]["device"]["id"]."';";
   $res = $db->query($sql);
-  $output["deployment"]["device"]["sensors"] = $res->fetch_all(MYSQLI_ASSOC);
+  $output["data"]["deployment"]["device"]["sensors"] = $res->fetch_all(MYSQLI_ASSOC);
   $res->close();
+  $output["notes"]["query_execution_time"] = microtime(true) - $query_start_time;
   return($output);
 }

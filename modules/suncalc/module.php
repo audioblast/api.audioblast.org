@@ -75,7 +75,9 @@ function suncalc_daysphases($f) {
   $retval=null;
   exec("Rscript --quiet --vanilla ./modules/suncalc/daysPhases.R ".$f["date"]." ".$f["period"]." ".$f["lat"]." ".$f["lon"]." ".$f["tz"], $output, $retval);
   if ($retval == 0) {
-    return($output);
-
+    $ret["data"] = $output;
+  } else {
+    $ret["notes"][] = "suncalc calculation failed";
   }
+  return($ret);
 }

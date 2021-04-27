@@ -117,11 +117,19 @@ function moduleAPI($db) {
   } else {
     switch ($module["endpoints"][$ep]["returns"]) {
       case "data":
-        $ret["data"] = call_user_func($module["endpoints"][$ep]["callback"], $params);
+        $mret = call_user_func($module["endpoints"][$ep]["callback"], $params);
+        if (isset($mret["data"])) {
+          $ret["data"] = $mret["data"];
+        }
+        if (isset($mret["notes"])) {
+          $notes = $mret["notes"];
+        }
         break;
       case "sql":
         $sql = call_user_func($module["endpoints"][$ep]["callback"], $params);
+        $query_start_time = microtime(true);
         $result = $db->query($sql);
+        $notes["query_execution_time"] = microtime(true) - $query_start_time;
         if ( $result) {
           while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
             $ret["data"][] = $row;

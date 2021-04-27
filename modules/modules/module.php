@@ -85,11 +85,12 @@ function modules_info() {
 }
 
 function modules_list_types($params) {
-  return(listModuleTypes());
+  $ret["data"]=listModuleTypes();
+  return($ret);
 }
 
 function modules_module_info($params) {
-  $module = loadModule($params["module"]);
+  $module["data"] = loadModule($params["module"]);
   return($module);
 }
 
@@ -98,7 +99,7 @@ function modules_list_modules($params) {
   $ret = array();
   foreach ($modules as $name => $info) {
     if (isset($params["category"]) && $info["category"] != $params["category"]) {continue;}
-    $ret[] = array("name" => $name, "hname" => $info["hname"], "category" => $info["category"]);
+    $ret["data"][] = array("name" => $name, "hname" => $info["hname"], "category" => $info["category"]);
   }
   return($ret);
 }
@@ -108,7 +109,7 @@ function modules_list_sources($params) {
   $ret = array();
   foreach ($modules as $name => $info) {
     if (isset($info["sources"])) {
-      $ret[$info["mname"]] = $info["sources"];
+      $ret["data"][$info["mname"]] = $info["sources"];
     }
   }
   return($ret);
