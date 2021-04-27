@@ -14,6 +14,7 @@ function parseType($type) {
 }
 
 function moduleAPI($db) {
+  $start_time = microtime(true);
   $execute_query = TRUE;
   $parts = explode("/", $_SERVER['REQUEST_URI']);
   $module = loadModule($parts[2]);
@@ -134,6 +135,7 @@ function moduleAPI($db) {
   }
 
   if ($execute_query) {
+    $query_start_time = microtime(true);
     if (isset($_GET['page'])) {
       //Pagination
       $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : 100;
@@ -162,10 +164,12 @@ function moduleAPI($db) {
       $totalPages = ceil($res['total'] / $perPage);
       $ret["last_page"] = $totalPages;
     }
+    $notes["query_execution_time"] = microtime(true) - $query_start_time;
   }
 
   $ret["params"] = $params;
   $ret["notes"] = $notes;
+  $ret["notes"]["total_execution_time"] = microtime(true) - $start_time;
 
   switch($params["output"]) {
     case "JSON":
