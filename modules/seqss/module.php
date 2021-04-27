@@ -27,10 +27,65 @@ function seqss_info() {
             "default" => "JSON"
           )
         )
+      ),
+      "recording_nearest_start_time" => array(
+        "callback" => "seqss_recording_nearest_start_time",
+        "desc" => "finds recording with nearest start time matching parameters",
+        "returns" => "data",
+        "params" => array(
+          "source" => array(
+            "desc" => "Filter by source",
+            "type" => "string",
+            "op" => "="
+          ),
+          "date" => array(
+            "desc" => "Date to match (YYYY-MM-DD)",
+            "type" => "string",
+            "op" => "="
+          ),
+          "time" => array(
+            "desc" => "Time to match (HHMM)",
+            "type" => "string",
+            "op" => "="
+          ),
+          "window" => array(
+            "desc" => "Maximum allowed difference (seconds)",
+            "type" => "integer",
+            "default" => 300
+          ),
+          "output" => array(
+            "desc" => "JSON object",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
       )
     )
   );
   return($info);
+}
+
+function seqss_recording_nearest_start_time($f) {
+  if (!isset($f["date"]) || !isset($f["time"])) {
+    $ret["notes"] = "Must set date and time";
+    return($ret);
+  }
+  $dt_string = $f["date"]." ".substr($f["time"],0,2).":".substr($f["time"],2,2);
+
+  global $db;
+  $sql  = "SELECT *, ABS(TIMESTAMPDIFF(SECOND,'$dt_string',CONCAT(`date`,' ',SUBSTRING(`time`,1,2),':',SUBSTRING(`time`,3,2),':00'))) AS `diff` ";
+  $sql .= "FROM `audioblast`.`recordings` WHERE `time` REGEXP '^[0-9]{4}$' AND `date` REGEXP '^[0-9]{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$' ";
+  if (isset($f["source"])) {
+    $sql .= "AND `source` = '".$f["source"]."' ";
+  }
+  $sql .= "HAVING `diff` <= ".$f["window"]." ORDER BY `diff`;";
+
+  $res = $db->query($sql);
+  $ret = $res->fetch_all(MYSQLI_ASSOC);
+  return($ret);
 }
 
 function seqss_deployment_latest($f) {
