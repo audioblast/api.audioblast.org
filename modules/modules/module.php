@@ -96,14 +96,11 @@ function modules_module_info($params) {
 
 function modules_list_modules($params) {
   $modules = loadModules();
-  $mods = array();
-  //TODO: Push filtering to database
   foreach ($modules as $name => $info) {
     if (isset($params["category"]) && $info["category"] != $params["category"]) {continue;}
-    $mods[] = array("name" => $name, "hname" => $info["hname"], "category" => $info["category"]);
+    $mods["data"][] = array("name" => $name, "hname" => $info["hname"], "category" => $info["category"]);
   }
-  $ret["data"] = $mods;
-  return($ret);
+  return($mods);
 }
 
 function modules_list_sources($params) {
