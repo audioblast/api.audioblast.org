@@ -111,7 +111,7 @@ function seqss_deployment_latest($f) {
   }
   $res->close();
 
-  $sql = "SELECT * FROM `audioblast`.`devices` WHERE `devices`.`id` = '".$output["deployment"]["device"]."';";
+  $sql = "SELECT * FROM `audioblast`.`devices` WHERE `devices`.`id` = '".$output["data"]["deployment"]["device"]."';";
   $res = $db->query($sql);
   if (mysqli_num_rows($res) == 1) {
     $output["data"]["deployment"]["device"] = $res->fetch_assoc();
@@ -121,7 +121,7 @@ function seqss_deployment_latest($f) {
   }
   $res-> close();
 
-  $sql = "SELECT * FROM `audioblast`.`sensors` WHERE `device` = '".$output["deployment"]["device"]["id"]."';";
+  $sql = "SELECT * FROM `audioblast`.`sensors` WHERE `device` = '".$output["data"]["deployment"]["device"]["id"]."';";
   $res = $db->query($sql);
   $output["data"]["deployment"]["device"]["sensors"] = $res->fetch_all(MYSQLI_ASSOC);
   $res->close();
