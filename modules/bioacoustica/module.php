@@ -11,8 +11,20 @@ function bioacoustica_info() {
       array(
         "type" => "recordings",
         "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/recordings.csv",
-        "process" => array(
-          "sourceR"
+        "mapping" => array(
+          "id" => "id",
+          "Title" => "Title",
+          "taxon" => "taxon",
+          "file" => "file",
+          "author" => "author",
+          "post_date" => "post_date",
+          "size" => "size",
+          "size_raw" => "size_raw",
+          "type" => "type",
+          "NonSpecimen" => "NonSpecimen",
+          "Date" => "Date",
+          "Time" => "Time",
+          "Duration" => "Duration"
         )
       ),
       array(
