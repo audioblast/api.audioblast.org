@@ -144,15 +144,17 @@ function moduleAPI($db) {
 
   if ($execute_query) {
     $query_start_time = microtime(true);
-      //Pagination
-      $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : 100;
-      $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
-      $startAt = $perPage * ($page - 1) + 1;
+
+    //Pagination
+    $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : 100;
+    $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
+    $startAt = $perPage * ($page - 1) + 1;
     $sql = $select.WHEREclause($where);
     $sql .= " LIMIT ".$startAt.", ".$perPage.";";
     $notes[] = $sql;
 
     $result = $db->query($sql);
+
     if ($result) {
       while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
         $ret["data"][] = $row;
@@ -162,12 +164,11 @@ function moduleAPI($db) {
       $notes[] = "Query failed on database.";
     }
 
-    if (isset($_GET['page'])) {
-      $sql = SELECTcount($module).WHEREclause($where).";";
-      $res = mysqli_fetch_assoc(mysqli_query($db, $sql));
-      $totalPages = ceil($res['total'] / $perPage);
-      $ret["last_page"] = $totalPages;
-    }
+    $sql = SELECTcount($module).WHEREclause($where).";";
+    $res = mysqli_fetch_assoc(mysqli_query($db, $sql));
+    $totalPages = ceil($res['total'] / $perPage);
+    $ret["last_page"] = $totalPages;
+
     $notes["query_execution_time"] = microtime(true) - $query_start_time;
   }
 
