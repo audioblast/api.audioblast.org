@@ -144,16 +144,12 @@ function moduleAPI($db) {
 
   if ($execute_query) {
     $query_start_time = microtime(true);
-    if (isset($_GET['page'])) {
       //Pagination
       $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : 100;
       $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
       $startAt = $perPage * ($page - 1);
-    }
     $sql = $select.WHEREclause($where);
-    if (isset($_GET['page'])) {
-      $sql .= " LIMIT ".$startAt.", ".$perPage.";";
-    }
+    $sql .= " LIMIT ".$startAt.", ".$perPage.";";
     $notes[] = $sql;
 
     $result = $db->query($sql);
@@ -225,7 +221,7 @@ function loadModule($mod) {
       $module["params"]["output"]["op"] = "";
     }
     } else {
-      return("WTF");
+      return(NULL);
     }
   return($module);
 }
