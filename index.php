@@ -17,7 +17,6 @@ error_reporting(E_ALL);
     <img src="https://cdn.audioblast.org/audioblast_logo.png" />
     <h1>audioBLAST! API</h1>
     <?php print(modulesHTML(loadModules())); ?>
-<?php print phpinfo(); ?>
     </body>
     </html>
     <?php
