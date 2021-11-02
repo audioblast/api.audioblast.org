@@ -147,7 +147,7 @@ function moduleAPI($db) {
       //Pagination
       $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : 100;
       $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
-      $startAt = $perPage * ($page - 1);
+      $startAt = $perPage * ($page - 1) + 1;
     $sql = $select.WHEREclause($where);
     $sql .= " LIMIT ".$startAt.", ".$perPage.";";
     $notes[] = $sql;
