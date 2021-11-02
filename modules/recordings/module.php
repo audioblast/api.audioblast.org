@@ -117,7 +117,8 @@ function recordings_info() {
         "type" => "string",
         "allowed" => array(
           "JSON",
-          "nakedJSON"
+          "nakedJSON",
+          "tabulator"
         ),
         "default" => "JSON"
       )
