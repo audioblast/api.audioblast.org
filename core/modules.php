@@ -162,6 +162,7 @@ function moduleAPI($db) {
       }
       $result->close();
     } else {
+      $ret["data"] = array();
       $notes[] = "Query failed on database.";
     }
 
