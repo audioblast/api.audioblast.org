@@ -42,6 +42,7 @@ function moduleAPI($db) {
 
   //Vaidate and insert parameters in the Tabulator format
   if (isset($_GET["filters"])) {
+    $notes["provided_filters"] = $_GET["filters"];
     foreach ($_GET["filters"] as $filter) {
       if ($filter["type"] == "function") {
         //Dealing with a range
@@ -175,7 +176,6 @@ function moduleAPI($db) {
   $ret["params"] = $params;
   $ret["notes"] = $notes;
   $ret["notes"]["total_execution_time"] = microtime(true) - $start_time;
-
   switch($params["output"]) {
     case "JSON":
       print(json_encode($ret));
