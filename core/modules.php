@@ -22,6 +22,8 @@ function moduleAPI($db) {
   $notes = array();
   $special = array("autocomplete", "columns", "js", "histogram", "files");
 
+  $notes["input_params"] = $_GET;
+
   if (isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
     $ep = $parts[3];
     $execute_query = FALSE;
@@ -40,9 +42,7 @@ function moduleAPI($db) {
   }
 
 
-  //Vaidate and insert parameters in the Tabulator format
   if (isset($_GET["filters"])) {
-    $notes["input_params"] = $_GET;
     foreach ($_GET["filters"] as $filter) {
       if ($filter["type"] == "function") {
         //Dealing with a range
