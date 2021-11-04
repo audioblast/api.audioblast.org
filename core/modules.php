@@ -42,8 +42,8 @@ function moduleAPI($db) {
   }
 
 
-  if (isset($_GET["filters"])) {
-    foreach ($_GET["filters"] as $filter) {
+  if (isset($_GET["filter"])) {
+    foreach ($_GET["filter"] as $filter) {
       if ($filter["type"] == "function") {
         //Dealing with a range
         if ($filter["value"]["start"] != "" && $filter["value"]["end"] != "") {$range = $filter["value"]["start"].":".$filter["value"]["end"];}
