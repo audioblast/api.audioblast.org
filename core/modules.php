@@ -184,9 +184,6 @@ function moduleAPI($db) {
       if (!isset($ret["data"])) {$ret["data"] = array();}
       print(json_encode($ret["data"]));
       break;
-    case "tabulator":
-      print(json_encode(["last_page"=>$ret["last_page"], "data"=>$ret["data"]]));
-      break;
   }
 }
 
