@@ -42,7 +42,7 @@ function moduleAPI($db) {
 
   //Vaidate and insert parameters in the Tabulator format
   if (isset($_GET["filters"])) {
-    $notes["provided_filters"] = $_GET["filters"];
+    $notes["input_params"] = $_GET;
     foreach ($_GET["filters"] as $filter) {
       if ($filter["type"] == "function") {
         //Dealing with a range
