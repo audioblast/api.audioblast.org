@@ -147,7 +147,8 @@ function moduleAPI($db) {
     $query_start_time = microtime(true);
 
     //Pagination
-    $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : 100;
+    $default_page = 50;
+    $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : $default_page;
     $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
     $startAt = $perPage * ($page - 1) + 1;
     $sql = $select.WHEREclause($where);
