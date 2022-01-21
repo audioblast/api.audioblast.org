@@ -37,6 +37,15 @@ function embed_info() {
             ),
             "default"=> "true"
           ),
+          "credit" => array(
+            "desc" => "Credit audioblast.org",
+            "type" => "string",
+            "allowed" => array(
+              "true",
+              "false"
+            ),
+            "default" => "true"
+          ),
           "output" => array(
             "desc" => "Type of player to return.",
             "type" => "string",
@@ -69,7 +78,7 @@ function embed_recording($f) {
 
 function embed_html5($f, $file) {
   $ret  = "<figure>";
-  if ($f["title"]=="true") {
+  if ($f["title"] == "true") {
     $ret .= "<figcaption>".$file["Title"].":</figcaption>";
   }
   $ret .= "<audio ";
@@ -77,6 +86,9 @@ function embed_html5($f, $file) {
   $ret .= "src='".$file["file"]."'>";
   $ret .= "Your browser does not support the <code>audio</code> element.";
   $ret .= "</audio>";
+  if ($f["credit"] == "true") {
+    $ret .= "<p>Powered by <a href='https://audioblast.org'>Audioblast</a>.</p>";
+  }
   $ret .= "</figure>";
 
   $mret = array();
