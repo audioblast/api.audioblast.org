@@ -30,7 +30,7 @@ function embed_info() {
           ),
           "title" => array(
             "desc" => "Include title in output?",
-            "type" => "string",
+            "type" => "boolean",
             "allowed" => array(
               "true",
               "false"
@@ -39,7 +39,7 @@ function embed_info() {
           ),
           "credit" => array(
             "desc" => "Credit audioblast.org",
-            "type" => "string",
+            "type" => "boolean",
             "allowed" => array(
               "true",
               "false"
