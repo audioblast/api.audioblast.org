@@ -22,6 +22,8 @@ function moduleAPI($db) {
   $notes = array();
   $special = array("autocomplete", "columns", "js", "histogram", "files");
 
+  $notes["input_params"] = $_GET;
+
   if (isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
     $ep = $parts[3];
     $execute_query = FALSE;
@@ -40,9 +42,8 @@ function moduleAPI($db) {
   }
 
 
-  //Vaidate and insert parameters in the Tabulator format
-  if (isset($_GET["filters"])) {
-    foreach ($_GET["filters"] as $filter) {
+  if (isset($_GET["filter"])) {
+    foreach ($_GET["filter"] as $filter) {
       if ($filter["type"] == "function") {
         //Dealing with a range
         if ($filter["value"]["start"] != "" && $filter["value"]["end"] != "") {$range = $filter["value"]["start"].":".$filter["value"]["end"];}
@@ -146,7 +147,8 @@ function moduleAPI($db) {
     $query_start_time = microtime(true);
 
     //Pagination
-    $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : 100;
+    $default_page = 50;
+    $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : $default_page;
     $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
     $startAt = $perPage * ($page - 1) + 1;
     $sql = $select.WHEREclause($where);
@@ -161,6 +163,7 @@ function moduleAPI($db) {
       }
       $result->close();
     } else {
+      $ret["data"] = array();
       $notes[] = "Query failed on database.";
     }
 
@@ -175,7 +178,6 @@ function moduleAPI($db) {
   $ret["params"] = $params;
   $ret["notes"] = $notes;
   $ret["notes"]["total_execution_time"] = microtime(true) - $start_time;
-
   switch($params["output"]) {
     case "JSON":
       print(json_encode($ret));
@@ -183,9 +185,6 @@ function moduleAPI($db) {
     case "nakedJSON":
       if (!isset($ret["data"])) {$ret["data"] = array();}
       print(json_encode($ret["data"]));
-      break;
-    case "tabulator":
-      print(json_encode(["last_page"=>$ret["last_page"], "data"=>$ret["data"]]));
       break;
   }
 }
