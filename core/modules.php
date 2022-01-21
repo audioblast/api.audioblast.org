@@ -117,6 +117,9 @@ function moduleAPI($db) {
     $where = generateParams($module, $params);
   } else {
     switch ($module["endpoints"][$ep]["returns"]) {
+      case "html":
+        $mret = call_user_func($module["endpoints"][$ep]["callback"], $params);
+        print $mret["html"];
       case "data":
         $mret = call_user_func($module["endpoints"][$ep]["callback"], $params);
         if (isset($mret["data"])) {
