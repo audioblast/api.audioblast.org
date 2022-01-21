@@ -12,10 +12,10 @@ function embed_info() {
       "recording" => array(
         "callback" => "embed_recording",
         "desc" => "Returns day phases for a date range",
-        "returns" => "data",
+        "returns" => "html",
         "params" => array(
-   		   "source" => array(
-       		 "desc" => "Source",
+          "source" => array(
+             "desc" => "Source",
              "type" => "string",
              "default" => "",
              "column" => "source",
@@ -28,13 +28,22 @@ function embed_info() {
             "column" => "id",
             "op" => "="
           ),
-          "output" => array(
-            "desc" => "At present just an array",
+          "title" => array(
+            "desc" => "Include title in output?",
             "type" => "string",
             "allowed" => array(
-              "JSON"
+              "true",
+              "false"
             ),
-            "default" => "JSON"
+            "default"=> "true"
+          ),
+          "output" => array(
+            "desc" => "Type of player to return.",
+            "type" => "string",
+            "allowed" => array(
+              "html5"
+            ),
+            "default" => "html5"
           )
         )
       )
@@ -44,5 +53,33 @@ function embed_info() {
 }
 
 function embed_recording($f) {
-  print_r(f);
+  global $db;
+  $sql  = "SELECT * FROM recordings WHERE source = '".$f['source']."' ";
+  $sql .= "AND id = ".$f['id'].";";
+  $res  = $db->query($sql);
+  $file  = $res->fetch_assoc();
+
+  switch($f['output']) {
+    case 'html5':
+      return embed_html5($f, $file);
+      break;
+  }
+}
+
+
+function embed_html5($f, $file) {
+  $ret  = "<figure>";
+  if ($f["title"]=="true") {
+    $ret .= "<figcaption>".$file["Title"].":</figcaption>";
+  }
+  $ret .= "<audio ";
+  $ret .= "controls ";
+  $ret .= "src='".$file["file"]."'>";
+  $ret .= "Your browser does not support the <code>audio</code> element.";
+  $ret .= "</audio>";
+  $ret .= "</figure>";
+
+  $mret = array();
+  $mret["html"] = $ret;
+  return($mret);
 }
