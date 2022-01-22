@@ -77,7 +77,7 @@ function embed_recording($f) {
 
 
 function embed_html5($f, $file) {
-  $ret  = "<figure>";
+  $ret  = "<figure class='audioblast-embed-html5-figure'>";
   if ($f["title"] == "true") {
     $ret .= "<figcaption>".$file["Title"].":</figcaption>";
   }
