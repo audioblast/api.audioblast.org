@@ -1,3 +1,4 @@
 .DS_Store
 settings/db.php
 files
+*.swp

@@ -195,7 +195,6 @@ function moduleAPI($db) {
   $ret["params"] = $params;
   $ret["notes"] = $notes;
   $ret["notes"]["total_execution_time"] = microtime(true) - $start_time;
-print_r($params);
   switch($params["output"]) {
     case "JSON":
       print(json_encode($ret));
@@ -250,11 +249,14 @@ function loadModule($mod) {
 /*
 Load all module info
 */
-function loadModules() {
+function loadModules($category=NULL) {
   $modules = array();
   foreach(glob("modules/"."*" , GLOB_ONLYDIR) as $mod_dir) {
       $mod_name = substr($mod_dir, 8);
-      $modules[$mod_name] = loadModule($mod_name);
+      $module = loadModule($mod_name);
+      if (is_null($category) || $module["category"] == $category) {
+        $modules[$mod_name] = $module;
+      }
   }
   return($modules);
 }
@@ -362,7 +364,6 @@ function modulesHTML($modules) {
       }
     }
     $out .= "</ul>";
-    
 
     if (isset($info["see_also"])) {
       $out .= "<h4>See also</h4>";
@@ -372,7 +373,7 @@ function modulesHTML($modules) {
       }
       $out .= "</ul>";
     }
-    
+
     $out.="</div>";
 
     switch($info["category"]) {
