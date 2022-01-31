@@ -5,7 +5,8 @@ function listModuleTypes() {
     "source",
     "data",
     "analysis",
-    "standalone"
+    "standalone",
+    "suggests"
   ));
 }
 
@@ -17,7 +18,16 @@ function moduleAPI($db) {
   $start_time = microtime(true);
   $execute_query = TRUE;
   $parts = explode("/", $_SERVER['REQUEST_URI']);
-  $module = loadModule($parts[2]);
+  if ($parts[1] == "suggests") {
+    $module = array();
+    $module["params"] = array(
+      "source" => "string",
+      "id" => "string",
+      "output" => array("default" => "JSON")
+    );
+  } else {
+    $module = loadModule($parts[2]);
+  }
   $params = array();
   $notes = array();
   $special = array("autocomplete", "columns", "js", "histogram", "files");
@@ -112,9 +122,13 @@ function moduleAPI($db) {
   } else if (isset($parts[3]) && $parts[3] == "histogram") {
     $select = "CALL `audioblast`.`".$module["histogram"]."`(1000)";
     $where = '';
-  } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
+  } else if (isset($parts[3]) && in_array(substr($parts[3],0, 1), array("", "?")) ) {
     $select = SELECTclause($module);
     $where = generateParams($module, $params);
+  } else if ($parts[1] == "suggests") {
+    $execute_query = FALSE;
+    include("core/suggests.php");
+    $ret["data"] = suggests($params["source"], $params["id"], $db);
   } else {
     switch ($module["endpoints"][$ep]["returns"]) {
       case "html":
@@ -235,11 +249,14 @@ function loadModule($mod) {
 /*
 Load all module info
 */
-function loadModules() {
+function loadModules($category=NULL) {
   $modules = array();
   foreach(glob("modules/"."*" , GLOB_ONLYDIR) as $mod_dir) {
       $mod_name = substr($mod_dir, 8);
-      $modules[$mod_name] = loadModule($mod_name);
+      $module = loadModule($mod_name);
+      if (is_null($category) || $module["category"] == $category) {
+        $modules[$mod_name] = $module;
+      }
   }
   return($modules);
 }
@@ -347,7 +364,6 @@ function modulesHTML($modules) {
       }
     }
     $out .= "</ul>";
-    
 
     if (isset($info["see_also"])) {
       $out .= "<h4>See also</h4>";
@@ -357,7 +373,7 @@ function modulesHTML($modules) {
       }
       $out .= "</ul>";
     }
-    
+
     $out.="</div>";
 
     switch($info["category"]) {
