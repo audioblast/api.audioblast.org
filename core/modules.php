@@ -5,7 +5,8 @@ function listModuleTypes() {
     "source",
     "data",
     "analysis",
-    "standalone"
+    "standalone",
+    "suggests"
   ));
 }
 
@@ -17,7 +18,16 @@ function moduleAPI($db) {
   $start_time = microtime(true);
   $execute_query = TRUE;
   $parts = explode("/", $_SERVER['REQUEST_URI']);
-  $module = loadModule($parts[2]);
+  if ($parts[1] == "suggests") {
+    $module = array();
+    $module["params"] = array(
+      "source" => "string",
+      "id" => "string",
+      "output" => array("default" => "JSON")
+    );
+  } else {
+    $module = loadModule($parts[2]);
+  }
   $params = array();
   $notes = array();
   $special = array("autocomplete", "columns", "js", "histogram", "files");
@@ -112,9 +122,13 @@ function moduleAPI($db) {
   } else if (isset($parts[3]) && $parts[3] == "histogram") {
     $select = "CALL `audioblast`.`".$module["histogram"]."`(1000)";
     $where = '';
-  } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
+  } else if (isset($parts[3]) && in_array(substr($parts[3],0, 1), array("", "?")) ) {
     $select = SELECTclause($module);
     $where = generateParams($module, $params);
+  } else if ($parts[1] == "suggests") {
+    $execute_query = FALSE;
+    $output = "hi";
+
   } else {
     switch ($module["endpoints"][$ep]["returns"]) {
       case "html":
@@ -181,6 +195,7 @@ function moduleAPI($db) {
   $ret["params"] = $params;
   $ret["notes"] = $notes;
   $ret["notes"]["total_execution_time"] = microtime(true) - $start_time;
+print_r($params);
   switch($params["output"]) {
     case "JSON":
       print(json_encode($ret));
