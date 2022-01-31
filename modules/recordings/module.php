@@ -15,7 +15,8 @@ function recordings_info() {
         "default" => "",
         "column" => "source",
         "op" => "contains",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "suggest" => TRUE
       ),
       "id" => array(
         "desc" => "ID",
@@ -39,7 +40,8 @@ function recordings_info() {
         "default" => "",
         "column" => "taxon",
         "op" => "=",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "suggest" => TRUE
       ),
       "filename" => array(
         "desc" => "File name",
