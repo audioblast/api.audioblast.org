@@ -1,5 +1,5 @@
 # api.audioblast.org
-Application Programming Interface (API) for [audioBLAST!](https://audioblast.org).
+Application Programming Interface (API) for [audioBLAST!](https://audioblast.org)
 
 The public API is documented at [api.audioblast.org](https://api.audioblast.org).
 
