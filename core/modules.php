@@ -127,8 +127,8 @@ function moduleAPI($db) {
     $where = generateParams($module, $params);
   } else if ($parts[1] == "suggests") {
     $execute_query = FALSE;
-    $output = "hi";
-
+    include("core/suggests.php");
+    $ret["data"] = suggests($params["source"], $params["id"], $db);
   } else {
     switch ($module["endpoints"][$ep]["returns"]) {
       case "html":
