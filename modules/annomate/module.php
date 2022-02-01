@@ -69,7 +69,7 @@ function annomate_info() {
         "desc" => "Start time",
         "type" => "string",
         "default" => "",
-        "column" => "start_time",
+        "column" => "time_start",
         "op" => "=",
         "autocomplete" => FALSE
       ),
