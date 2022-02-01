@@ -98,7 +98,7 @@ function moduleAPI($db) {
   } else if (isset($parts[3]) && $parts[3] == "columns") {
     $execute_query = FALSE;
     foreach ($module["params"] as $name => $info) {
-      if ($name == "output") {continue;}
+      if ($name == "output" || $name == "format") {continue;}
       $col = array(
         "title" => $name,
         "field" => $name
@@ -123,7 +123,7 @@ function moduleAPI($db) {
     $select = "CALL `audioblast`.`".$module["histogram"]."`(1000)";
     $where = '';
   } else if (isset($parts[3]) && in_array(substr($parts[3],0, 1), array("", "?")) ) {
-    $select = SELECTclause($module);
+    $select = SELECTclause($module, NULL, "table", $params["format"]);
     $where = generateParams($module, $params);
   } else if ($parts[1] == "suggests") {
     $execute_query = FALSE;

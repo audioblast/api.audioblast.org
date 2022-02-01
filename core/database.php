@@ -11,7 +11,7 @@ if (file_exists("settings/db.php")) {
 function generateParams($params, $inputs) {
   $ret = array();
   foreach($params["params"] as $name => $data) {
-   if ($name == "output") {continue;}
+   if ($name == "output" || $name == "format") {continue;}
    if (isset($inputs[$name])) {
       if ($inputs[$name] == "") {continue;}
       switch ($params["params"][$name]["op"]) {
@@ -31,7 +31,7 @@ function generateParams($params, $inputs) {
   return($ret);
 }
 
-function SELECTclause($module, $field=NULL, $mode="table") {
+function SELECTclause($module, $field=NULL, $mode="table", $format="internal") {
   $ret = "SELECT ";
 
   if ($mode=="autocomplete") {
@@ -45,9 +45,13 @@ function SELECTclause($module, $field=NULL, $mode="table") {
   if ($mode=="table") {
     $i = 0;
     foreach ($module["params"] as $pname => $pinfo) {
-      if ($pname != "output") {
+      if ($pname != "output" && $pname != "format") {
         if ($i > 0) {$ret .= ", ";}
-        $ret .= "`".$pinfo["column"]."` as `".$pname."`";
+        if ($format=="ac" && isset($pinfo["ac"])) {
+          $ret .= "`".$pinfo["column"]."` as `".$pinfo["ac"]."`";
+        } else {
+          $ret .= "`".$pinfo["column"]."` as `".$pname."`";
+        }
         $i++;
       }
     }

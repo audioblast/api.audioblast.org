@@ -71,7 +71,8 @@ function annomate_info() {
         "default" => "",
         "column" => "time_start",
         "op" => "=",
-        "autocomplete" => FALSE
+        "autocomplete" => FALSE,
+        "ac" => "ac:startTime"
       ),
       "time_end" => array(
         "desc" => "End time",
@@ -79,7 +80,8 @@ function annomate_info() {
         "default" => "",
         "column" => "time_end",
         "op" => "=",
-        "autocomplete" => FALSE
+        "autocomplete" => FALSE,
+        "ac" => "ac:endTime"
       ),
       "taxon" => array(
         "desc" => "Taxon",
@@ -87,7 +89,8 @@ function annomate_info() {
         "default" => "",
         "column" => "taxon",
         "op" => "contains",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "ac" => "dwc:scientificName"
       ),
       "type" => array(
         "desc" => "Annotation type",
@@ -120,6 +123,15 @@ function annomate_info() {
         "column" => "contact",
         "op" => "contains",
         "autocomplete" => TRUE
+      ),
+      "format" => array(
+        "desc" => "Data represenation to return.",
+        "type" => "string",
+        "allowed" => array(
+          "internal",
+          "ac"
+        ),
+       "default" => "internal"
       ),
       "output" => array(
         "desc" => "The format of the returned data",

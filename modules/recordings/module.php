@@ -31,7 +31,8 @@ function recordings_info() {
         "default" => "",
         "column" => "Title",
         "op" => "contains",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "ac" => "dcterms:title"
       ),
       "taxon" => array(
         "desc" => "Taxon",
@@ -44,6 +45,7 @@ function recordings_info() {
           "desc"  => "Recordings of same taxon",
           "same_source" => FALSE
         ),
+        "ac" => "dwc:scientificName"
       ),
       "filename" => array(
         "desc" => "File name",
@@ -89,7 +91,8 @@ function recordings_info() {
         "column" => "type",
         "default" => "",
         "op" => "=",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "ac" => "dc:format"
       ),
       "recording_type" => array(
         "desc" => "Used to identify soundscape recordings",
@@ -118,7 +121,17 @@ function recordings_info() {
         "type" => "range",
         "default" => "",
         "column" => "Duration",
-        "op" => "range"
+        "op" => "range",
+        "ac" => "ac:mediaDuration"
+      ),
+      "format" => array(
+        "desc" => "Data represenation to return.",
+        "type" => "string",
+        "allowed" => array(
+          "internal",
+          "ac"
+        ),
+       "default" => "internal"
       ),
       "output" => array(
         "desc" => "The format of the returned data",
