@@ -40,7 +40,10 @@ function recordings_info() {
         "column" => "taxon",
         "op" => "=",
         "autocomplete" => TRUE,
-        "suggest" => TRUE
+        "suggest" => array(
+          "desc"  => "Recordings of same taxon",
+          "same_source" => FALSE
+        ),
       ),
       "filename" => array(
         "desc" => "File name",
@@ -55,7 +58,11 @@ function recordings_info() {
         "default" => "",
         "column" => "author",
         "op" => "contains",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "suggest" => array(
+          "desc" => "By same contributor in source",
+          "same_source" => TRUE
+        )
       ),
       "post_date" => array(
         "desc" => "Date the content was uploaded",
