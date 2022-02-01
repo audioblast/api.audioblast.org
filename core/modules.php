@@ -6,6 +6,7 @@ function listModuleTypes() {
     "data",
     "analysis",
     "embed",
+    "search",
     "standalone",
     "suggests"
   ));
@@ -35,6 +36,15 @@ function moduleAPI($db) {
         $module = $endpoints[$parts[3]];
       }
     }
+  } else if ($parts[1] == "search") {
+    $module = array();
+    loadModule($parts[2]);
+    if (function_exists($parts[2]."_search_info")) {
+      $endpoints = call_user_func($parts[2]."_search_info");
+      if (isset($endpoints[$parts[3]])) {
+        $module = $endpoints[$parts[3]];
+      }
+    }
   } else {
     $module = loadModule($parts[2]);
   }
@@ -44,7 +54,7 @@ function moduleAPI($db) {
 
   $notes["input_params"] = $_GET;
 
-  if ($parts[1] != "embed" && isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
+  if ($parts[1] != "embed" && $parts[1]!="search" && isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
     $ep = $parts[3];
     $execute_query = FALSE;
     $module["params"] = $module["endpoints"][$ep]["params"];
@@ -109,6 +119,14 @@ function moduleAPI($db) {
     $execute_query = FALSE;
     if (function_exists($parts[2]."_embed_info")) {
       $endpoints = call_user_func($parts[2]."_embed_info");
+      if (isset($endpoints[$parts[3]])) {
+        $ret  = call_user_func($endpoints[$parts[3]]["callback"], $params);
+      }
+    }
+  } else if ($parts[1] == "search") {
+    $execute_query = FALSE;
+    if (function_exists($parts[2]."_search_info")) {
+      $endpoints = call_user_func($parts[2]."_search_info");
       if (isset($endpoints[$parts[3]])) {
         $ret  = call_user_func($endpoints[$parts[3]]["callback"], $params);
       }
