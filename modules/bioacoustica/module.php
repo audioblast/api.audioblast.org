@@ -25,6 +25,9 @@ function bioacoustica_info() {
           "Date" => "Date",
           "Time" => "Time",
           "Duration" => "Duration"
+        ),
+        "process" => array(
+          "sourceR"
         )
       ),
       array(
