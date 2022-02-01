@@ -73,10 +73,12 @@ function analysis_counts($params) {
   global $db;
   $res = $db->query($sql);
   $ret = array();
+  $count = 0;
   while ($row = $res->fetch_assoc()) {
-    $ret["data"][] = $row;
+    $ret["counts"] = $row;
+    $count += $row[1];
   }
-  $ret["data"]["total"] = "1,000,000";
+  $ret["total"] = $count;
   return($ret);
 }
 
