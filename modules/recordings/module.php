@@ -91,7 +91,8 @@ function recordings_info() {
         "column" => "type",
         "default" => "",
         "op" => "=",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "ac" => "dc:format"
       ),
       "recording_type" => array(
         "desc" => "Used to identify soundscape recordings",
