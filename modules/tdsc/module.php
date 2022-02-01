@@ -116,7 +116,7 @@ function tdsc_search_5x5($f) {
   $sql .= "POW(o-".$ret["o"].") + ";
   $sql .= "POW(p-".$ret["p"].") + ";
   $sql .= "POW(q-".$ret["q"].") + ";
-  $sql .= "POW(r-".$ret['r"].") + ";
+  $sql .= "POW(r-".$ret["r"].") + ";
   $sql .= "POW(s-".$ret["s"].") + ";
   $sql .= "POW(t-".$ret["t"].") + ";
   $sql .= "POW(u-".$ret["u"].") + ";
