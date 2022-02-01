@@ -128,6 +128,8 @@ function tdsc_search_5x5($f) {
   $sql .= " ON `analysis-tdsc5x5`.`source` = `recordings`.`source` AND `analysis-tdsc5x5`.`id` = `recordings`.`id`";
   $sql .= " ORDER BY diff DESC LIMIT 10;";
 
+print_r($sql);
+
   $res = $db->query($sql);
   $ret = array();
   while ($row = $res->fetch_assoc()) {
