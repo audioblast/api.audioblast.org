@@ -141,6 +141,7 @@ function moduleAPI($db) {
     $select = "CALL `audioblast`.`".$module["histogram"]."`(1000)";
     $where = '';
   } else if (isset($parts[3]) && in_array(substr($parts[3],0, 1), array("", "?")) ) {
+    if (!isset($params["format"])) {$params["format"]=NULL;}
     $select = SELECTclause($module, NULL, "table", $params["format"]);
     $where = generateParams($module, $params);
   } else if ($parts[1] == "suggests") {
