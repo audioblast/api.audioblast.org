@@ -126,7 +126,7 @@ function tdsc_search_5x5($f) {
   $sql .= "POW(y-".$ret["y"].",2)";
   $sql .= ") AS diff FROM `analysis-tdsc5x5` INNER JOIN `recordings`";
   $sql .= " ON `analysis-tdsc5x5`.`source` = `recordings`.`source` AND `analysis-tdsc5x5`.`id` = `recordings`.`id`";
-  $sql .= " ORDER BY diff DESC LIMIT 10;";
+  $sql .= " ORDER BY diff ASC LIMIT 10;";
 
   $res = $db->query($sql);
   $ret = array();
