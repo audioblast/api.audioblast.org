@@ -11,7 +11,7 @@ function analysis_info() {
       "fetch_analysis_counts" => array(
         "callback" => "analysis_counts",
         "desc" => "Returns a count of analysis results.",
-        "returns" => "sql",
+        "returns" => "data",
         "params" => array(
           "output" => array(
             "desc" => "At present just an array",
