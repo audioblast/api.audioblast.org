@@ -64,7 +64,7 @@ function analysis_counts($params) {
   $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
   foreach ($modules as $name => $info) {
     if ($info["category"] != "analysis") {continue;}
-    if ($i > 0) { $ret .= ", ";}
+    if ($i > 0) { $sql .= ", ";}
     $sql .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
     $i++;
   }
