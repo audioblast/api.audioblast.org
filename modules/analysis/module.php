@@ -59,16 +59,24 @@ function analysis_info() {
 
 function analysis_counts($params) {
   $modules = loadModules();
-  $ret = "SELECT ";
+  $sql = "SELECT ";
   $i = 0;
   $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
   foreach ($modules as $name => $info) {
     if ($info["category"] != "analysis") {continue;}
     if ($i > 0) { $ret .= ", ";}
-    $ret .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
+    $sql .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
     $i++;
   }
-  $ret .= " FROM DUAL;";
+  $sql .= " FROM DUAL;";
+
+  global $db;
+  $res = $db->query($sql);
+  $ret = array();
+  while ($row = $res->fetch_assoc()) {
+    $ret["data"][] = $row;
+  }
+  $ret["data"]["total"] = "1,000,000";
   return($ret);
 }
 
