@@ -96,5 +96,42 @@ function tdsc_search_5x5($f) {
   global $db;
   $res = $db->query($sql);
   $ret = $res->fetch_assoc();
+
+  $sql  = "SELECT `recordings`.source, `recordings`.id, taxon, startTime, ";
+  $sql .= "SQRT(";
+  $sql .= "POW(a-".$ret["a"].") + ";
+  $sql .= "POW(b-".$ret["b"].") + ";
+  $sql .= "POW(c-".$ret["c"].") + ";
+  $sql .= "POW(d-".$ret["d"].") + ";
+  $sql .= "POW(e-".$ret["e"].") + ";
+  $sql .= "POW(f-".$ret["f"].") + ";
+  $sql .= "POW(g-".$ret["g"].") + ";
+  $sql .= "POW(h-".$ret["h"].") + ";
+  $sql .= "POW(i-".$ret["i"].") + ";
+  $sql .= "POW(j-".$ret["j"].") + ";
+  $sql .= "POW(k-".$ret["k"].") + ";
+  $sql .= "POW(l-".$ret["l"].") + ";
+  $sql .= "POW(m-".$ret["m"].") + ";
+  $sql .= "POW(n-".$ret["n"].") + ";
+  $sql .= "POW(o-".$ret["o"].") + ";
+  $sql .= "POW(p-".$ret["p"].") + ";
+  $sql .= "POW(q-".$ret["q"].") + ";
+  $sql .= "POW(r-".$ret['r"].") + ";
+  $sql .= "POW(s-".$ret["s"].") + ";
+  $sql .= "POW(t-".$ret["t"].") + ";
+  $sql .= "POW(u-".$ret["u"].") + ";
+  $sql .= "POW(v-".$ret["v"].") + ";
+  $sql .= "POW(w-".$ret["w"].") + ";
+  $sql .= "POW(x-".$ret["x"].") + ";
+  $sql .= "POW(y-".$ret["y"].")";
+  $sql .= ") AS diff FROM `analysis-tdsc5x5` INNER JOIN `recordings`";
+  $sql .= " ON `analysis-tdsc5x5`.`source` = `recordings`.`source` AND `analysis-tdsc5x5`.`id` = `recordings`.`id`";
+  $sql .= " ORDER BY diff DESC LIMIT 10;";
+
+  $res = $db->query($sql);
+  $ret = aray();
+  while ($row = $res->fetch_assoc()) {
+    $ret["data"][] = $row;
+  }
   return($ret);
 }
