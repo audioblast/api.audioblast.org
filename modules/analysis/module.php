@@ -76,7 +76,7 @@ function analysis_counts($params) {
   $count = 0;
   while ($row = $res->fetch_assoc()) {
     $ret["counts"] = $row;
-    $count += $row[1];
+    $count += $row[0];
   }
   $ret["total"] = $count;
   return($ret);
