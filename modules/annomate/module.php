@@ -33,6 +33,94 @@ function annomate_info() {
         "op" => "contains",
         "autocomplete" => TRUE
       ),
+      "annotation_id" => array(
+        "desc" => "Annotation ID",
+        "type" => "string",
+        "default" => "",
+        "column" => "annotation_id",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
+      "annotation_date" => array(
+        "desc" => "Annotation date",
+        "type" => "string",
+        "default" => "",
+        "column" => "annotation_date",
+        "op" => "contains",
+        "autocomplete" => FALSE
+      ),
+      "annotation_info_url" => array(
+        "desc" => "Annotation information link",
+        "type" => "string",
+        "default" => "",
+        "column" => "annotation_info_url",
+        "op" => "contains",
+        "autocomplete" => FALSE
+      ),
+      "recording_url" => array(
+        "desc" => "Recording URL",
+        "type" => "string",
+        "default" => "",
+        "column" => "recording_url",
+        "op" => "contains",
+        "autocomplete" => FALSE
+      ),
+      "time_start" => array(
+        "desc" => "Start time",
+        "type" => "string",
+        "default" => "",
+        "column" => "start_time",
+        "op" => "=",
+        "autocomplete" => FALSE
+      ),
+      "time_end" => array(
+        "desc" => "End time",
+        "type" => "string",
+        "default" => "",
+        "column" => "time_end",
+        "op" => "=",
+        "autocomplete" => FALSE
+      ),
+      "taxon" => array(
+        "desc" => "Taxon",
+        "type" => "string",
+        "default" => "",
+        "column" => "taxon",
+        "op" => "contains",
+        "autocomplete" => TRUE
+      ),
+      "type" => array(
+        "desc" => "Annotation type",
+        "type" => "string",
+        "default" => "",
+        "column" => "type",
+        "op" => "contains",
+        "autocomplete" => TRUE
+      ),
+      "lat" => array(
+        "desc" => "Latitude",
+        "type" => "string",
+        "default" => "",
+        "column" => "lat",
+        "op" => "contains",
+        "autocomplete" => FALSE
+      ),
+      "lon" => array(
+        "desc" => "Longitude",
+        "type" => "string",
+        "default" => "",
+        "column" => "lon",
+        "op" => "contains",
+        "autocomplete" => FALSE
+      ),
+      "contact" => array(
+        "desc" => "Contact",
+        "type" => "string",
+        "default" => "",
+        "column" => "contact",
+        "op" => "contains",
+        "autocomplete" => TRUE
+      ),
       "output" => array(
         "desc" => "The format of the returned data",
         "type" => "string",
