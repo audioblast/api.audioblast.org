@@ -129,7 +129,7 @@ function tdsc_search_5x5($f) {
   $sql .= " ORDER BY diff DESC LIMIT 10;";
 
   $res = $db->query($sql);
-  $ret = aray();
+  $ret = array();
   while ($row = $res->fetch_assoc()) {
     $ret["data"][] = $row;
   }
