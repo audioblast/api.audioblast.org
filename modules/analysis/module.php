@@ -11,7 +11,7 @@ function analysis_info() {
       "fetch_analysis_counts" => array(
         "callback" => "analysis_counts",
         "desc" => "Returns a count of analysis results.",
-        "returns" => "sql",
+        "returns" => "data",
         "params" => array(
           "output" => array(
             "desc" => "At present just an array",
@@ -59,16 +59,24 @@ function analysis_info() {
 
 function analysis_counts($params) {
   $modules = loadModules();
-  $ret = "SELECT ";
+  $sql = "SELECT ";
   $i = 0;
   $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
   foreach ($modules as $name => $info) {
     if ($info["category"] != "analysis") {continue;}
-    if ($i > 0) { $ret .= ", ";}
-    $ret .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
+    if ($i > 0) { $sql .= ", ";}
+    $sql .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
     $i++;
   }
-  $ret .= " FROM DUAL;";
+  $sql .= " FROM DUAL;";
+
+  global $db;
+  $res = $db->query($sql);
+  $ret = array();
+  while ($row = $res->fetch_assoc()) {
+    $ret["data"]["counts"] = $row;
+  }
+  $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
   return($ret);
 }
 
