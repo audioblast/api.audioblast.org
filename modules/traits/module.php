@@ -22,7 +22,7 @@ function traits_info() {
         "type" => "string",
         "default" => "",
         "column" => "Trait",
-        "op" => "=",
+        "op" => "contains",
         "autocomplete" => TRUE
       ),
       "trait_ontology" => array(
