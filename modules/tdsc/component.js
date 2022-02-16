@@ -46,7 +46,7 @@ const tdscAB = {
     setCurrentTime: function(t) {
       this.currentTime = t;
       if (this.activeTab == "table") {
-        var table = Tabulator.prototype.findTable("#"+this.renderDiv)[0];
+        var table = Tabulator.findTable("#"+this.renderDiv)[0];
         if (table !== undefined && this.axisX != null) {
           table.scrollToRow(parseInt(this.currentTime));
         }
