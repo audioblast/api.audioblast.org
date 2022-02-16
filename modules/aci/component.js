@@ -71,7 +71,7 @@ const aciAB = {
         generateAnalysisTabulator("#"+this.renderDiv, "aci", this.source, this.id, this.data, scrollTo);
       }
       if (this.activeTab == "chart") {
-        delete Tabulator.prototype.findTable("#"+this.renderDiv)[0];
+        delete Tabulator.findTable("#"+this.renderDiv)[0];
         var element = document.getElementById(this.renderDiv);
         element.classList.remove("tabulator");
 
@@ -116,7 +116,7 @@ const aciAB = {
         }
       }
       if (this.activeTab == "table") {
-        var table = Tabulator.prototype.findTable("#"+this.renderDiv)[0];
+        var table = Tabulator.findTable("#"+this.renderDiv)[0];
         if (table !== undefined && this.axisX != null) {
           table.scrollToRow(parseInt(this.currentTime-this.currentTime%30));
         }
