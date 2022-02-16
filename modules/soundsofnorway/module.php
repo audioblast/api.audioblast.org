@@ -67,7 +67,8 @@ function soundsofnorway_info() {
           "minimum" => 0.8
         ),
         "process" => array(
-          "sourceR"
+          "sourceR",
+          "birdnetVernacular"
         )
       )
     )
