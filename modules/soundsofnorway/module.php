@@ -39,6 +39,36 @@ function soundsofnorway_info() {
           "sourceR",
           "date2dateAndTime"
         )
+      ),
+      array(
+        "type" => "ann-o-mate",
+        "git" => array(
+          "owner" => "audioblast",
+          "repo" => "small_ingests",
+          "file" => "son_detections.csv"
+        ),
+        "mapping" => array(
+          "source_id" => "audio_id",
+          "annotation_id" => "id",
+          "annotation_date" => "upload_time",
+          "recording_url" => "audio_link",
+          "time_start" => "start_secs",
+          "time_end" => "end_secs",
+          "taxon" => "tags",
+          "lat" => "latitude",
+          "lon" => "longitude"
+        ),
+        "override" => array(
+          "annotator" => "BirdNet-Lite",
+          "type" => "Call"
+        ),
+        "confidence" => array(
+          "column" => "confidence",
+          "minimum" => 0.8
+        ),
+        "process" => array(
+          "sourceR"
+        )
       )
     )
   );
