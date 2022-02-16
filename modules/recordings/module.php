@@ -39,7 +39,7 @@ function recordings_info() {
         "type" => "string",
         "default" => "",
         "column" => "taxon",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE,
         "suggest" => array(
           "desc"  => "Recordings of same taxon",
