@@ -10,7 +10,11 @@ function soundsofnorway_info() {
     "sources" => array(
       array(
         "type" => "recordings",
-        "url" => "https://raw.githubusercontent.com/audioblast/small_ingests/main/son_test.csv",
+        "git" => array(
+          "owner" => "audioblast",
+          "repo" => "small_ingests",
+          "file" => "son_test.csv"
+        ),
         "mapping" => array(
           "id" => "audio_id",
           //"Title" => "Title",
