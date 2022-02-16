@@ -51,6 +51,21 @@ function data_info() {
             "default" => "JSON"
           )
         )
+      ),
+      "list_hours" => array(
+        "callback" => "data_hours",
+        "desc" => "Returns total number of hours of audio in audioBlast.",
+        "returns" => "data",
+        "params" => array(
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
       )
     )
   );
@@ -87,5 +102,14 @@ function data_list($params) {
     if ($info["category"] != "data") {continue;}
     $ret[] = $name;
   }
+  return($ret);
+}
+
+function data_hours($params) {
+  $sql= "SELECT SUM(`Duration`)/3600 as `hours` FROM `recordings`;";
+  global $db;
+  $ret = array();
+  $res = $db->query($sql);
+  $ret["data"] = $res->fetch_assoc();
   return($ret);
 }
