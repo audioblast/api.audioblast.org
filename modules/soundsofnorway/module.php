@@ -32,7 +32,8 @@ function soundsofnorway_info() {
         ),
         "override" => array(
           "NonSpecimen" => "Soundscape",
-          "Duration" => 300
+          "Duration" => 300,
+          "type" => "audio/mpeg"
         ),
         "process" => array(
           "sourceR",
