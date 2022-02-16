@@ -30,6 +30,10 @@ function soundsofnorway_info() {
           //"Time" => "Time",
           //"Duration" => "Duration"
         ),
+        "default" => array(
+          "NonSpecimen" => "Soundscape",
+          "Duration" => 300
+        ),
         "process" => array(
           "sourceR",
           "date2dateAndTime"
