@@ -34,7 +34,12 @@ function data_info() {
             "default" => "",
             "column" => "id",
             "op" => "="
-          )
+          ),
+          "cache" => array(
+            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "type" => "boolean",
+            "default" => TRUE
+          ),
         )
       ),
       "list_data" => array(
@@ -73,6 +78,12 @@ function data_info() {
 }
 
 function data_counts($params) {
+  if($params["cache"]==true) {
+    $ret = speedbird_get("datacount");
+    if ($ret != FALSE) {
+      return($ret);
+    }
+  }
   $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
