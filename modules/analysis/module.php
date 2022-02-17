@@ -58,6 +58,12 @@ function analysis_info() {
 }
 
 function analysis_counts($params) {
+  if($params["cache"]==true) {
+    $ret = speedbird_get("analysiscount");
+    if ($ret != FALSE) {
+      return($ret);
+    }
+  }
   $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
