@@ -34,7 +34,12 @@ function data_info() {
             "default" => "",
             "column" => "id",
             "op" => "="
-          )
+          ),
+          "cache" => array(
+            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "type" => "boolean",
+            "default" => TRUE
+          ),
         )
       ),
       "list_data" => array(
@@ -57,6 +62,11 @@ function data_info() {
         "desc" => "Returns total number of hours of audio in audioBlast.",
         "returns" => "data",
         "params" => array(
+          "cache" => array(
+            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "type" => "boolean",
+            "default" => TRUE
+          ),
           "output" => array(
             "desc" => "At present just an array",
             "type" => "string",
@@ -73,6 +83,12 @@ function data_info() {
 }
 
 function data_counts($params) {
+  if($params["cache"]==true) {
+    $ret = speedbird_get("datacount");
+    if ($ret != FALSE) {
+      return($ret);
+    }
+  }
   $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
@@ -107,10 +123,17 @@ function data_list($params) {
 }
 
 function data_hours($params) {
+  if($params["cache"]==true) {
+    $ret = speedbird_get("datahours");
+    if ($ret != FALSE) {
+      return($ret);
+    }
+  }
   $sql= "SELECT SUM(`Duration`)/3600 as `hours` FROM `recordings`;";
   global $db;
   $ret = array();
   $res = $db->query($sql);
   $ret["data"] = $res->fetch_assoc();
+  speedbird_put("datahours", serialize($ret));
   return($ret);
 }

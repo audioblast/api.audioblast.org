@@ -8,6 +8,10 @@ function speedbird_put($key, $value) {
 
 function speedbird_get($key) {
   $sql = "SELECT `value` FROM `speedbird` WHERE `key`='$key';";
+  global $db;
   $res = $db->query($sql);
+  if ($res->num_rows == 0) {
+    return(FALSE);
+  }
   return(unserialize($res->fetch_assoc()['value']));
 }

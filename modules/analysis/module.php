@@ -34,6 +34,11 @@ function analysis_info() {
             "default" => "",
             "column" => "id",
             "op" => "="
+          ),
+          "cache" => array(
+            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "type" => "boolean",
+            "default" => TRUE
           )
         )
       ),
@@ -58,6 +63,12 @@ function analysis_info() {
 }
 
 function analysis_counts($params) {
+  if($params["cache"]==true) {
+    $ret = speedbird_get("analysiscount");
+    if ($ret != FALSE) {
+      return($ret);
+    }
+  }
   $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
