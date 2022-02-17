@@ -11,7 +11,7 @@ if (file_exists("settings/db.php")) {
 function generateParams($params, $inputs) {
   $ret = array();
   foreach($params["params"] as $name => $data) {
-   if ($name == "output" || $name == "format") {continue;}
+   if ($name == "output" || $name == "format" || $name == "cache") {continue;}
    if (isset($inputs[$name])) {
       if ($inputs[$name] == "") {continue;}
       switch ($params["params"][$name]["op"]) {
