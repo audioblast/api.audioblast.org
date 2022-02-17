@@ -77,6 +77,7 @@ function analysis_counts($params) {
     $ret["data"]["counts"] = $row;
   }
   $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
+  speedbird_put("analysiscount", serialize($ret));
   return($ret);
 }
 

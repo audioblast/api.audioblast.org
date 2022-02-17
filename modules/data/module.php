@@ -92,6 +92,7 @@ function data_counts($params) {
     $ret["data"]["counts"] = $row;
   }
   $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
+  speedbird_put("datacount", serialize($ret));
   return($ret);
 }
 
