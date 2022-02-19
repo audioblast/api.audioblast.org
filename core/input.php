@@ -1,9 +1,19 @@
 <?php
 
+/*
+List columns that do not need to go through generateParams90.
+*/
+function listOutputColumns() {
+  return(array(
+    "output",
+    "cache"
+  ));
+}
+
 function generateParams($params, $inputs) {
     $ret = array();
     foreach($params["params"] as $name => $data) {
-     if ($name == "output") {continue;}
+     if (in_array($name, listOutputColumns())) {continue;}
      if (isset($inputs[$name])) {
         if ($inputs[$name] == "") {continue;}
         switch ($params["params"][$name]["op"]) {
