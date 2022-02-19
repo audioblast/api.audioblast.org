@@ -18,7 +18,7 @@ function generateParams($params, $inputs) {
         if ($inputs[$name] == "") {continue;}
         switch ($params["params"][$name]["op"]) {
           case "range":
-            if (!isset($params["params"][$name]["column"]) {continue;}
+            if (!isset($params["params"][$name]["column"])) {continue;}
             $ret = filterMerge($ret, filterABrange($params["params"][$name]["column"], $inputs[$name], $params["params"][$name]["type"]));
             break;
           default:
