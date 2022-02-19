@@ -134,12 +134,12 @@ function parseType($type) {
       $select = SELECTclause($module);
       $where = generateParams($module, $params);
     } else {
-      switch ($module["endpoints"][$ep]["returns"]) {
+      switch ($module["endpoints"][$endpoint]["returns"]) {
         case "html":
-          $mret = call_user_func($module["endpoints"][$ep]["callback"], $params);
+          $mret = call_user_func($module["endpoints"][$endpoint]["callback"], $params);
           print $mret["html"];
         case "data":
-          $mret = call_user_func($module["endpoints"][$ep]["callback"], $params);
+          $mret = call_user_func($module["endpoints"][$endpoint]["callback"], $params);
           if (isset($mret["data"])) {
             $ret["data"] = $mret["data"];
           }
@@ -148,7 +148,7 @@ function parseType($type) {
           }
           break;
         case "sql":
-          $sql = call_user_func($module["endpoints"][$ep]["callback"], $params);
+          $sql = call_user_func($module["endpoints"][$endpoint]["callback"], $params);
           $query_start_time = microtime(true);
           $result = $db->query($sql);
           $notes["query_execution_time"] = microtime(true) - $query_start_time;
