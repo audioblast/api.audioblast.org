@@ -8,29 +8,6 @@ if (file_exists("settings/db.php")) {
   exit;
 }
 
-function generateParams($params, $inputs) {
-  $ret = array();
-  foreach($params["params"] as $name => $data) {
-   if ($name == "output" || $name == "format" || $name == "cache") {continue;}
-   if (isset($inputs[$name])) {
-      if ($inputs[$name] == "") {continue;}
-      switch ($params["params"][$name]["op"]) {
-        case "range":
-          $ret = filterMerge($ret, filterABrange($params["params"][$name]["column"], $inputs[$name], $params["params"][$name]["type"]));
-          break;
-        default:
-          $ret[] = array(
-            "column" => $params["params"][$name]["column"],
-            "op" => $params["params"][$name]["op"],
-            "value" => $inputs[$name],
-            "type" => $params["params"][$name]["type"]
-          );
-      }
-    }
-  }
-  return($ret);
-}
-
 function SELECTclause($module, $field=NULL, $mode="table", $format="internal") {
   $ret = "SELECT ";
 
