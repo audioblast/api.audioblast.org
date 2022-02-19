@@ -24,7 +24,7 @@ function generateParams($params, $inputs) {
           default:
             $ret[] = array(
               "column" => isset($params["params"][$name]["column"]) ? $params["params"][$name]["column"] : "",
-              "op" => isset9$params["params"][$name]["op"]) ? $params["params"][$name]["op"] : "",
+              "op" => isset($params["params"][$name]["op"]) ? $params["params"][$name]["op"] : "",
               "value" => $inputs[$name],
               "type" => $params["params"][$name]["type"]
             );
