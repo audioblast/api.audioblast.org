@@ -38,7 +38,8 @@ function analysis_info() {
           "cache" => array(
             "desc" => "This query can be slow. Using the cache is highly reccommended.",
             "type" => "boolean",
-            "default" => TRUE
+            "default" => 1,
+            "op" => "="
           )
         )
       ),
