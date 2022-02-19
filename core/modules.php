@@ -1,5 +1,8 @@
 <?php
 
+/*
+Just lists the types of modules that can be handled by the API
+*/
 function listModuleTypes() {
   return(array(
     "source",
@@ -12,6 +15,7 @@ function listModuleTypes() {
   ));
 }
 
+<<<<<<< HEAD
 function parseType($type) {
   if ($type == "range") { return("string");} else {return($type);}
 }
@@ -247,6 +251,8 @@ function moduleAPI($db) {
   }
 }
 
+=======
+>>>>>>> f8e4707 (Refactor.)
 function loadModules_analysisDefaultParams() {
   $ret = array(
     "source" => array(
@@ -302,11 +308,8 @@ function loadModules($category=NULL) {
   return($modules);
 }
 
-function codeLink($info) {
-  $ret  = " ";
-  $ret .= $info["code"]["language"];
-  $ret .= " package ";
 
+<<<<<<< HEAD
   $href="";
   if ($info["code"]["language"] == "R" && $info["code"]["source"] == "CRAN") {
     $href = "https://cran.r-project.org/package=".$info["code"]["name"];
@@ -485,3 +488,5 @@ function modulesHTML_printlinks($links, $section) {
   $ret .= "</ul>";
   return($ret);
 }
+=======
+>>>>>>> f8e4707 (Refactor.)
