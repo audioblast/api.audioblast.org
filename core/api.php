@@ -8,47 +8,46 @@ function listSpecialEndpoints() {
       "autocomplete",
       "columns",
       "js",
-      "histogram", 
+      "histogram",
       "files"
     ));
   }
-  
-  
-  /*
-  Some param types (e.g. range) need to be transofrmed before processing.
-  */
-  function parseType($type) {
-    if ($type == "range") { return("string");} else {return($type);}
-  }
-  
+
+
+/*
+Some param types (e.g. range) need to be transofrmed before processing.
+*/
+function parseType($type) {
+  if ($type == "range") { return("string");} else {return($type);}
+}
+
   /*
   This is the main function for returning API data
   */
   function moduleAPI($db) {
     $start_time = microtime(true);  //Track execution time for this request
     $execute_query = TRUE;          //Flag. By defaut this function will excute SQL.
-                                    // - some functions will excute their own. 
-   
+                                    // - some functions will excute their own.
     $parts = explode("/", $_SERVER['REQUEST_URI']);
     if (isset($parts[2])) {
       $module = loadModule($parts[2]);
     } else {
-      print("Call to API processing with no module provided.")
+      print("Call to API processing with no module provided.");
     }
-    
+
     $params = array();
     $notes = array();
     $special = listSpecialEndpoints();
-  
+
     $notes["input_params"] = $_GET;
-  
+
     //Check for endpoints where this module will not execute SQL
     if (isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
       $endpoint = $parts[3];
       $execute_query = FALSE;
       $module["params"] = $module["endpoints"][$endpoint]["params"];
     }
-  
+
     //Sanitise parameters and apply defaults
     foreach ($module["params"] as $pname => $pinfo) {
       if (isset($_GET[$pname])) {
@@ -59,7 +58,7 @@ function listSpecialEndpoints() {
         }
       }
     }
-  
+
     //Special processing for filters via Tabulator
     if (isset($_GET["filter"])) {
       foreach ($_GET["filter"] as $filter) {
@@ -74,7 +73,7 @@ function listSpecialEndpoints() {
         }
       }
     }
-  
+
     if (isset($parts[3]) && $parts[3] == "autocomplete") {
       $field= $parts[4];
       if (!isset($module["params"][$field])) {
@@ -95,7 +94,7 @@ function listSpecialEndpoints() {
         $op = "none";
         $value = "";
       }
-  
+
       $select = SELECTclause($module, $field, "autocomplete");
       $where = generateParams($module, $params);
       $where[] = array(
@@ -164,10 +163,10 @@ function listSpecialEndpoints() {
           break;
       }
     }
-  
+
     if ($execute_query) {
       $query_start_time = microtime(true);
-  
+
       //Pagination
       $default_page = 50;
       $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : $default_page;
@@ -176,9 +175,9 @@ function listSpecialEndpoints() {
       $sql = $select.WHEREclause($where);
       $sql .= " LIMIT ".$startAt.", ".$perPage.";";
       $notes[] = $sql;
-  
+
       $result = $db->query($sql);
-  
+
       if ($result) {
         while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
           $ret["data"][] = $row;
@@ -188,15 +187,15 @@ function listSpecialEndpoints() {
         $ret["data"] = array();
         $notes[] = "Query failed on database.";
       }
-  
+
       $sql = SELECTcount($module).WHEREclause($where).";";
       $res = mysqli_fetch_assoc(mysqli_query($db, $sql));
       $totalPages = ceil($res['total'] / $perPage);
       $ret["last_page"] = $totalPages;
-  
+
       $notes["query_execution_time"] = microtime(true) - $query_start_time;
     }
-  
+
     $ret["params"] = $params;
     $ret["notes"] = $notes;
     $ret["notes"]["total_execution_time"] = microtime(true) - $start_time;
@@ -210,4 +209,3 @@ function listSpecialEndpoints() {
         break;
     }
   }
-  
