@@ -16,6 +16,7 @@ function generateParams($params, $inputs) {
      if (in_array($name, listOutputColumns())) {continue;}
      if (isset($inputs[$name])) {
         if ($inputs[$name] == "") {continue;}
+        if (!isset($params["params"][$name]["op"])) {continue;}
         switch ($params["params"][$name]["op"]) {
           case "range":
             if (!isset($params["params"][$name]["column"])) {continue;}
