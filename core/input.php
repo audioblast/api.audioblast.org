@@ -6,6 +6,7 @@ List columns that do not need to go through generateParams().
 function listOutputColumns() {
   return(array(
     "output",
+    "format",
     "cache"
   ));
 }
@@ -13,28 +14,25 @@ function listOutputColumns() {
 function generateParams($params, $inputs) {
     $ret = array();
     foreach($params["params"] as $name => $data) {
-     if (in_array($name, listOutputColumns())) {continue;}
-     if (isset($inputs[$name])) {
-        if ($inputs[$name] == "") {continue;}
-        if (!isset($params["params"][$name]["op"])) {continue;}
-        switch ($params["params"][$name]["op"]) {
-          case "range":
-            if (!isset($params["params"][$name]["column"])) {continue;}
-            $ret = filterMerge($ret, filterABrange($params["params"][$name]["column"], $inputs[$name], $params["params"][$name]["type"]));
-            break;
-          default:
-            $ret[] = array(
-              "column" => isset($params["params"][$name]["column"]) ? $params["params"][$name]["column"] : "",
-              "op" => isset($params["params"][$name]["op"]) ? $params["params"][$name]["op"] : "",
-              "value" => $inputs[$name],
-              "type" => $params["params"][$name]["type"]
-            );
-        }
+      if (in_array($name, listOutputColumns())) {continue;}
+      if (isset($inputs[$name])) {
+      if ($inputs[$name] == "") {continue;}
+      switch ($params["params"][$name]["op"]) {
+        case "range":
+          $ret = filterMerge($ret, filterABrange($params["params"][$name]["column"], $inputs[$name], $params["params"][$name]["type"]));
+          break;
+        default:
+          $ret[] = array(
+            "column" => $params["params"][$name]["column"],
+            "op" => $params["params"][$name]["op"],
+            "value" => $inputs[$name],
+            "type" => $params["params"][$name]["type"]
+          );
       }
     }
-    return($ret);
   }
-
+  return($ret);
+}
   function filterMerge($f1, $f2) {
     if (is_array($f1)) {
       if (is_array($f2)) {
