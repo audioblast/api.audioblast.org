@@ -171,7 +171,7 @@ function parseType($type) {
       $default_page = 50;
       $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : $default_page;
       $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
-      $startAt = $perPage * ($page - 1) + 1;
+      $startAt = $perPage * ($page - 1);
       $sql = $select.WHEREclause($where);
       $sql .= " LIMIT ".$startAt.", ".$perPage.";";
       $notes[] = $sql;
@@ -179,7 +179,9 @@ function parseType($type) {
       $result = $db->query($sql);
 
       if ($result) {
+
         while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
+
           $ret["data"][] = $row;
         }
         $result->close();
