@@ -29,10 +29,29 @@ function parseType($type) {
     $execute_query = TRUE;          //Flag. By defaut this function will excute SQL.
                                     // - some functions will excute their own.
     $parts = explode("/", $_SERVER['REQUEST_URI']);
-    if (isset($parts[2])) {
-      $module = loadModule($parts[2]);
+
+    //Check module type is set and exists
+    if (isset($parts[1])) {
+      if (!in_array($parts[1], listModuleTypes())) {
+        print("Module type `".$parts[1]."` is not recognised.");
+        exit;
+      }
     } else {
-      print("Call to API processing with no module provided.");
+      print("No module type provided.");
+      exit;
+    }
+
+    //Check module is set and exists
+    if (isset($parts[2])) {
+      if (in_array($parts[2], listModules())) {
+        $module = loadModule($parts[2]);
+      } else {
+        print("Module `".$parts[2]."` is not recognised.");
+        exit;
+      }
+    } else {
+      print("No module provided.");
+      exit;
     }
 
     $params = array();
