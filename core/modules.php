@@ -69,3 +69,14 @@ function loadModules($category=NULL) {
   }
   return($modules);
 }
+
+/*
+List module names
+*/
+function listModules($category=NULL) {
+  $modules = array();
+  foreach(glob("modules/"."*" , GLOB_ONLYDIR) as $mod_dir) {
+      $modules[] = substr($mod_dir, 8);
+  }
+  return($modules);
+}
