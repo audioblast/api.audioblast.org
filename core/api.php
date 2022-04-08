@@ -64,7 +64,28 @@ function parseType($type) {
     if (isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
       $endpoint = $parts[3];
       $execute_query = FALSE;
-      $module["params"] = $module["endpoints"][$endpoint]["params"];
+      if ($endpoint == "embed") {
+        if (function_exists($parts[2]."_embed_info")) {
+          $embeds = call_user_func($parts[2]."_embed_info"); 
+         if (isset($parts[4])) {
+            if (isset($embeds[$parts[4]])) {
+              $module["endpoints"][$parts[4]] = $embeds[$parts[4]];
+              $module["params"] = $embeds[$parts[4]]["params"];
+            } else {
+              print("Module `".$parts[3]."` has no embed `".$parts[4]."`.");
+              exit;
+            }
+          } else {
+            print("No embed type selected.");
+            exit;
+          }
+        } else {
+          print("Module `".$parts[2]."` does not have embed function.");
+          exit;
+        }
+      } else {
+        $module["params"] = $module["endpoints"][$endpoint]["params"];
+      }
     }
 
     //Sanitise parameters and apply defaults
@@ -153,6 +174,7 @@ function parseType($type) {
       $select = SELECTclause($module);
       $where = generateParams($module, $params);
     } else {
+      if ($endpoint=="embed") { $endpoint = $parts[4];}
       switch ($module["endpoints"][$endpoint]["returns"]) {
         case "html":
           $mret = call_user_func($module["endpoints"][$endpoint]["callback"], $params);
