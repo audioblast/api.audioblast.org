@@ -230,7 +230,7 @@ function parseType($type) {
         $ret["data"] = array();
         $notes[] = "Query failed on database.";
       }
-print_r($ret);exit;
+
       $sql = SELECTcount($module).WHEREclause($where).";";
       $res = mysqli_fetch_assoc(mysqli_query($db, $sql));
       $totalPages = ceil($res['total'] / $perPage);
