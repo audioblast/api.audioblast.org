@@ -3,6 +3,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+ini_set('default_charset', 'utf-8');
+
   include("core/core.php");
 
   //What do we need to do?
