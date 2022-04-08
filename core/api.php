@@ -1,7 +1,7 @@
 <?php
 
 /*
-Lists stadard special special endpoints
+Lists standard special endpoints
 */
 function listSpecialEndpoints() {
     return(array(
@@ -56,12 +56,14 @@ function moduleAPI($db) {
 
   $params = array();
   $notes = array();
-  $special = listSpecialEndpoints();
 
   $notes["input_params"] = $_GET;
 
-  //Check for endpoints where this module will not execute SQL
-  if (isset($parts[3]) && !in_array($parts[3], $special)  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
+  /**
+   * Check for endpoints where this module will not execute SQL and prepare
+   * endpoints for execution.
+   */
+  if (isset($parts[3]) && !in_array($parts[3], listSpecialEndpoints())  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
     $endpoint = $parts[3];
     $execute_query = FALSE;
     if ($endpoint == "embed") {
