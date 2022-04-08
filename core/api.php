@@ -247,7 +247,6 @@ function parseType($type) {
         print(json_encode($ret));
         break;
       case "nakedJSON":
-        $ret = array_map(utf8_encode, $ret);
         print_r($ret);
         if (!isset($ret["data"])) {$ret["data"] = array();}
         print(json_encode($ret["data"]));
