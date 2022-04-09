@@ -150,7 +150,7 @@ function recordings_info() {
 
 function recordings_embed_info() {
   $info = array(
-      "recording" => array(
+    "recording" => array(
         "callback" => "recordings_embed",
         "desc" => "Returns embeddable recording",
         "returns" => "html",
@@ -192,7 +192,8 @@ function recordings_embed_info() {
             "desc" => "Type of player to return.",
             "type" => "string",
             "allowed" => array(
-              "html5"
+              "html5",
+              "zcjs"
             ),
             "default" => "html5"
           )
@@ -211,7 +212,10 @@ function recordings_embed($f) {
   $file = $res->fetch_assoc();
   switch($f['output']) {
     case 'html5':
-      return recordings_embed_html5($f, $file);
+      return(recordings_embed_html5($f, $file));
+      break;
+    case "zcjs":
+      return(recordings_embed_zcjs($f, $file));
       break;
   }
 }
@@ -237,3 +241,22 @@ function recordings_embed_html5($f, $file) {
   return($mret);
 }
 
+function recordings_embed_zcjs($f, $file) {
+  $ret  = "<!DOCTYPE html>";
+  $ret .= "<html>";
+  $ret .= "<head>";
+  $ret .= addJavaScript("zcjs");
+  $ret .= addJavaScript("plotly");
+  $ret .= "</head>";
+  $ret .= "<body>";
+  $ret .= '<div id="plot-here" width="100%"></div>';
+  $ret .= '<script type="text/javascript">';
+  $ret .= 'p = new ZCJS("plot-here");';
+  $ret .= 'p.setURL("'.$file["file"].'");';
+  $ret .= "</script>";
+  $ret .= "</body>";
+  $ret .= "</html>";
+  $mret = array();
+  $mret["html"] = $ret;
+  return($mret);
+}
