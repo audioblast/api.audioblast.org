@@ -242,9 +242,20 @@ function recordings_embed_html5($f, $file) {
 }
 
 function recordings_embed_zcjs($f, $file) {
-  $ret  = addJavaScript("zcjs");
+  $ret  = "<!DOCTYPE html>";
+  $ret .= "<html>";
+  $ret .= "<head>";
+  $ret .= addJavaScript("zcjs");
+  $ret .= addJavaScript("plotly");
+  $ret .= "</head>";
+  $ret .= "<body>";
   $ret .= '<div id="plot-here" width="100%"></div>';
-  $ret .= '<script type="text/javascript">p = new ZCJS("plot-here");p.setURL("'.$file["file"].'");</script>';
+  $ret .= '<script type="text/javascript">';
+  $ret .= 'p = new ZCJS("plot-here");';
+  $ret .= 'p.setURL("'.$file["file"].'");';
+  $ret .= "</script>";
+  $ret .= "</body>";
+  $ret .= "</html>";
   $mret = array();
   $mret["html"] = $ret;
   return($mret);
