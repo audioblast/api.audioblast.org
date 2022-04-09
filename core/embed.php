@@ -26,7 +26,10 @@ function embedPage() {
         $response = file_get_contents($url);
         print($response);
         print("<br><textarea style='width: 100%'>");
-        print($response);
+        switch ($epinfo->embed) {
+          case "iframe":
+            print("<iframe src='".$url."' style='border: none; width: 100%;'></iframe>");
+        }
         print("</textarea>");
       }
     }

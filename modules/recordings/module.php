@@ -154,6 +154,7 @@ function recordings_embed_info() {
         "callback" => "recordings_embed",
         "desc" => "Returns embeddable recording",
         "returns" => "html",
+        "embed" => "iframe",
         "params" => array(
           "source" => array(
              "desc" => "Source",
