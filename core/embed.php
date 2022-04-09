@@ -25,9 +25,9 @@ function embedPage() {
         $url = "http://api.audioblast.org/standalone/embed/".$epname."/?source=".$_GET["source"]."&id=".$_GET["id"]."&output=".$output;
         $response = file_get_contents($url);
         print($response);
-        print("<br><PRE>");
+        print("<br><textarea style='width: 100%'>");
         print($response);
-        print("</PRE>");
+        print("</textarea>");
       }
     }
   }
