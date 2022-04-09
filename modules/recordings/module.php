@@ -192,7 +192,8 @@ function recordings_embed_info() {
             "desc" => "Type of player to return.",
             "type" => "string",
             "allowed" => array(
-              "html5"
+              "html5",
+              "zcjs"
             ),
             "default" => "html5"
           )
@@ -211,7 +212,10 @@ function recordings_embed($f) {
   $file = $res->fetch_assoc();
   switch($f['output']) {
     case 'html5':
-      return recordings_embed_html5($f, $file);
+      return(recordings_embed_html5($f, $file));
+      break;
+    case "zcjs":
+      return(recordings_embed_zcjs($f, $file));
       break;
   }
 }
@@ -237,3 +241,9 @@ function recordings_embed_html5($f, $file) {
   return($mret);
 }
 
+function recordings_embed_zcjs($f, $file) {
+  $ret  = addJavaScript("zcjs");
+  $ret .= '<div id="plot-here" width="100%"></div>';
+  $ret .= '<script type="text/javascript">p = new ZCJS("plot-here");p.setURL("'.$file["file"].'");</script>';
+  return($ret);
+}
