@@ -7,3 +7,4 @@ include("speedbird.php");
 include("input.php");
 include("api.php");
 include("embed.php");
+include("cdn.php");
