@@ -31,64 +31,67 @@ function moduleAPI($db) {
   $parts = explode("/", $_SERVER['REQUEST_URI']);
 
   //Check module type is set and exists
-  if (isset($parts[1])) {
+  if (isset($parts[1]) && $parts[1] != "embed") {
     if (!in_array($parts[1], listModuleTypes())) {
       print("Module type `".$parts[1]."` is not recognised.");
       exit;
     }
   } else {
-    print("No module type provided.");
-    exit;
+    if (isset($parts[1]) && $parts[1] == "embed") {
+
+    } else {
+      print("No module type provided.");
+      exit;
+    }
   }
 
   //Check module is set and exists
-  if (isset($parts[2])) {
+  if (isset($parts[2]) && $parts[1] != "embed") {
     if (in_array($parts[2], listModules())) {
       $module = loadModule($parts[2]);
+    } else if ($parts[2]=="embed"){
+      $module = loadModule($parts[3]);
     } else {
       print("Module `".$parts[2]."` is not recognised.");
       exit;
     }
   } else {
-    print("No module provided.");
-    exit;
+    if ($parts[1] != "embed") {
+      print("No module provided.");
+      exit;
+    }
+  }
+
+  //Process embeds
+  if (isset($parts[1]) && $parts[1] =="embed") {
+    loadModule($parts[2]);
+    if (function_exists($parts[2]."_embed_info")) {
+      $module = call_user_func($parts[2]."_embed_info");
+      if (array_key_exists($parts[3], $module)) {
+        $module = $module[$parts[3]];
+      } else {
+        print("Module doe snot have requested embed");
+      }
+    } else {
+      print("No embed info for module.");
+    }
+  }
+
+  //Process standalone
+  if (isset($parts[1]) && $parts[1] == "standalone") {
+    if (isset($parts[3])) {
+      if (array_key_exists($parts[3], $module["endpoints"])) {
+        $module = $module["endpoints"][$parts[3]];
+      } else {
+        print("Module does not have requested endpoint.");
+      }
+    }
   }
 
   $params = array();
   $notes = array();
 
   $notes["input_params"] = $_GET;
-
-  /**
-   * Check for endpoints where this module will not execute SQL and prepare
-   * endpoints for execution.
-   */
-  if (isset($parts[3]) && !in_array($parts[3], listSpecialEndpoints())  && !in_array(substr($parts[3],0, 1), array("", "?"))) {
-    $endpoint = $parts[3];
-    $execute_query = FALSE;
-    if ($endpoint == "embed") {
-      if (function_exists($parts[2]."_embed_info")) {
-        $embeds = call_user_func($parts[2]."_embed_info"); 
-        if (isset($parts[4])) {
-          if (isset($embeds[$parts[4]])) {
-            $module["endpoints"][$parts[4]] = $embeds[$parts[4]];
-            $module["params"] = $embeds[$parts[4]]["params"];
-          } else {
-            print("Module `".$parts[3]."` has no embed `".$parts[4]."`.");
-            exit;
-          }
-        } else {
-          print("No embed type selected.");
-          exit;
-        }
-      } else {
-        print("Module `".$parts[2]."` does not have embed function.");
-        exit;
-      }
-    } else {
-      $module["params"] = $module["endpoints"][$endpoint]["params"];
-    }
-  }
 
   //Sanitise parameters and apply defaults
   foreach ($module["params"] as $pname => $pinfo) {
@@ -111,7 +114,7 @@ function moduleAPI($db) {
         if ($filter["value"]["start"] != "" && $filter["value"]["end"] == "") {$range = ">".$filter["value"]["start"];}
         $params[mysqli_real_escape_string($db, $filter["field"])] = mysqli_real_escape_string($db, $range);
       } else {
-        $params[mysqli_real_escape_string($db, $filter["field"])] = mysqli_real_escape_string($db, $filter["value"]); 
+        $params[mysqli_real_escape_string($db, $filter["field"])] = mysqli_real_escape_string($db, $filter["value"]);
       }
     }
   }
@@ -175,14 +178,19 @@ function moduleAPI($db) {
   } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
     $select = SELECTclause($module);
     $where = generateParams($module, $params);
+  } else if ($parts[1] == "embed") {
+    $execute_query = FALSE;
+    $mret = call_user_func($module["callback"], $params);
+    print($mret["html"]);
   } else {
-    if ($endpoint=="embed") { $endpoint = $parts[4];}
-    switch ($module["endpoints"][$endpoint]["returns"]) {
+    //Standalone
+    $execute_query=FALSE;
+    switch ($module["returns"]) {
       case "html":
-        $mret = call_user_func($module["endpoints"][$endpoint]["callback"], $params);
+        $mret = call_user_func($module["callback"], $params);
         print $mret["html"];
       case "data":
-        $mret = call_user_func($module["endpoints"][$endpoint]["callback"], $params);
+        $mret = call_user_func($module["callback"], $params);
         if (isset($mret["data"])) {
           $ret["data"] = $mret["data"];
         }
@@ -191,7 +199,7 @@ function moduleAPI($db) {
         }
         break;
       case "sql":
-        $sql = call_user_func($module["endpoints"][$endpoint]["callback"], $params);
+        $sql = call_user_func($module["callback"], $params);
         $query_start_time = microtime(true);
         $result = $db->query($sql);
         $notes["query_execution_time"] = microtime(true) - $query_start_time;

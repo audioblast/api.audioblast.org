@@ -150,7 +150,7 @@ function recordings_info() {
 
 function recordings_embed_info() {
   $info = array(
-      "recording" => array(
+    "recording" => array(
         "callback" => "recordings_embed",
         "desc" => "Returns embeddable recording",
         "returns" => "html",
@@ -245,10 +245,7 @@ function recordings_embed_zcjs($f, $file) {
   $ret  = addJavaScript("zcjs");
   $ret .= '<div id="plot-here" width="100%"></div>';
   $ret .= '<script type="text/javascript">p = new ZCJS("plot-here");p.setURL("'.$file["file"].'");</script>';
-
   $mret = array();
   $mret["html"] = $ret;
-print_r($mret);
   return($mret);
-
 }
