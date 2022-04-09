@@ -245,5 +245,8 @@ function recordings_embed_zcjs($f, $file) {
   $ret  = addJavaScript("zcjs");
   $ret .= '<div id="plot-here" width="100%"></div>';
   $ret .= '<script type="text/javascript">p = new ZCJS("plot-here");p.setURL("'.$file["file"].'");</script>';
-  return($ret);
+
+  $mret = array();
+  $mret["html"] = $ret;
+  return($mret);
 }
