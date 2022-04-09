@@ -248,5 +248,7 @@ function recordings_embed_zcjs($f, $file) {
 
   $mret = array();
   $mret["html"] = $ret;
+print_r($mret);
   return($mret);
+
 }
