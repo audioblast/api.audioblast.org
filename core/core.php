@@ -6,3 +6,4 @@ $db->set_charset('utf8mb4');
 include("speedbird.php");
 include("input.php");
 include("api.php");
+include("embed.php");

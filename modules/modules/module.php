@@ -78,6 +78,21 @@ function modules_info() {
             "default" => "JSON"
           )
         )
+      ),
+      "list_embeds" => array(
+        "callback" => "modules_list_embeds",
+        "desc" => "Returns a list of embed endpoints",
+        "returns" => "data",
+        "params" => array(
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
       )
     )
   );
@@ -109,6 +124,17 @@ function modules_list_sources($params) {
   foreach ($modules as $name => $info) {
     if (isset($info["sources"])) {
       $ret["data"][$info["mname"]] = $info["sources"];
+    }
+  }
+  return($ret);
+}
+
+function modules_list_embeds($params) {
+  $modules = loadModules();
+  $ret = array();
+  foreach ($modules as $name => $info) {
+    if (function_exists($name."_embed_info")) {
+      $ret["data"][$info["mname"]] = call_user_func($name."_embed_info");
     }
   }
   return($ret);

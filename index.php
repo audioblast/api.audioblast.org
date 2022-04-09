@@ -22,6 +22,8 @@ ini_set('default_charset', 'utf-8');
     </body>
     </html>
     <?php
+  } else if (isEmbedPage()) {
+     embedPage();
   } else {
     moduleAPI($db);
   }
