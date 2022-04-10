@@ -40,7 +40,7 @@ const aciAB = {
     },
     doRenderControl: function() {
       var controller = document.getElementById(this.controlDiv);
-      controller.innerHTML = "<a onclick=\"viewAB.setTab('"+this.cname+"','table')\">Table</a><br/><a onclick=\"viewAB.setTab('"+this.cname+"','chart')\">Chart</a>";
+      controller.innerHTML = "<ul><li><a onclick=\"viewAB.setTab('"+this.cname+"','table')\">Table</a></li><li><a onclick=\"viewAB.setTab('"+this.cname+"','chart')\">Chart</a></li></ul>";
     },
     doRender: function() {
       if (this.data == null) {
