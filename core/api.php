@@ -168,10 +168,6 @@ function moduleAPI($db) {
       }
       $ret["data"][] = $col;
     }
-  } else if (isset($parts[3]) && $parts[3] == "js") {
-    header('Content-Type: application/javascript');
-    print(file_get_contents("modules/".$parts[2]."/component.js", TRUE));
-    return;
   } else if (isset($parts[3]) && $parts[3] == "histogram") {
     $select = "CALL `audioblast`.`".$module["histogram"]."`(1000)";
     $where = '';

@@ -7,6 +7,7 @@ function bioacoustica_info() {
     "category" => "source",
     "hname" => "BioAcoustica",
     "url" => "http://bio.acousti.ca",
+    "logo_url" => "https://raw.githubusercontent.com/BioAcoustica/BioAcoustica-Resources/master/logos/Website/logo.svg",
     "sources" => array(
       array(
         "type" => "recordings",
