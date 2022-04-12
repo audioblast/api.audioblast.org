@@ -166,7 +166,19 @@ function getPhymoji() {
     "pinales" => "🌲",
     "liliales" => "🌷",
     "asterales" => "🌻",
-    "malvales" => "🌺"
+    "malvales" => "🌺",
+    "vitaceae" => "🍇",
+    "cucurbitaceae" => "🍈",
+    "rutaceae" => "🍊",
+    "faboideae" => "🥜",
+    "allioideae" => "🧅",
+    "allium sativum" => "🧄",
+    "brassicales" => "🥦",
+    "cucumis" => "🥒",
+    "capsicum" => "🌶️",
+    "zea" => "🌽",
+    "apiaceae" => "🥕",
+    "solanum tuberosum" => "🥔"
     );
     return($phymoji);
 }
