@@ -160,7 +160,7 @@ function getPhymoji() {
     "acer" => "🍁",
     "fabaceae" => "🍀",
     "trifolium" => "☘️",
-    "poaceae" => "🌾",
+    "poales" => "🌾",
     "cactaceae" => "🌵",
     "arecaceae" => "🌴",
     "pinales" => "🌲",
@@ -178,7 +178,21 @@ function getPhymoji() {
     "capsicum" => "🌶️",
     "zea" => "🌽",
     "apiaceae" => "🥕",
-    "solanum tuberosum" => "🥔"
+    "solanum tuberosum" => "🥔",
+    "solanum melongena" => "🍆",
+    "laurales" => "🥑",
+    "cocos" => "🥥",
+    "lamiales" => "🫒",
+    "solanales" => "🍅",
+    "actinidiaceae" =>"🥝",
+    "ericales" => "🫐",
+    "fragaria" => "🍓",
+    "prunus persicus" =>"🍑",
+    "pyrus" => "🍐",
+    "maleae" => "🍎",
+    "sapindales" => "🥭",
+    "bromeliaceae" => "🍍",
+    "zingiberales" => "🍌"
     );
     return($phymoji);
 }
