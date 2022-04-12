@@ -35,7 +35,9 @@ function phymoji_info() {
 }
 
 function phymoji_phymoji($f) {
-  //Munge $f into correct format
+  //TODO: Include below as sep file
+  $ret = array();
+  $ret["data"] = phymoji($f['names']);
   return($ret);
 }
 
