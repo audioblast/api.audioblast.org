@@ -18,18 +18,28 @@ if ($page == "API") {
   <html>
     <head>
       <title>audioBLAST! API</title>
-      <link rel="stylesheet" href="https://cdn.audioblast.org/ab-api.css">
+      <link rel="stylesheet" href="https://audioblast.org/ab-api.css">
     </head>
     <body>
-      <img src="https://cdn.audioblast.org/audioblast_logo.png" />
+      <div id="title">
+        <a href="/"><img src="https://cdn.audioblast.org/audioblast_flash.png" class="audioblast-flash" /></a>
+        <?php
+        switch($page) {
+          case "home":
+            print("<h1>audioBLAST! API</h1>");
+            break;
+          case "embed":
+            print("<h1>Embed API</h1>");
+            break;
+        }
+        ?>
+      </div>
       <?php
       switch($page) {
         case "home":
-          print("<h1>audioBLAST! API</h1>");
           print(modulesHTML(loadModules()));
           break;
         case "embed":
-          print("<h1>Embed API</h1>");
           embedPage();
           break;
       }
