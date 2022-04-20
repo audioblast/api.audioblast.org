@@ -96,7 +96,14 @@ function moduleAPI($db) {
   //Sanitise parameters and apply defaults
   foreach ($module["params"] as $pname => $pinfo) {
     if (isset($_GET[$pname])) {
-      $params[$pname] = mysqli_real_escape_string($db, $_GET[$pname]);
+      if (is_array($_GET[$pname])) {
+        $params[$pname] = array();
+        foreach ($_GET[$pname] as $key => $value) {
+          $params[$pname][mysqli_real_escape_string($db, $key)] = mysqli_real_escape_string($db, $value);
+        }
+      } else {
+        $params[$pname] = mysqli_real_escape_string($db, $_GET[$pname]);
+      }
     } else {
       if (isset($pinfo["default"])) {
         $params[$pname] = $pinfo["default"];
