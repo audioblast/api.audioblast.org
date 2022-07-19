@@ -16,6 +16,11 @@ function unp_info() {
         "process" => array()
       ),
       array(
+        "type" => "recordings",
+        "url" => "https://raw.githubusercontent.com/NaturalHistoryMuseum/audioblast_ingest/master/recordings-audiomoth.csv",
+        "process" => array()
+      ),
+      array(
         "type" => "deployments",
         "url" => "https://raw.githubusercontent.com/NaturalHistoryMuseum/audioblast_ingest/master/deployments.csv",
         "process" => array()
