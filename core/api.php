@@ -15,7 +15,7 @@ function listSpecialEndpoints() {
 
 
 /*
-Some param types (e.g. range) need to be transofrmed before processing.
+Some param types (e.g. range) need to be transformed before processing.
 */
 function parseType($type) {
   if ($type == "range") { return("string");} else {return($type);}
