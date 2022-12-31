@@ -106,6 +106,9 @@ function traits_info() {
 
 function traits_list_text_values() {
   $ret = array();
-  $ret["data"] = array("dog", "cat");
+  global $db;
+  $sql = "SELECT DISTINCT `Value` as `value` FROM `traits`;";
+  $res = $db->query($sql);
+  $ret["data"] = $res->fetch_assoc();
   return($ret);
 }
