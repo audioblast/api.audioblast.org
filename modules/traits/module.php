@@ -112,7 +112,7 @@ function traits_list_text_values() {
   $res = $db->query($sql);
   while ($row = $res->fetch_assoc()) {
     if (preg_match('/^[\p{L} \(\)]+$/u', $row["value"])) {
-      $ret["data"][] = $row["value"];
+      $ret["data"][] = strtolower($row["value"]);
     }
   }
   return($ret);
