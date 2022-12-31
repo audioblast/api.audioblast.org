@@ -77,7 +77,7 @@ function moduleAPI($db) {
     }
   }
 
-  //Process standalone
+  //Process endpoints
   if (isset($parts[1]) && $parts[1] == "standalone") {
     if (isset($parts[3])) {
       if (array_key_exists($parts[3], $module["endpoints"])) {
@@ -86,6 +86,9 @@ function moduleAPI($db) {
         print("Module does not have requested endpoint.");
       }
     }
+  } else if (in_array(parts[3], $module["endpoints"])) {
+    //Endpoints in a module that is not standalone
+    $module = $module["endpoints"][$parts[3]];
   }
 
   $params = array();
