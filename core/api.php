@@ -89,10 +89,7 @@ function moduleAPI($db) {
   } else if (array_key_exists($parts[3], $module["endpoints"])) {
     //Endpoints in a module that is not standalone
     $module = $module["endpoints"][$parts[3]];
-    print_r($module);
-    exit;
   }
-  print("No key");exit;
 
   $params = array();
   $notes = array();
