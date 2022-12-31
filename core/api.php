@@ -36,13 +36,6 @@ function moduleAPI($db) {
       print("Module type `".$parts[1]."` is not recognised.");
       exit;
     }
-  } else {
-    if (isset($parts[1]) && $parts[1] == "embed") {
-
-    } else {
-      print("No module type provided.");
-      exit;
-    }
   }
 
   //Check module is set and exists
