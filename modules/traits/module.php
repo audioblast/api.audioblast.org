@@ -105,6 +105,7 @@ function traits_info() {
 }
 
 function traits_list_text_values() {
-  $ret = array("dog", "cat");
+  $ret = array();
+  $ret["data"] = array("dog", "cat");
   return($ret);
 }
