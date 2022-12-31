@@ -92,6 +92,7 @@ function moduleAPI($db) {
     print_r($module);
     exit;
   }
+  print("No key");exit;
 
   $params = array();
   $notes = array();
