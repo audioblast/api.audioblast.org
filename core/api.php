@@ -26,12 +26,12 @@ This is the main function for returning API data
 */
 function moduleAPI($db) {
   $start_time = microtime(true);  //Track execution time for this request
-  $execute_query = TRUE;          //Flag. By defaut this function will excute SQL.
-                                  // - some functions will excute their own.
+  $execute_query = TRUE;          //Flag. By defaut this function will execute SQL.
+                                  // - some functions will execute their own.
   $parts = explode("/", $_SERVER['REQUEST_URI']);
 
   //Check module type is set and exists
-  if (isset($parts[1]) && $parts[1] != "embed") {
+  if (isset($parts[1]) && $parts[1] != "embed") {e
     if (!in_array($parts[1], listModuleTypes())) {
       print("Module type `".$parts[1]."` is not recognised.");
       exit;
