@@ -111,7 +111,7 @@ function traits_list_text_values() {
   $sql = "SELECT DISTINCT `Value` as `value` FROM `traits`;";
   $res = $db->query($sql);
   while ($row = $res->fetch_assoc()) {
-    if (preg_match('/^[\p{L} ]+$/u', $row["value"])) {
+    if (preg_match('/^[\p{L} \(\)]+$/u', $row["value"])) {
       $ret["data"][] = $row["value"];
     }
   }
