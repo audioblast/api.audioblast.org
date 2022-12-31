@@ -70,7 +70,7 @@ function moduleAPI($db) {
       if (array_key_exists($parts[3], $module)) {
         $module = $module[$parts[3]];
       } else {
-        print("Module doe snot have requested embed");
+        print("Module does not have requested embed");
       }
     } else {
       print("No embed info for module.");
