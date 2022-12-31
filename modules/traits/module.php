@@ -8,6 +8,23 @@ function traits_info() {
     "table" => "traits",
     "hname" => "Traits",
     "desc" => "This endpoint allows for the querying of the organism traits held within audioBLAST!",
+    "endpoints" => array(
+      "list_text_values" => array(
+        "callback" => "traits_list_text_values",
+        "desc" => "Returns a list of distinct text values.",
+        "returns" => "data",
+        "params" => array(
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
+      )
+    ),
     "params" => array(
       "taxon" => array(
         "desc" => "Taxonomic name",
@@ -85,4 +102,9 @@ function traits_info() {
     )
   );
   return($info);
+}
+
+function traits_list_text_values() {
+  $ret = array("dog", "cat");
+  return($ret);
 }
