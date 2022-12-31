@@ -109,6 +109,6 @@ function traits_list_text_values() {
   global $db;
   $sql = "SELECT DISTINCT `Value` as `value` FROM `traits`;";
   $res = $db->query($sql);
-  $ret["data"] = $res->fetch_assoc();
+  $ret["data"] = $res->fetch_all(MYSQLI_ASSOC);
   return($ret);
 }
