@@ -79,7 +79,7 @@ function moduleAPI($db) {
         print("Module does not have requested endpoint.");
       }
     }
-  } else if (array_key_exists($parts[3], $module["endpoints"])) {
+  } else if (isset($module["endpoints"]) && array_key_exists($parts[3], $module["endpoints"])) {
     //Endpoints in a module that is not standalone
     $module = $module["endpoints"][$parts[3]];
   }
