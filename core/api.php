@@ -77,6 +77,7 @@ function moduleAPI($db) {
     }
   }
 
+  print_r($module);exit;
   //Process endpoints
   if (isset($parts[1]) && $parts[1] == "standalone") {
     if (isset($parts[3])) {
@@ -88,7 +89,6 @@ function moduleAPI($db) {
     }
   } else if (in_array($parts[3], $module["endpoints"])) {
     //Endpoints in a module that is not standalone
-    print_r($parts);
     $module = $module["endpoints"][$parts[3]];
     print_r($module);
   }
