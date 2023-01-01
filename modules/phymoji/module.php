@@ -38,6 +38,6 @@ function phymoji_phymoji($f) {
   include_once("phymoji.php");
   $phymoji = new PhyMoji;
   $ret = array();
-  $ret["data"] = $phymoji->phymoji($f['names']);
+  $ret["data"] = $phymoji->phymoji(strtolower($f['names']));
   return($ret);
 }
