@@ -28,6 +28,27 @@ function phymoji_info() {
             "default" => "JSON"
           )
         )
+      ),
+      "get_taxon" => array(
+        "callback" => "phymoji_taxon",
+        "desc" => "Finds a scientific name for an emoji.",
+        "returns" => "data",
+        "params" => array(
+          "emoji" => array(
+            "desc" => "An emoji of a plant or animal",
+            "type" => "string",
+            "op" => "=",
+            "default" => "",
+          ),
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
       )
     )
   );
@@ -39,5 +60,13 @@ function phymoji_phymoji($f) {
   $phymoji = new PhyMoji;
   $ret = array();
   $ret["data"] = $phymoji->phymoji(strtolower($f['names']));
+  return($ret);
+}
+
+function phymoji_taxon($f) {
+  include_once("phymoji.php");
+  $phymoji = new PhyMoji;
+  $ret = array();
+  $ret["data"] = $phymoji->getTaxon($f['emoji']);
   return($ret);
 }
