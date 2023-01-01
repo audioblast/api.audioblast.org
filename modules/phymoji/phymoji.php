@@ -169,4 +169,10 @@ class PhyMoji {
         }
         return(array("emoji" => "", "match"=>""));
     }
+
+    public function getTaxon($e) {
+        foreach ($this->data as $taxon => $emoji) {
+            if ($e == $emoji) {return($taxon);}
+        }
+    }
 }
