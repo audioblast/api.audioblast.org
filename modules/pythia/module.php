@@ -55,7 +55,7 @@ function pythia_process($f) {
     $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$parts[i]."';";
     $res = $db->query($sql);
     print($res->num_rows());
-    for($l=0; $l<(count($parts)-$i); $l++) {
+    for($l=i; $l<(count($parts)); $l++) {
         print $i."-".$l."\n";
     }
   }
