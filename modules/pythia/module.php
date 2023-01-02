@@ -41,6 +41,7 @@ function pythia_process($f) {
   //Check for fragments already identified
   $parts = array();
   foreach($parts as $part) {
+    print $part."\n";
     if (strpos($part, ":")===false) {
       $parts[] = $part;
     }
