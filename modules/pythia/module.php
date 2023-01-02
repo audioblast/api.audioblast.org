@@ -50,8 +50,8 @@ function pythia_process($f) {
     "start"  => NULL,
     "length" => NULL
   );
-  for ($i=0; $i<length($parts); $i++) {
-    for($l=0; $l<(length($parts)-i); $l++) {
+  for ($i=0; $i<count($parts); $i++) {
+    for($l=0; $l<(count($parts)-i); $l++) {
         print $i."-".$l."\n";
     }
   }
