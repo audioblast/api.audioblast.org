@@ -36,8 +36,6 @@ function pythia_info() {
 
 function pythia_process($f) {
   $q_parts = explode(" ", $f["query"]);
-  print_r($q_parts);
-
   //Check for fragments already identified
   $parts = array();
   foreach($q_parts as $part) {
@@ -46,8 +44,6 @@ function pythia_process($f) {
       $parts[] = $part;
     }
   }
-  print_r($parts);
-  exit;
 
   //Match taxa
   $best_taxon_match = array(
@@ -59,5 +55,7 @@ function pythia_process($f) {
         print $i."-".$l."\n";
     }
   }
+
+  exit;
   return($ret);
 }
