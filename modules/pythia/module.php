@@ -66,7 +66,7 @@ function pythia_process($f) {
                 $best_taxon_match["start"] = $i;
                 $best_taxon_match["length"] = $length;
             }
-            continue;
+            break;
         }
     }
   }
