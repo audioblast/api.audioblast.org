@@ -35,7 +35,16 @@ function pythia_info() {
 }
 
 function pythia_process($f) {
-  $parts = explode(" ", $f["query"]);
+  $q_parts = explode(" ", $f["query"]);
+  print_r($q_parts);
+
+  //Check for fragments already identified
+  $parts = array();
+  foreach($parts as $part) {
+    if (strpos($part, ":")==FALSE) {
+      $parts[] = $part;
+    }
+  }
   print_r($parts);
   exit;
   return($ret);
