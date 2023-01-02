@@ -35,7 +35,7 @@ function pythia_info() {
 }
 
 function pythia_process($f) {
-  $parts = explode($f["query"]);
+  $parts = explode(" ", $f["query"]);
   print_r($parts);
   exit;
   return($ret);
