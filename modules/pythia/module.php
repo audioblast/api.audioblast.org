@@ -52,7 +52,7 @@ function pythia_process($f) {
     "length" => NULL
   );
   for ($i=0; $i<count($parts); $i++) {
-    $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$parts[i]."';";
+    $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$parts[$i]."';";
     $res = $db->query($sql);
     print($res->num_rows());
     for($l=$i; $l<(count($parts)); $l++) {
