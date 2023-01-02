@@ -62,7 +62,7 @@ function pythia_process($f) {
         if($res->num_rows == 0) {
             $length = $l-1 - $i;
             if ($length > $best_taxon_match["length"]) {
-                $best_taxon_match["start"] = $start;
+                $best_taxon_match["start"] = $i;
                 $best_taxon_match["length"] = $length;
             }
         }
