@@ -60,7 +60,7 @@ function pythia_process($f) {
         $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
         $res = $db->query($sql);
         if($res->num_rows == 0) {
-            $length = $l - $i +1;
+            $length = $l - $i;
             if ($length > $best_taxon_match["length"]) {
                 $best_taxon_match["start"] = $i;
                 $best_taxon_match["length"] = $length;
