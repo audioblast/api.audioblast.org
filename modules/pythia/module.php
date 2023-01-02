@@ -56,7 +56,7 @@ function pythia_process($f) {
     if($res->num_rows == 0) {continue;}
     $name_string = $parts[$i];
     for($l=$i+1; $l<(count($parts)); $l++) {
-        $name_string += ' '.$parts[$l];
+        $name_string .= ' '.$parts[$l];
         $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
         $res = $db->query($sql);
         if($res->num_rows == 0) {
