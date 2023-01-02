@@ -37,7 +37,7 @@ function pythia_info() {
 function pythia_process($f) {
   global $db;
   $q_parts = explode(" ", $f["query"]);
-  //Check for fragments already identified
+  //Check for fragments already identified - do this better using regex
   $parts = array();
   foreach($q_parts as $part) {
     print $part."\n";
@@ -55,7 +55,7 @@ function pythia_process($f) {
     $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$parts[i]."';";
     $res = $db->query($sql);
     print($res->num_rows());
-    for($l=i; $l<(count($parts)); $l++) {
+    for($l=$i; $l<(count($parts)); $l++) {
         print $i."-".$l."\n";
     }
   }
