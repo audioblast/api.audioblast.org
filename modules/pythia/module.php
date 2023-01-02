@@ -41,11 +41,22 @@ function pythia_process($f) {
   //Check for fragments already identified
   $parts = array();
   foreach($parts as $part) {
-    if (strpos($part, ":")==FALSE) {
+    if (strpos($part, ":")===false) {
       $parts[] = $part;
     }
   }
   print_r($parts);
   exit;
+
+  //Match taxa
+  $best_taxon_match = array(
+    "start"  => NULL,
+    "length" => NULL
+  );
+  for ($i=0; $i<length($parts); $i++) {
+    for($l=0; $l<(length($parts)-i); $l++) {
+        print $i."-".$l."\n";
+    }
+  }
   return($ret);
 }
