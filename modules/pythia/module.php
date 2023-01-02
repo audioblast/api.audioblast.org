@@ -40,7 +40,6 @@ function pythia_process($f) {
   //Check for fragments already identified - do this better using regex
   $parts = array();
   foreach($q_parts as $part) {
-    print $part."\n";
     if (strpos($part, ":")===false) {
       $parts[] = $part;
     }
@@ -49,16 +48,30 @@ function pythia_process($f) {
   //Match taxa
   $best_taxon_match = array(
     "start"  => NULL,
-    "length" => NULL
+    "length" => 0
   );
   for ($i=0; $i<count($parts); $i++) {
     $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$parts[$i]."';";
     $res = $db->query($sql);
-    print($res->num_rows);
-    for($l=$i; $l<(count($parts)); $l++) {
-        print $i."-".$l."\n";
+    if($res->num_rows == 0) {continue;}
+    $name_string = $parts[$i];
+    for($l=$i+1; $l<(count($parts)); $l++) {
+        $name_string += ' '.$parts[$l];
+        $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
+        $res = $db->query($sql);
+        if($res->num_rows == 0) {
+            $length = $l-1 - $i;
+            if ($length > $best_taxon_match["length"]) {
+                $best_taxon_match["start"] = $start;
+                $best_taxon_match["length"] = $length;
+            }
+        }
     }
   }
+
+for ($i = $best_taxon_match["start"]; $i < ($best_taxon_match["start"]+$best_taxon_match["length"]); $i++) {
+    print($parts[$i]);
+}
 
   exit;
   return($ret);
