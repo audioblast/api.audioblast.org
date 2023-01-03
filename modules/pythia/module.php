@@ -54,19 +54,21 @@ function pythia_process($f) {
 
 function _pythia_match_taxon($parts) {
   global $db;
+  $n_parts = count($parts);
   $taxon_match = array();
-  for ($i=0; $i<count($parts); $i++) {
+  for ($i=0; $i<$n_parts; $i++) {
     $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$parts[$i]."';";
     $res = $db->query($sql);
     if($res->num_rows == 0) {continue;}
     $name_string = $parts[$i];
-    for($l=$i+1; $l<(count($parts)); $l++) {
+    for($l=$i+1; $l<$n_parts; $l++) {
       $last_name_string = $name_string;
       $name_string .= ' '.$parts[$l];
       $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
       $res = $db->query($sql);
-      if($res->num_rows == 0 || $l + 1 == count($parts)) {
+      if($res->num_rows == 0 || $l + 1 == $n_parts) {
         $length = $l - $i;
+        $row = $res->fetch_assoc();
         $taxon_match[] = array(
           "start" => $i,
           "length" => $length,
