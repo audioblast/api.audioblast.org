@@ -53,34 +53,28 @@ function pythia_process($f) {
 function _pythia_match_taxon($parts) {
   global $db;
 
-  $best_taxon_match = array(
-    "start"  => NULL,
-    "length" => 0
-  );
+  $taxon_match = array();
+
   for ($i=0; $i<count($parts); $i++) {
     $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$parts[$i]."';";
     $res = $db->query($sql);
     if($res->num_rows == 0) {continue;}
     $name_string = $parts[$i];
     for($l=$i+1; $l<(count($parts)); $l++) {
-        $name_string .= ' '.$parts[$l];
-        $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
-        $res = $db->query($sql);
-        if($res->num_rows == 0) {
-            $length = $l - $i;
-            if ($length > $best_taxon_match["length"]) {
-                $best_taxon_match["start"] = $i;
-                $best_taxon_match["length"] = $length;
-            }
-            break;
-        }
+      $name_string .= ' '.$parts[$l];
+      $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
+      $res = $db->query($sql);
+      if($res->num_rows == 0) {
+        $length = $l - $i;
+        $taxon_match[] = array(
+          "start" => $i,
+          "length" => $length,
+          "match" => $name_string
+        );
+        break;
+      }
     }
   }
 
-  $best_taxon_match["matched_string"] = "";
-  for ($i = $best_taxon_match["start"]; $i < ($best_taxon_match["start"]+$best_taxon_match["length"]); $i++) {
-    $best_taxon_match["matched_string"] .= ($best_taxon_match["start"] == $i) ? "" : " ";
-    $best_taxon_match["matched_string"] .= $parts[$i];
-  }
-  return($best_taxon_match);
+  return($taxon_match);
 }
