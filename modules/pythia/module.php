@@ -44,9 +44,11 @@ function pythia_process($f) {
     }
   }
 
-  print_r(_pythia_match_taxon($parts));
-
-  exit;
+  $ret = array(
+    "data" => array(
+      "taxa" => _pythia_match_taxon($parts)
+    )
+  );
   return($ret);
 }
 
