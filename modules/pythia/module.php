@@ -66,7 +66,7 @@ function _pythia_match_taxon($parts) {
       $name_string .= ' '.$parts[$l];
       $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
       $res = $db->query($sql);
-      if($res->num_rows == 0 || $l + 1 == $n_parts) {
+      if($res->num_rows == 0 || ($l + 1) == $n_parts) {
         $length = $l - $i;
         $row = $res->fetch_assoc();
         $taxon_match[] = array(
