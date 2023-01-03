@@ -72,7 +72,8 @@ function _pythia_match_taxon($parts) {
         $taxon_match[] = array(
           "start" => $i,
           "length" => $length,
-          "match" => $last_name_string
+          "match" => $last_name_string,
+          "rank" => $row["rank"]
         );
         break;
       }
