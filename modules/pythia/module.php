@@ -45,7 +45,7 @@ function pythia_process($f) {
     }
   }
 
-  print_r(_pythia_match_taxon($arts));
+  print_r(_pythia_match_taxon($parts));
 
   exit;
   return($ret);
