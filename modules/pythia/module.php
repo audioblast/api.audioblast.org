@@ -51,7 +51,7 @@ function pythia_process($f) {
   return($ret);
 }
 
-_pythia_match_taxon($array) {
+function _pythia_match_taxon($array) {
   $best_taxon_match = array(
     "start"  => NULL,
     "length" => 0
