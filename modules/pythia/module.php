@@ -45,7 +45,13 @@ function pythia_process($f) {
     }
   }
 
-  //Match taxa
+  print_r(_pythia_match_taxon($arts));
+
+  exit;
+  return($ret);
+}
+
+_pythia_match_taxon($array) {
   $best_taxon_match = array(
     "start"  => NULL,
     "length" => 0
@@ -69,11 +75,11 @@ function pythia_process($f) {
         }
     }
   }
-  print_r($best_taxon_match);
-  for ($i = $best_taxon_match["start"]; $i < ($best_taxon_match["start"]+$best_taxon_match["length"]); $i++) {
-    print($parts[$i]);
-  }
 
-  exit;
-  return($ret);
+  $best_taxon_match["matched_string"] = "";
+  for ($i = $best_taxon_match["start"]; $i < ($best_taxon_match["start"]+$best_taxon_match["length"]); $i++) {
+    $best_taxon_match["matched_string"] += ($best_taxon_match["start"] == $i) ? "" : " ";
+    $best_taxon_match["matched_string"] += $parts[$i];
+  }
+  return($best_taxon_match);
 }
