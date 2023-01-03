@@ -68,12 +68,10 @@ function _pythia_match_taxon($parts) {
       $res = $db->query($sql);
       if($res->num_rows == 0 || ($l + 1) == $n_parts) {
         $length = $l - $i;
-        $row = $res->fetch_assoc();
         $taxon_match[] = array(
           "start" => $i,
           "length" => $length,
-          "match" => $last_name_string,
-          "rank" => $row["rank"]
+          "match" => $last_name_string
         );
         break;
       }
