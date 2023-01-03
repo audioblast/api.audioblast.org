@@ -52,7 +52,7 @@ function pythia_process($f) {
 
 function _pythia_match_taxon($parts) {
   global $db;
-  
+
   $best_taxon_match = array(
     "start"  => NULL,
     "length" => 0
@@ -79,8 +79,8 @@ function _pythia_match_taxon($parts) {
 
   $best_taxon_match["matched_string"] = "";
   for ($i = $best_taxon_match["start"]; $i < ($best_taxon_match["start"]+$best_taxon_match["length"]); $i++) {
-    $best_taxon_match["matched_string"] += ($best_taxon_match["start"] == $i) ? "" : " ";
-    $best_taxon_match["matched_string"] += $parts[$i];
+    $best_taxon_match["matched_string"] .= ($best_taxon_match["start"] == $i) ? "" : " ";
+    $best_taxon_match["matched_string"] .= $parts[$i];
   }
   return($best_taxon_match);
 }
