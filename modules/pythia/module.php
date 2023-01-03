@@ -35,7 +35,6 @@ function pythia_info() {
 }
 
 function pythia_process($f) {
-  global $db;
   $q_parts = explode(" ", $f["query"]);
   //Check for fragments already identified - do this better using regex
   $parts = array();
@@ -52,6 +51,8 @@ function pythia_process($f) {
 }
 
 function _pythia_match_taxon($parts) {
+  global $db;
+  
   $best_taxon_match = array(
     "start"  => NULL,
     "length" => 0
