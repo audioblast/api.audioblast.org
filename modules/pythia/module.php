@@ -57,15 +57,26 @@ function _pythia_match_taxon($parts) {
   $n_parts = count($parts);
   $taxon_match = array();
   for ($i=0; $i<$n_parts; $i++) {
-    $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$parts[$i]."';";
-    $res = $db->query($sql);
-    if($res->num_rows == 0) {continue;}
     $name_string = $parts[$i];
+    $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
+    $res = $db->query($sql);
+    if ($res->num_rows == 0) {continue;}
+
+    //If this is last term...
+    if (($i+1)==$n_parts) {
+      $taxon_match[] = array(
+        "start" => $i,
+        "length" => 1,
+        "match" => $name_string
+      );
+    }
     for($l=$i+1; $l<$n_parts; $l++) {
       $last_name_string = $name_string;
       $name_string .= ' '.$parts[$l];
       $sql = "SELECT `taxon` FROM `taxa` WHERE `taxon` = '".$name_string."';";
       $res = $db->query($sql);
+
+      //If this is last term...
       if($res->num_rows == 0 || ($l + 1) == $n_parts) {
         $length = $l - $i;
         $taxon_match[] = array(
