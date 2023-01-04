@@ -87,7 +87,7 @@ function _pythia_match_taxon($parts) {
       }
 
       //If this is last term...
-      if($l + 1) == $n_parts) {
+      if (($l + 1) == $n_parts) {
         $length = $l - $i +1;
         $taxon_match[] = array(
           "start" => $i,
