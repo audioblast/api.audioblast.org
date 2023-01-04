@@ -39,7 +39,7 @@ function pythia_process($f) {
   //Check for fragments already identified - do this better using regex
   $parts = array();
   foreach($q_parts as $part) {
-    if (preg_match("^(:'(\p{L}| |_)+')+:$", $part)==0) {
+    if (preg_match('/^(:\'(\p{L}| |_)+\')+:$/', $part)==0) {
       $parts[] = $part;
     }
   }
