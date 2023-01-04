@@ -39,7 +39,7 @@ function pythia_process($f) {
   //Check for fragments already identified - do this better using regex
   $parts = array();
   foreach($q_parts as $part) {
-    if (strpos($part, ":")===false) {
+    if (preg_match("^(:'(\p{L}| |_)+')+:$", $part)==0) {
       $parts[] = $part;
     }
   }
@@ -88,7 +88,7 @@ function _pythia_match_taxon($parts) {
 
       //If this is last term...
       if (($l + 1) == $n_parts) {
-        $length = $l - $i +1;
+        $length = $l - $i + 1;
         $taxon_match[] = array(
           "start" => $i,
           "length" => $length,
