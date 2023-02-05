@@ -15,7 +15,7 @@ function m_info() {
       "source" => "CRAN",
       "function" => "M()"
     ),
-    "table" => "analysis-m",
+    "table" => "analysis-M",
     "params" => array(
       "source" => array(
         "desc" => "Filter by source",
