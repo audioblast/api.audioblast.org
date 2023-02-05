@@ -45,15 +45,21 @@ function aci_info() {
         "column" => "value",
         "op" => "range"
       ),
+      "channel" => array(
+        "desc" => "Audio channel analysed",
+        "type" => "integer",
+        "default" => 1,
+        "column" => "channel",
+        "op" => "="
+      ),
       "duration" => array(
         "desc" => "Analysis duration",
         "type" => "integer",
-        "default" => 30,
+        "default" => 60,
         "column" => "duration",
         "op" => "=",
         "allowed" => array(
-          1,
-          30
+          60
         )
       ),
       "output" => array(

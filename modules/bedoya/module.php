@@ -39,6 +39,23 @@ function bedoya_info() {
         "column" => "id",
         "op" => "="
       ),
+      "channel" => array(
+        "desc" => "Audio channel analysed",
+        "type" => "integer",
+        "default" => 1,
+        "column" => "channel",
+        "op" => "="
+      ),
+      "duration" => array(
+        "desc" => "Analysis duration",
+        "type" => "integer",
+        "default" => 60,
+        "column" => "duration",
+        "op" => "=",
+        "allowed" => array(
+          60
+        )
+      ),
       "startTime" => array(
         "desc" => "start time(s) to return",
         "type" => "integer",
