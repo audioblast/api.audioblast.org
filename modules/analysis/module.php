@@ -132,6 +132,7 @@ function analysis_list($params) {
 }
 
 function analysis_status($params) {
+  $modules = loadModules();
   $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_status"], $params));
   if($params["cache"]==true) {
     $ret = speedbird_get("analysisstatus"); #ToDo: customise for wc
