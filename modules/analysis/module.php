@@ -161,6 +161,6 @@ function analysis_status($params) {
   while ($row = $res->fetch_assoc()) {
     $ret["data"]["counts"] = $row;
   }
-  speedbird_put("analysiscount", serialize($ret));
+  speedbird_put("analysisstatus", serialize($ret));
   return($ret);
 }
