@@ -134,8 +134,9 @@ function analysis_list($params) {
 function analysis_status($params) {
   $modules = loadModules();
   $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_status"], $params));
+  $speedbird_hash = "ac".$wc
   if($params["cache"]==true) {
-    $ret = speedbird_get("analysisstatus"); #ToDo: customise for wc
+    $ret = speedbird_get($speedbird_hash);
     if ($ret != FALSE) {
       return($ret);
     }
@@ -150,9 +151,9 @@ function analysis_status($params) {
   $sql .= "FROM (";
   $sql .= "  SELECT";
   $sql .= "    (SELECT COUNT(*) FROM audioblast.`recordings` ".$wc.") AS `total`,";
-  $sql .= "    (SELECT COUNT(*) FROM audioblast.`todo-progress` ".$wc.") AS `assigned`,";
-  $sql .= "    (SELECT COUNT(*) FROM audioblast.`todo` ".$wc.") AS `todo`,";
-  $sql .= "    (SELECT COUNT(DISTINCT(`process`)) FROM audioblast.`todo-progress` ".$wc.") AS `processes`";
+  $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks-progress` ".$wc.") AS `assigned`,";
+  $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks` ".$wc.") AS `todo`,";
+  $sql .= "    (SELECT COUNT(DISTINCT(`process`)) FROM audioblast.`tasks-progress` ".$wc.") AS `processes`";
   $sql .= "  FROM DUAL)  AS `intermediate`;";
   
   global $db;
@@ -161,6 +162,6 @@ function analysis_status($params) {
   while ($row = $res->fetch_assoc()) {
     $ret["data"]["counts"] = $row;
   }
-  speedbird_put("analysisstatus", serialize($ret));
+  speedbird_put($speedbird_hash, serialize($ret));
   return($ret);
 }
