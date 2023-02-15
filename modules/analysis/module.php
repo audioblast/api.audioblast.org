@@ -134,7 +134,7 @@ function analysis_list($params) {
 function analysis_status($params) {
   $modules = loadModules();
   $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_status"], $params));
-  $speedbird_hash = "ac".$wc
+  $speedbird_hash = "ac".$wc;
   if($params["cache"]==true) {
     $ret = speedbird_get($speedbird_hash);
     if ($ret != FALSE) {
