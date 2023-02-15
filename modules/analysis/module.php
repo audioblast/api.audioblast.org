@@ -92,8 +92,10 @@ function analysis_info() {
 }
 
 function analysis_counts($params) {
+  $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
+  $speedbird_hash = hash("sha256", "ac".$wc);
   if($params["cache"]==true) {
-    $ret = speedbird_get("analysiscount");
+    $ret = speedbird_get($speedbird_hash);
     if ($ret != FALSE) {
       return($ret);
     }
@@ -101,7 +103,7 @@ function analysis_counts($params) {
   $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
-  $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
+  
   foreach ($modules as $name => $info) {
     if ($info["category"] != "analysis") {continue;}
     if ($i > 0) { $sql .= ", ";}
@@ -117,7 +119,7 @@ function analysis_counts($params) {
     $ret["data"]["counts"] = $row;
   }
   $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
-  speedbird_put("analysiscount", serialize($ret));
+  speedbird_put($speedbird_hash, serialize($ret));
   return($ret);
 }
 
@@ -134,7 +136,7 @@ function analysis_list($params) {
 function analysis_status($params) {
   $modules = loadModules();
   $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_status"], $params));
-  $speedbird_hash = hash("sha256", "ac".$wc);
+  $speedbird_hash = hash("sha256", "as".$wc);
   if($params["cache"]==true) {
     $ret = speedbird_get($speedbird_hash);
     if ($ret != FALSE) {

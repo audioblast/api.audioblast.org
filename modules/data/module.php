@@ -85,8 +85,10 @@ function data_info() {
 }
 
 function data_counts($params) {
+  $wc = WHEREclause(generateParams($modules["data"]["endpoints"]["fetch_data_counts"], $params));
+  $speedbird_hash = hash("sha256", "dc".$wc);
   if($params["cache"]==true) {
-    $ret = speedbird_get("datacount");
+    $ret = speedbird_get($speedbird_hash);
     if ($ret != FALSE) {
       return($ret);
     }
@@ -94,7 +96,6 @@ function data_counts($params) {
   $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
-  $wc = WHEREclause(generateParams($modules["data"]["endpoints"]["fetch_data_counts"], $params));
   foreach ($modules as $name => $info) {
     if ($info["category"] != "data") {continue;}
     if ($i > 0) { $sql .= ", ";}
@@ -110,7 +111,7 @@ function data_counts($params) {
     $ret["data"]["counts"] = $row;
   }
   $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
-  speedbird_put("datacount", serialize($ret));
+  speedbird_put($speedbird_hash, serialize($ret));
   return($ret);
 }
 
