@@ -1,29 +1,21 @@
 <?php
 
-function bedoya_info() {
+function h_info() {
   $info = array(
-    "mname" => "bedoya",
+    "mname" => "h",
     "version" => 1.0,
     "category" => "analysis",
-    "hname" => "Rainfall analysis using the bedoya method",
+    "hname" => "Acoustic Entropy",
     "desc" => "Explain how this works...",
     "ab-plugin" => TRUE,
     "code" => array(
       "type" => "package",
       "language" => "R",
-      "name" => "sonicscrewdriver",
+      "name" => "seewave",
       "source" => "CRAN",
-      "function" => "rainfallDetection(method=\"bedoya2017\")"
+      "function" => "H()"
     ),
-    "references" => array(
-      array(
-        "title" => "Automatic identification of rainfall in acoustic recordings",
-        "year" => 2017,
-        "authors" => "Bedoya et al",
-        "doi" => "10.1016/j.ecolind.2016.12.018"
-      )
-    ),
-    "table" => "analysis-bedoya",
+    "table" => "analysis-H",
     "params" => array(
       "source" => array(
         "desc" => "Filter by source",
@@ -38,6 +30,20 @@ function bedoya_info() {
         "default" => "",
         "column" => "id",
         "op" => "="
+      ),
+      "startTime" => array(
+        "desc" => "start time(s) to return",
+        "type" => "integer",
+        "default" => 0,
+        "column" => "startTime",
+        "op" => "range"
+      ),
+      "value" => array(
+        "desc" => "Output of analysis",
+        "type" => "integer",
+        "default" => 0,
+        "column" => "value",
+        "op" => "range"
       ),
       "channel" => array(
         "desc" => "Audio channel analysed",
@@ -55,20 +61,6 @@ function bedoya_info() {
         "allowed" => array(
           60
         )
-      ),
-      "startTime" => array(
-        "desc" => "start time(s) to return",
-        "type" => "integer",
-        "default" => 0,
-        "column" => "startTime",
-        "op" => "range"
-      ),
-      "value" => array(
-        "desc" => "Output of analysis",
-        "type" => "integer",
-        "default" => 0,
-        "column" => "value",
-        "op" => "range"
       ),
       "output" => array(
         "desc" => "At present just an array",

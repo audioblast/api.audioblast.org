@@ -43,6 +43,34 @@ function analysis_info() {
           )
         )
       ),
+      "fetch_analysis_status" => array(
+        "callback" => "analysis_status",
+        "desc" => "Returns the status of a source in the analysis pipeline.",
+        "returns" => "data",
+        "params" => array(
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          ),
+          "source" => array(
+            "desc" => "Filter by source",
+            "type" => "string",
+            "default" => "",
+            "column" => "source",
+            "op" => "=",
+          ),
+          "cache" => array(
+            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "type" => "boolean",
+            "default" => 1,
+            "op" => "="
+          )
+        )
+      ),
       "list_analysis" => array(
         "callback" => "analysis_list",
         "desc" => "Returns a list of analysis types.",
@@ -64,8 +92,10 @@ function analysis_info() {
 }
 
 function analysis_counts($params) {
+  $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
+  $speedbird_hash = hash("sha256", "ac".$wc);
   if($params["cache"]==true) {
-    $ret = speedbird_get("analysiscount");
+    $ret = speedbird_get($speedbird_hash);
     if ($ret != FALSE) {
       return($ret);
     }
@@ -73,7 +103,7 @@ function analysis_counts($params) {
   $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
-  $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
+  
   foreach ($modules as $name => $info) {
     if ($info["category"] != "analysis") {continue;}
     if ($i > 0) { $sql .= ", ";}
@@ -89,7 +119,7 @@ function analysis_counts($params) {
     $ret["data"]["counts"] = $row;
   }
   $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
-  speedbird_put("analysiscount", serialize($ret));
+  speedbird_put($speedbird_hash, serialize($ret));
   return($ret);
 }
 
@@ -100,5 +130,40 @@ function analysis_list($params) {
     if ($info["category"] != "analysis") {continue;}
     $ret[] = $name;
   }
+  return($ret);
+}
+
+function analysis_status($params) {
+  $modules = loadModules();
+  $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_status"], $params));
+  $speedbird_hash = hash("sha256", "as".$wc);
+  if($params["cache"]==true) {
+    $ret = speedbird_get($speedbird_hash);
+    if ($ret != FALSE) {
+      return($ret);
+    }
+  }
+
+  $sql  = "SELECT ";
+  $sql .= "	 `total`-`todo` AS `done`, ";
+  $sql .= "  `assigned`, ";
+  $sql .= "  `todo` - `assigned` AS `waiting`, ";
+  $sql .= "  `total`, ";
+  $sql .= "  `processes` ";
+  $sql .= "FROM (";
+  $sql .= "  SELECT";
+  $sql .= "    (SELECT COUNT(*) FROM audioblast.`recordings` ".$wc.") AS `total`,";
+  $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks-progress` ".$wc.") AS `assigned`,";
+  $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks` ".$wc.") AS `todo`,";
+  $sql .= "    (SELECT COUNT(DISTINCT(`process`)) FROM audioblast.`tasks-progress` ".$wc.") AS `processes`";
+  $sql .= "  FROM DUAL)  AS `intermediate`;";
+  
+  global $db;
+  $res = $db->query($sql);
+  $ret = array();
+  while ($row = $res->fetch_assoc()) {
+    $ret["data"]["counts"] = $row;
+  }
+  speedbird_put($speedbird_hash, serialize($ret));
   return($ret);
 }
