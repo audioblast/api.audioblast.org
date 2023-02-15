@@ -85,6 +85,7 @@ function data_info() {
 }
 
 function data_counts($params) {
+  $modules = loadModules();
   $wc = WHEREclause(generateParams($modules["data"]["endpoints"]["fetch_data_counts"], $params));
   $speedbird_hash = hash("sha256", "dc".$wc);
   if($params["cache"]==true) {
@@ -93,7 +94,6 @@ function data_counts($params) {
       return($ret);
     }
   }
-  $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
   foreach ($modules as $name => $info) {

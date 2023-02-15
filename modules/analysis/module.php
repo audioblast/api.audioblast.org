@@ -92,6 +92,7 @@ function analysis_info() {
 }
 
 function analysis_counts($params) {
+  $modules = loadModules();
   $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
   $speedbird_hash = hash("sha256", "ac".$wc);
   if($params["cache"]==true) {
@@ -100,7 +101,6 @@ function analysis_counts($params) {
       return($ret);
     }
   }
-  $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
   
