@@ -1,5 +1,5 @@
 # api.audioblast.org
-Application Programming Interface (API) for [audioBLAST!](https://audioblast.org)
+Application Programming Interface (API) for [audioBlast](https://audioblast.org).
 
 The public API is documented at [api.audioblast.org](https://api.audioblast.org).
 
@@ -14,6 +14,6 @@ Modules that solely provide new data sources may be submitted as unsolicited pul
 The current web version is `release`.
 
 ## Credits
-Initial development of audioBLAST was supported by the Leverhulme Trust funded Automated Acoustic Observatories project at the University of York.
+Initial development of [audioBlast](https://audioblast.org) was supported by the Leverhulme Trust funded [Automated Acoustic Observatories](https://ebaker.me.uk/aao) project at the University of York.
 
-The project is currently hosted by the Natural History Museum, London.
+The project is currently hosted by the [Natural History Museum, London](https://www.nhm.ac.uk).
