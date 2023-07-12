@@ -9,22 +9,6 @@ function abiotic_info() {
     "hname" => "Abiotic data",
     "desc" => "This endpoint allows querying abiotic measurements from deployments.",
     "params" => array(
-      "source" => array(
-        "desc" => "Source",
-        "type" => "string",
-        "default" => "",
-        "column" => "source",
-        "op" => "=",
-        "autocomplete" => TRUE
-      ),
-      "id" => array(
-        "desc" => "ID",
-        "type" => "string",
-        "default" => "",
-        "column" => "id",
-        "op" => "=",
-        "autocomplete" => TRUE
-      ),
       "deployment" => array(
         "desc" => "Deployment ID",
         "type" => "string",
