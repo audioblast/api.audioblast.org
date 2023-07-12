@@ -56,7 +56,7 @@ function abiotic_info() {
       "value" => array(
         "desc" => "Measured value",
         "type" => "string",
-        "column" => "property",
+        "column" => "value",
         "op" => "contains",
         "autocomplete" => FALSE
       ),
