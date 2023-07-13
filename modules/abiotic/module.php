@@ -84,7 +84,7 @@ function abiotic_info() {
       "sensor" => array(
         "desc" => "Sensor",
         "type" => "string",
-        "column" => "node_id",
+        "column" => "sensor",
         "op" => "=",
         "autocomplete" => TRUE
       ),
