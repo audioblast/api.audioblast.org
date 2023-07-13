@@ -60,6 +60,41 @@ function abiotic_info() {
         "op" => "contains",
         "autocomplete" => FALSE
       ),
+      "unit" => array(
+        "desc" => "Unit of measurement",
+        "type" => "string",
+        "column" => "unit",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
+      "node_id" => array(
+        "desc" => "Node ID",
+        "type" => "string",
+        "column" => "node_id",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
+      "sensor_id" => array(
+        "desc" => "Sensor ID",
+        "type" => "string",
+        "column" => "sensor_id",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
+      "sensor" => array(
+        "desc" => "Sensor",
+        "type" => "string",
+        "column" => "node_id",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
+      "config" => array(
+        "desc" => "Configuration",
+        "type" => "string",
+        "column" => "config",
+        "op" => "contains",
+        "autocomplete" => TRUE
+      ),
       "output" => array(
         "desc" => "The format of the returned data",
         "type" => "string",
