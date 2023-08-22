@@ -171,17 +171,13 @@ function analysis_status($params) {
   }
 
   $sql  = "SELECT ";
-  $sql .= "	 `total`-`todo` AS `done`, ";
   $sql .= "  `assigned`, ";
   $sql .= "  `todo` - `assigned` AS `waiting`, ";
   $sql .= "  `total`, ";
-  $sql .= "  `processes` ";
   $sql .= "FROM (";
   $sql .= "  SELECT";
-  $sql .= "    (SELECT COUNT(*) FROM audioblast.`recordings` ".$wc.") AS `total`,";
   $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks-progress` ".$wc.") AS `assigned`,";
-  $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks` ".$wc.") AS `todo`,";
-  $sql .= "    (SELECT COUNT(DISTINCT(`process`)) FROM audioblast.`tasks-progress` ".$wc.") AS `processes`";
+  $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks` ".$wc.") AS `total`,";
   $sql .= "  FROM DUAL)  AS `intermediate`;";
   
   global $db;
