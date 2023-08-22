@@ -139,7 +139,7 @@ function analysis_counts($params) {
 }
 
 function analysis_agents($params) {
-  $sql = "SELECT COUNT(DISTINCT `process`) FROM `tasks-progress`;";
+  $sql = "SELECT COUNT(DISTINCT `process`) AS `total` FROM `tasks-progress`;";
   global $db;
   $res = $db->query($sql);
   $ret = array();
@@ -172,7 +172,7 @@ function analysis_status($params) {
 
   $sql  = "SELECT ";
   $sql .= "  `assigned`, ";
-  $sql .= "  `todo` - `assigned` AS `waiting`, ";
+  $sql .= "  `total` - `assigned` AS `waiting`, ";
   $sql .= "  `total`, ";
   $sql .= "FROM (";
   $sql .= "  SELECT";
