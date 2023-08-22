@@ -173,7 +173,7 @@ function analysis_status($params) {
   $sql  = "SELECT ";
   $sql .= "  `assigned`, ";
   $sql .= "  `total` - `assigned` AS `waiting`, ";
-  $sql .= "  `total`, ";
+  $sql .= "  `total` ";
   $sql .= "FROM (";
   $sql .= "  SELECT";
   $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks-progress` ".$wc.") AS `assigned`,";
