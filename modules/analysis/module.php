@@ -122,7 +122,7 @@ function analysis_counts($params) {
   foreach ($modules as $name => $info) {
     if ($info["category"] != "analysis") {continue;}
     if ($i > 0) { $sql .= ", ";}
-    $sql .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
+    $sql .= "(SELECT COUNT(*) as `total` FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
     $i++;
   }
   $sql .= " FROM DUAL;";
