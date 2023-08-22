@@ -71,6 +71,21 @@ function analysis_info() {
           )
         )
       ),
+      "analysis_agents" => array(
+        "callback" => "analysis_agents",
+        "desc" => "Returns the number of analysis agents.",
+        "returns" => "data",
+        "params" => array(
+          "output" => array(
+            "desc" => "At present just an array",
+            "type" => "string",
+            "allowed" => array(
+              "JSON"
+            ),
+            "default" => "JSON"
+          )
+        )
+      ),
       "list_analysis" => array(
         "callback" => "analysis_list",
         "desc" => "Returns a list of analysis types.",
@@ -120,6 +135,17 @@ function analysis_counts($params) {
   }
   $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
   speedbird_put($speedbird_hash, serialize($ret));
+  return($ret);
+}
+
+function analysis_agents($params) {
+  $sql = "SELECT COUNT(DISTINCT `process`) FROM `tasks-progress`;";
+  global $db;
+  $res = $db->query($sql);
+  $ret = array();
+  while ($row = $res->fetch_assoc()) {
+    $ret["data"]["agents"] = $row;
+  }
   return($ret);
 }
 
