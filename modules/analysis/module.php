@@ -177,7 +177,7 @@ function analysis_status($params) {
   $sql .= "FROM (";
   $sql .= "  SELECT";
   $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks-progress` ".$wc.") AS `assigned`,";
-  $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks` ".$wc.") AS `total`,";
+  $sql .= "    (SELECT COUNT(*) FROM audioblast.`tasks` ".$wc.") AS `total`";
   $sql .= "  FROM DUAL)  AS `intermediate`;";
   
   global $db;
