@@ -96,6 +96,10 @@ function modulesHTML($modules) {
       $out .= "<h4>References</h4>";
       $out .= refsLink($info);
     }
+    if (isset($info["vocab_url"])) {
+      $out .= "<h4>Vocabulary links</h4>";
+      $out .= $info["vocab_url"];
+    }
 
     $out .= "<h4>Endpoints</h4>";
     $out .= "<ul>";

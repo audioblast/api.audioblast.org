@@ -7,6 +7,7 @@ function aci_info() {
     "category" => "analysis",
     "hname" => "ACI",
     "desc" => "Explain how this works...",
+    "vocab_url" => "https://vocab.audioblast.org/cv/analysis#seewaveACI",
     "ab-plugin" => TRUE,
     "code" => array(
       "type" => "package",
