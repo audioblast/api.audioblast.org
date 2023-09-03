@@ -98,7 +98,7 @@ function modulesHTML($modules) {
     }
     if (isset($info["vocab_url"])) {
       $out .= "<h4>Vocabulary links</h4>";
-      $out .= $info["vocab_url"];
+      $out .= "<a href='"$info["vocab_url"]."'>".$info["vocab_url"]."</a>";
     }
 
     $out .= "<h4>Endpoints</h4>";
