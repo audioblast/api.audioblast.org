@@ -4,6 +4,12 @@
 Check if currently requested URI is treated as the homepage
 */
 function isHomepage() {
+  // If page is ping then return pong
+  if ($_SERVER['REQUEST_URI'] == "/ping") {
+    echo "pong";
+    exit;
+  }
+
   $homes = array(
     "/",
     "/index.php"
