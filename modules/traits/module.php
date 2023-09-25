@@ -39,7 +39,7 @@ function traits_info() {
         "type" => "string",
         "default" => "",
         "column" => "Trait",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "trait_ontology" => array(
