@@ -39,16 +39,6 @@ function bi_info() {
         "column" => "channel",
         "op" => "="
       ),
-      "duration" => array(
-        "desc" => "Analysis duration",
-        "type" => "integer",
-        "default" => 60,
-        "column" => "duration",
-        "op" => "=",
-        "allowed" => array(
-          60
-        )
-      ),
       "startTime" => array(
         "desc" => "start time(s) to return",
         "type" => "integer",

@@ -52,16 +52,6 @@ function sh_info() {
         "column" => "channel",
         "op" => "="
       ),
-      "duration" => array(
-        "desc" => "Analysis duration",
-        "type" => "integer",
-        "default" => 60,
-        "column" => "duration",
-        "op" => "=",
-        "allowed" => array(
-          60
-        )
-      ),
       "output" => array(
         "desc" => "At present just an array",
         "type" => "string",
