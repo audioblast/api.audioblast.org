@@ -1,4 +1,10 @@
 <?php
+// Acoustic Complexity Index module for audioBlast API
+//
+// This module provides access to the Acoustic Complexity Index (ACI) analyses
+// in audioBlast. The ACI is a measure of the acoustic complexity of a soundscape,
+// and is in this instance calculated using the seewave package in R, with an analysis
+// window of 60 seconds.
 
 function aci_info() {
   $info = array(
@@ -52,16 +58,6 @@ function aci_info() {
         "default" => 1,
         "column" => "channel",
         "op" => "="
-      ),
-      "duration" => array(
-        "desc" => "Analysis duration",
-        "type" => "integer",
-        "default" => 60,
-        "column" => "duration",
-        "op" => "=",
-        "allowed" => array(
-          60
-        )
       ),
       "output" => array(
         "desc" => "At present just an array",
