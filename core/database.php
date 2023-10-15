@@ -8,6 +8,12 @@ if (file_exists("settings/db.php")) {
   exit;
 }
 
+//Check that $db is a database connection.
+if (!isset($db)) {
+  print("No database connection!");
+  exit;
+}
+
 function SELECTclause($module, $field=NULL, $mode="table", $format="internal") {
   $ret = "SELECT ";
 
