@@ -9,7 +9,7 @@ if (file_exists("settings/db.php")) {
 }
 
 //Check that $db is a database connection.
-if (!isset($db)) {
+if ($_SERVER['REQUEST_URI'] == "/ping" && !isset($db)) {
   print("No database connection!");
   exit;
 }
