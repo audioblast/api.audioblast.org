@@ -9,7 +9,7 @@ if (file_exists("settings/db.php")) {
 }
 
 //Check database connection.
-if ($_SERVER['REQUEST_URI'] == "/ping" && $db->connect_error) {
+if ($_SERVER['REQUEST_URI'] == "/dbping" && $db->connect_error) {
   print("Database connection failed: ".$db->connect_error);
   exit;
 }
