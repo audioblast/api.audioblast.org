@@ -14,6 +14,12 @@ if (!isset($db)) {
   exit;
 }
 
+//Check database connection.
+if ($db->connect_error) {
+  print("Database connection failed: ".$db->connect_error);
+  exit;
+}
+
 function SELECTclause($module, $field=NULL, $mode="table", $format="internal") {
   $ret = "SELECT ";
 
