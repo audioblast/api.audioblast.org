@@ -5,7 +5,7 @@ function birdnet_embeddings_info() {
     "mname" => "birdnet_embeddings",
     "version" => 1.0,
     "category" => "analysis",
-    "hname" => "Birdnet identifications (default)",
+    "hname" => "Birdnet embeddings (default)",
     "desc" => "",
     "table" => "analysis_3sec-birdnet_default_embed",
     
