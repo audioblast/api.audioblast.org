@@ -12,8 +12,12 @@ function unp_info() {
     "sources" => array(
       array(
         "type" => "recordings",
-        "url" => "https://media.githubusercontent.com/media/NaturalHistoryMuseum/audioblast_ingest/master/recordings.csv",
-        "process" => array()
+        "git" => array(
+          "owner" => "NaturalHistoryMuseum",
+          "repo" => "audioblast_ingest",
+          "file" => "recordings.csv"
+        ),
+       "process" => array()
       ),
       array(
         "type" => "deployments",
