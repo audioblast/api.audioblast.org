@@ -12,7 +12,9 @@ function small_ingests_info() {
       array(
         "type" => "recordings",
         "url" => "https://raw.githubusercontent.com/audioblast/small_ingests/main/ColinBirds.csv",
-        "process" => array()
+        "process" => array(),
+        "override" => array(
+          "deployment" => NULL
       )
     )
   );
