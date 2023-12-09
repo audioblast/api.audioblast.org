@@ -28,7 +28,8 @@ function soundsofnorway_info() {
           //"NonSpecimen" => "NonSpecimen",
           "Date" => "created_time",
           //"Time" => "Time",
-          //"Duration" => "Duration"
+          //"Duration" => "Duration",
+          "deployment" =>"site"
         ),
         "override" => array(
           "NonSpecimen" => "Soundscape",
