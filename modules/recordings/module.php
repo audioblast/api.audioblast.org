@@ -124,6 +124,13 @@ function recordings_info() {
         "op" => "range",
         "ac" => "ac:mediaDuration"
       ),
+      "deployment" => array(
+        "desc" => "Deployment",
+        "type" => "string",
+        "column" => "deployment",
+        "default" => "",
+        "op" => "="
+      ),
       "format" => array(
         "desc" => "Data represenation to return.",
         "type" => "string",
