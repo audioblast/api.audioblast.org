@@ -15,6 +15,7 @@ function small_ingests_info() {
         "process" => array(),
         "override" => array(
           "deployment" => NULL
+        )
       )
     )
   );
