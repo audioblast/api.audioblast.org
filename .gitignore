@@ -2,3 +2,4 @@
 settings/db.php
 files
 *.swp
+.vscode/*
