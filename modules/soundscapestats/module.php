@@ -1,6 +1,6 @@
 <?php
 
-function soundscapesstats_info() {
+function soundscapestats_info() {
   $info = array(
     "mname" => "soundscapestats",
     "version" => 1.0,
@@ -51,7 +51,7 @@ function soundscapesstats_info() {
 
 function soundscapes_day_counts($params) {
   $modules = loadModules();
-  
+
   $sql  = "SELECT STR_TO_DATE(`Date`, '%Y-%m-%d') as `date`, COUNT(*) as `count`, SUM((`Duration`) as `duration` ";
   $sql .= " FROM `audioblast`.`recordings` WHERE `deployment ='".$params["deployment"]."' ";
   $sql .= " AND YEAR(`Date`) = '".$params["year"]."' ";
