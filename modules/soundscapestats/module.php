@@ -1,6 +1,9 @@
 <?php
 
 function soundscapestats_info() {
+  ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
   $info = array(
     "mname" => "soundscapestats",
     "version" => 1.0,
@@ -8,7 +11,7 @@ function soundscapestats_info() {
     "hname" => "Generic stats on soundscapes",
     "desc" => "Provides stats on soundscapes",
     "endpoints" => array(
-      "day_counts" => array(
+      "fetch_soundscapes_day_counts" => array(
         "callback" => "soundscapes_day_counts",
         "desc" => "Returns a count of soundscape by recordings by day.",
         "returns" => "data",
