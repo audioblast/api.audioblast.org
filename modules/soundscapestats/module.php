@@ -1,6 +1,9 @@
 <?php
 
 function soundscapestats_info() {
+  ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
   $info = array(
     "mname" => "soundscapestats",
     "version" => 1.0,
