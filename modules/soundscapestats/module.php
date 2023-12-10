@@ -1,6 +1,6 @@
 <?php
 
-function soundscapesstats_info() {
+function soundscapestats_info() {
   $info = array(
     "mname" => "soundscapestats",
     "version" => 1.0,
