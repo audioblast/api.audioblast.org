@@ -1,9 +1,6 @@
 <?php
 
-function soundscapestats_info() {
-  ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+function soundscapesstats_info() {
   $info = array(
     "mname" => "soundscapestats",
     "version" => 1.0,
@@ -54,8 +51,7 @@ error_reporting(E_ALL);
 
 function soundscapes_day_counts($params) {
   $modules = loadModules();
-  $wc = WHEREclause(generateParams($modules["soundscapestats"]["endpoints"]["soundscapes_day_counts"], $params));
-
+  
   $sql  = "SELECT STR_TO_DATE(`Date`, '%Y-%m-%d') as `date`, COUNT(*) as `count`, SUM((`Duration`) as `duration` ";
   $sql .= " FROM `audioblast`.`recordings` WHERE `deployment ='".$params["deployment"]."' ";
   $sql .= " AND YEAR(`Date`) = '".$params["year"]."' ";
@@ -67,5 +63,6 @@ function soundscapes_day_counts($params) {
   while ($row = $res->fetch_assoc()) {
     $ret["data"]["days"] = $row;
   }
+
   return($ret);
 }
