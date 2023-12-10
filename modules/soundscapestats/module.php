@@ -64,7 +64,7 @@ function soundscapes_day_counts($params) {
   $res = $db->query($sql);
   $ret = array();
   while ($row = $res->fetch_assoc()) {
-    $ret["data"]["days"] = $row;
+    $ret["data"]["days"][] = $row;
   }
 
   return($ret);
