@@ -9,6 +9,14 @@ function deployments_info() {
     "hname" => "Deployments",
     "desc" => "This endpoint allows for listing equipment deployments.",
     "params" => array(
+      "source" => array(
+        "desc" => "Source",
+        "type" => "string",
+        "default" => "",
+        "column" => "source",
+        "op" => "contains",
+        "autocomplete" => TRUE
+      ),
       "id" => array(
         "desc" => "ID",
         "type" => "string",
