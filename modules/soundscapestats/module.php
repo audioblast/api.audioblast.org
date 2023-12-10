@@ -8,7 +8,7 @@ function soundscapestats_info() {
     "hname" => "Generic stats on soundscapes",
     "desc" => "Provides stats on soundscapes",
     "endpoints" => array(
-      "fetch_soundscapes_day_counts" => array(
+      "day_counts" => array(
         "callback" => "soundscapes_day_counts",
         "desc" => "Returns a count of soundscape by recordings by day.",
         "returns" => "data",
