@@ -55,7 +55,7 @@ error_reporting(E_ALL);
 function soundscapes_day_counts($params) {
   $modules = loadModules();
 
-  $sql  = "SELECT STR_TO_DATE(`Date`, '%Y-%m-%d') as `date`, COUNT(*) as `count`, SUM(`Duration`) as `duration` ";
+  $sql  = "SELECT STR_TO_DATE(`Date`, '%Y-%m-%d') as `date`, COUNT(*) as `count`, SUM(`Duration`) as `duration`, `deployment` ";
   $sql .= "FROM `audioblast`.`recordings` ";
   $wcc = 0;
   if ($params["source"] != "") {
