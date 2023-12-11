@@ -70,9 +70,9 @@ function soundscapes_day_counts($params) {
   if ($params["year"] != "") {
     $sql .= ($wcc > 0) ? "AND " : "WHERE ";
     $sql .= "YEAR(`Date`) = '".$params["year"]."' ";
-    $wcc++;
   }
   $sql .= "GROUP BY `date`;";
+  print(sql);exit;
 
   global $db;
   $res = $db->query($sql);
