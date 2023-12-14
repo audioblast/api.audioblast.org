@@ -33,6 +33,22 @@ function deployments_info() {
         "op" => "contains",
         "autocomplete" => TRUE
       ),
+      "lat" => array(
+        "desc" => "Latiude",
+        "type" => "string",
+        "default" => "",
+        "column" => "name",
+        "op" => "contains",
+        "autocomplete" => FALSE
+      ),
+      "lon" => array(
+        "desc" => "Longitude",
+        "type" => "string",
+        "default" => "",
+        "column" => "name",
+        "op" => "contains",
+        "autocomplete" => FALSE
+      ),
       "output" => array(
         "desc" => "The format of the returned data",
         "type" => "string",
