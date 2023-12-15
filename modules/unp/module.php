@@ -25,23 +25,8 @@ function unp_info() {
         "process" => array()
       ),
       array(
-        "type" => "devices",
-        "url" => "https://raw.githubusercontent.com/NaturalHistoryMuseum/audioblast_ingest/master/devices.csv",
-        "process" => array()
-      ),
-      array(
-        "type" => "abiotic",
-        "url" => "https://github.com/NaturalHistoryMuseum/audioblast_ingest/raw/master/abiotic.csv",
-        "process" => array()
-      ),
-      array(
         "type" => "deployment_locations",
         "url" => "https://github.com/NaturalHistoryMuseum/audioblast_ingest/raw/master/deployment_location.csv",
-        "process" => array()
-      ),
-      array(
-        "type" => "sensors",
-        "url" => "https://github.com/NaturalHistoryMuseum/audioblast_ingest/raw/master/sensor.csv",
         "process" => array()
       )
     )
