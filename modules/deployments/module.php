@@ -37,7 +37,7 @@ function deployments_info() {
         "desc" => "Latiude",
         "type" => "string",
         "default" => "",
-        "column" => "name",
+        "column" => "lat",
         "op" => "contains",
         "autocomplete" => FALSE
       ),
@@ -45,7 +45,7 @@ function deployments_info() {
         "desc" => "Longitude",
         "type" => "string",
         "default" => "",
-        "column" => "name",
+        "column" => "lon",
         "op" => "contains",
         "autocomplete" => FALSE
       ),
