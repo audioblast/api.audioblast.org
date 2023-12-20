@@ -8,7 +8,6 @@ function birdnet_selection_latlon_info() {
     "hname" => "Birdnet identifications (with lat/lon)",
     "desc" => "",
     "table" => "d_3sec-birdnet_latlon-selection",
-    
     "params" => array(
       "source" => array(
         "desc" => "Filter by source",
