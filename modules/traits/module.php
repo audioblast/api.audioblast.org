@@ -26,6 +26,22 @@ function traits_info() {
       )
     ),
     "params" => array(
+      "source" => array(
+        "desc" => "Source",
+        "type" => "string",
+        "default" => "",
+        "column" => "source",
+        "op" => "contains",
+        "autocomplete" => TRUE
+      ),
+      "id" => array(
+        "desc" => "ID",
+        "type" => "string",
+        "default" => "",
+        "column" => "traitID",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
       "taxon" => array(
         "desc" => "Taxonomic name",
         "type" => "string",
