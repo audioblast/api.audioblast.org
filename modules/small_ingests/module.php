@@ -16,7 +16,36 @@ function small_ingests_info() {
         "override" => array(
           "deployment" => ""
         )
-      )
+      ),
+      array(
+        "type" => "traits",
+        "url" => "https://raw.githubusercontent.com/audioblast/small_ingests/main/Mikula_etal_2020.csv",
+        "process" => array(
+          "sourceR"
+        ),
+        "mapping" => array(
+          "taitID" => "Xeno_cantoID",
+          "Taxonomic.name" => "scinam_birdtree",
+          "Value" => "Peak_frequency"
+        ),
+        "override" => array(
+          "souce" => "Mikula_etal_2020",
+          "taxonID" => "",
+          "Trait" => "Peak Frequency (kHz)",
+          "Ontology.link" => "https://vocab.audioblast.org/PeakFrequency",
+          "Call.Type" => "call",
+          "Sex" => "",
+          "Temperature" => "",
+          "Reference" => "Mikula, et al. 2020",
+          "Cascade" => "0",
+          "Annotation.ID" => "",
+          "min" => "",
+          "max" => ""
+        ),
+        "process" => array(
+          "sourceR"
+        )
+      ) 
     )
   );
   return($info);
