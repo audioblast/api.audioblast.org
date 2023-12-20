@@ -24,12 +24,12 @@ function small_ingests_info() {
           "sourceR"
         ),
         "mapping" => array(
-          "taitID" => "Xeno_cantoID",
+          "traitID" => "Xeno_cantoID",
           "Taxonomic.name" => "scinam_birdtree",
           "Value" => "Peak_frequency"
         ),
         "override" => array(
-          "souce" => "Mikula_etal_2020",
+          "source" => "Mikula_etal_2020",
           "taxonID" => "",
           "Trait" => "Peak Frequency (kHz)",
           "Ontology.link" => "https://vocab.audioblast.org/PeakFrequency",
