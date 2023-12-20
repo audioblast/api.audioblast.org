@@ -7,7 +7,7 @@ function birdnet_selection_latlon_info() {
     "category" => "analysis",
     "hname" => "Birdnet identifications (with lat/lon)",
     "desc" => "",
-    "table" => "analysis_3sec-birdnet_latlon-selection",
+    "table" => "d_3sec-birdnet_latlon-selection",
     
     "params" => array(
       "source" => array(
@@ -58,6 +58,12 @@ function birdnet_selection_latlon_info() {
         "type" => "integer",
         "column" => "confidence",
         "op" => "range"
+      ),
+      "deployment" => array(
+        "desc" => "Taxon to filter by",
+        "type" => "string",
+        "column" => "deployment",
+        "op" => "="
       ),
       "output" => array(
         "desc" => "At present just an array",
