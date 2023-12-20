@@ -32,7 +32,7 @@ function small_ingests_info() {
           "source" => "Mikula_etal_2020",
           "taxonID" => "",
           "Trait" => "Peak Frequency (kHz)",
-          "Ontology.link" => "https://vocab.audioblast.org/PeakFrequency",
+          "Ontology.Link" => "https://vocab.audioblast.org/PeakFrequency",
           "Call.Type" => "call",
           "Sex" => "",
           "Temperature" => "",
