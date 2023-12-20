@@ -33,7 +33,7 @@ function small_ingests_info() {
           "taxonID" => "",
           "Trait" => "Peak Frequency (kHz)",
           "Ontology.Link" => "https://vocab.audioblast.org/PeakFrequency",
-          "Call.Type" => "call",
+          "Call.Type" => "Song",
           "Sex" => "",
           "Temperature" => "",
           "Reference" => "Mikula, et al. 2020",
