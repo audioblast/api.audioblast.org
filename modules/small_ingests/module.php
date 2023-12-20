@@ -43,7 +43,7 @@ function small_ingests_info() {
           "max" => ""
         ),
         "process" => array(
-          "sourceR"
+          "hz2khz"
         )
       ) 
     )
