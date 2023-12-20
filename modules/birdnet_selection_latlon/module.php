@@ -50,7 +50,7 @@ function birdnet_selection_latlon_info() {
       "taxon" => array(
         "desc" => "Taxon to filter by",
         "type" => "string",
-        "column" => "startTime",
+        "column" => "taxon",
         "op" => "="
       ),
       "confidence" => array(
