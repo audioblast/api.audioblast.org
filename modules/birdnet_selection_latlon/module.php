@@ -26,13 +26,13 @@ function birdnet_selection_latlon_info() {
       "analysis_id" => array(
         "desc" => "filter by annotation id within source",
         "type" => "string",
-        "column" => "id",
+        "column" => "analysis_id",
         "op" => "="
       ),
       "annotation_date" => array(
         "desc" => "filter by annotation date",
         "type" => "string",
-        "column" => "id",
+        "column" => "annotation_date",
         "op" => "="
       ),
       "time_start" => array(
