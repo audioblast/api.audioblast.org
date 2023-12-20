@@ -20,49 +20,42 @@ function birdnet_selection_latlon_info() {
       "id" => array(
         "desc" => "filter by id within source",
         "type" => "string",
-        "default" => "",
         "column" => "id",
         "op" => "="
       ),
       "analysis_id" => array(
         "desc" => "filter by annotation id within source",
         "type" => "string",
-        "default" => "",
         "column" => "id",
         "op" => "="
       ),
       "annotation_date" => array(
         "desc" => "filter by annotation date",
         "type" => "string",
-        "default" => "",
         "column" => "id",
         "op" => "="
       ),
       "time_start" => array(
         "desc" => "start time(s) to return",
         "type" => "integer",
-        "default" => 0,
         "column" => "time_start",
         "op" => "range"
       ),
       "time_end" => array(
         "desc" => "end time(s) to return",
         "type" => "integer",
-        "default" => 0,
         "column" => "time_end",
         "op" => "range"
       ),
       "taxon" => array(
         "desc" => "Taxon to filter by",
         "type" => "string",
-        "default" => 0,
         "column" => "startTime",
         "op" => "="
       ),
       "confidence" => array(
         "desc" => "Output of analysis",
         "type" => "integer",
-        "default" => 0,
         "column" => "confidence",
         "op" => "range"
       ),
