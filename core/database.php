@@ -28,6 +28,15 @@ function SELECTclause($module, $field=NULL, $mode="table", $format="internal") {
   if ($mode=="table") {
     $i = 0;
     foreach ($module["params"] as $pname => $pinfo) {
+      if ($mmodule["params"]["format"] == "ac") {
+        if ($pname == "source") continue;
+        if ($pname == "id" || $pname =="source_id") {
+          $ret .= "CONCAT(`source`, '_', `".$pname."`) as `id` ";
+          continue;
+        }
+      }
+
+
       if ($pname != "output" && $pname != "format") {
         if ($i > 0) {$ret .= ", ";}
         if ($format=="ac" && isset($pinfo["ac"])) {
