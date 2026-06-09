@@ -60,6 +60,20 @@ function WHEREclause($filters) {
     if ($filter["column"] == "") {continue;}
     if ($filter["value"] == "") {continue;}
     if ($i > 0) { $wc .= "AND "; } else { $wc.= " WHERE ";}
+
+    // Opt-in index-backed full-text search for the `contains` op. Activated by
+    // setting "fulltext" => TRUE on the param; requires a FULLTEXT index on the
+    // column. Without the flag, `contains` keeps the LIKE '%value%' behaviour
+    // below. Boolean mode with a trailing wildcard gives prefix matching; the
+    // value is already SQL-escaped, and we strip the boolean operators so user
+    // punctuation can't reshape the search.
+    if ($filter["op"] == "contains" && !empty($filter["fulltext"])) {
+      $term = str_replace(array('+','-','*','"','(',')','~','<','>','@'), ' ', $filter["value"]);
+      $wc .= "MATCH(`".$filter["column"]."`) AGAINST ('".$term."*' IN BOOLEAN MODE) ";
+      $i++;
+      continue;
+    }
+
     $wc .= "`".$filter["column"]."` ";
     switch ($filter["op"]) {
       case "=":

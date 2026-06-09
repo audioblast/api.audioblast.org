@@ -149,7 +149,8 @@ function moduleAPI($db) {
       "column" => $module["params"][$field]["column"],
       "op" => $op,
       "value" => $value,
-      "type" => "string"
+      "type" => "string",
+      "fulltext" => !empty($module["params"][$field]["fulltext"])
     );
   } else if (isset($parts[3]) && $parts[3] == "columns") {
     $execute_query = FALSE;
