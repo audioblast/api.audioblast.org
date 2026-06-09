@@ -214,7 +214,7 @@ function recordings_embed_info() {
 function recordings_embed($f) {
   global $db;
   $sql  = "SELECT * FROM recordings WHERE source = '".$f['source']."' ";
-  $sql .= "AND id = ".$f['id'].";";
+  $sql .= "AND id = '".$f['id']."';";
   $res  = $db->query($sql);
   $file = $res->fetch_assoc();
   switch($f['output']) {

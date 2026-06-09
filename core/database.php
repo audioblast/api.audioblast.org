@@ -103,7 +103,10 @@ function WHEREclause($filters) {
         }
         break;
       default:
-        $wc .= $filter["value"]. " ";
+        // Non-string types (integer/range/boolean) are numeric. Quote the
+        // already-escaped value so it cannot break out of the literal;
+        // MySQL coerces the quoted value when comparing numeric columns.
+        $wc .= "'".$filter["value"]."' ";
     }
     $i++;
   }
