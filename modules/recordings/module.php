@@ -135,7 +135,7 @@ function recordings_info() {
         "op" => "="
       ),
       "format" => array(
-        "desc" => "Data represenation to return.",
+        "desc" => "Data representation to return.",
         "type" => "string",
         "allowed" => array(
           "internal",

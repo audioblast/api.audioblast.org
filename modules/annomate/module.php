@@ -128,7 +128,7 @@ function annomate_info() {
         "autocomplete" => TRUE
       ),
       "format" => array(
-        "desc" => "Data represenation to return.",
+        "desc" => "Data representation to return.",
         "type" => "string",
         "allowed" => array(
           "internal",

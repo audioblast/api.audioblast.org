@@ -34,7 +34,7 @@ function deployments_info() {
         "autocomplete" => TRUE
       ),
       "lat" => array(
-        "desc" => "Latiude",
+        "desc" => "Latitude",
         "type" => "string",
         "default" => "",
         "column" => "lat",
