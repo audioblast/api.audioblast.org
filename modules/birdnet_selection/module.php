@@ -38,19 +38,22 @@ function birdnet_selection_info() {
         "desc" => "start time(s) to return",
         "type" => "integer",
         "column" => "time_start",
-        "op" => "range"
+        "op" => "range",
+        "ac" => "ac:startTime"
       ),
       "time_end" => array(
         "desc" => "end time(s) to return",
         "type" => "integer",
         "column" => "time_end",
-        "op" => "range"
+        "op" => "range",
+        "ac" => "ac:endTime"
       ),
       "taxon" => array(
         "desc" => "Taxon to filter by",
         "type" => "string",
         "column" => "taxon",
-        "op" => "="
+        "op" => "=",
+        "ac" => "dwc:scientificName"
       ),
       "confidence" => array(
         "desc" => "Output of analysis",

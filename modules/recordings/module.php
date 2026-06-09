@@ -52,7 +52,8 @@ function recordings_info() {
         "type" => "string",
         "default" => "",
         "column" => "file",
-        "op" => "contains"
+        "op" => "contains",
+        "ac" => "ac:accessURI"
       ),
       "author" => array(
         "desc" => "Author",
@@ -64,7 +65,8 @@ function recordings_info() {
         "suggest" => array(
           "desc" => "By same contributor in source",
           "same_source" => TRUE
-        )
+        ),
+        "ac" => "dc:creator"
       ),
       "post_date" => array(
         "desc" => "Date the content was uploaded",
@@ -107,7 +109,8 @@ function recordings_info() {
         "type" => "string",
         "column" => "Date",
         "default" => "",
-        "op" => "none"
+        "op" => "none",
+        "ac" => "xmp:CreateDate"
       ),
       "time" => array(
         "desc" => "Time",

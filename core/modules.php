@@ -49,6 +49,21 @@ function loadModule($mod) {
       $module["params"]["output"]["column"] = "";
       $module["params"]["output"]["op"] = "";
     }
+    // Expose an internal/ac output-format selector on any module that maps at
+    // least one field to an Audiovisual Core term (unless it defines its own).
+    if (isset($module["params"]) && !isset($module["params"]["format"])) {
+      foreach ($module["params"] as $pinfo) {
+        if (isset($pinfo["ac"])) {
+          $module["params"]["format"] = array(
+            "desc" => "Data representation to return.",
+            "type" => "string",
+            "allowed" => array("internal", "ac"),
+            "default" => "internal"
+          );
+          break;
+        }
+      }
+    }
     } else {
       return(NULL);
     }

@@ -175,7 +175,8 @@ function moduleAPI($db) {
     $select = "CALL `audioblast`.`".$module["histogram"]."`(1000)";
     $where = '';
   } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
-    $select = SELECTclause($module);
+    $format = isset($params["format"]) ? $params["format"] : "internal";
+    $select = SELECTclause($module, NULL, "table", $format);
     $where = generateParams($module, $params);
   } else if ($parts[1] == "embed") {
     $execute_query = FALSE;

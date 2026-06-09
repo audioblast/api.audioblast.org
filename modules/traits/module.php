@@ -48,7 +48,8 @@ function traits_info() {
         "default" => "",
         "column" => "Taxonomic.name",
         "op" => "=",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "ac" => "dwc:scientificName"
       ),
       "trait" => array(
         "desc" => "Trait name",

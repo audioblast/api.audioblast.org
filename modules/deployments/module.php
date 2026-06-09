@@ -39,7 +39,8 @@ function deployments_info() {
         "default" => "",
         "column" => "lat",
         "op" => "contains",
-        "autocomplete" => FALSE
+        "autocomplete" => FALSE,
+        "ac" => "dwc:decimalLatitude"
       ),
       "lon" => array(
         "desc" => "Longitude",
@@ -47,7 +48,8 @@ function deployments_info() {
         "default" => "",
         "column" => "lon",
         "op" => "contains",
-        "autocomplete" => FALSE
+        "autocomplete" => FALSE,
+        "ac" => "dwc:decimalLongitude"
       ),
       "output" => array(
         "desc" => "The format of the returned data",
