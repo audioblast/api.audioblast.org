@@ -241,10 +241,20 @@ function moduleAPI($db) {
       $notes[] = "Query failed on database.";
     }
 
-    $sql = SELECTcount($module).WHEREclause($where).";";
-    $res = mysqli_fetch_assoc(mysqli_query($db, $sql));
-    $totalPages = ceil($res['total'] / $perPage);
-    $ret["last_page"] = $totalPages;
+    //Pagination total. This COUNT(*) is a second full scan of the filtered
+    //set, so only run it when the result is actually needed and cannot be
+    //derived for free from the page we already fetched.
+    $rowsReturned = isset($ret["data"]) ? count($ret["data"]) : 0;
+    if (($params["output"] ?? "") == "nakedJSON") {
+      //last_page is not part of nakedJSON output, so the count is never used.
+    } else if ($page == 1 && $rowsReturned < $perPage) {
+      //Whole result set fits on the first page; derive last_page directly.
+      $ret["last_page"] = ($rowsReturned == 0) ? 0 : 1;
+    } else {
+      $sql = SELECTcount($module).WHEREclause($where).";";
+      $res = mysqli_fetch_assoc(mysqli_query($db, $sql));
+      $ret["last_page"] = ceil($res['total'] / $perPage);
+    }
 
     $notes["query_execution_time"] = microtime(true) - $query_start_time;
   }

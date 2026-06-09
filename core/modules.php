@@ -148,6 +148,13 @@ function loadModule($mod) {
 Load all module info
 */
 function loadModules($category=NULL) {
+  //Module definitions are static within a request, so memoise per category to
+  //avoid re-globbing and re-running every module's *_info() on repeat calls.
+  static $cache = array();
+  $cacheKey = is_null($category) ? "__all__" : $category;
+  if (isset($cache[$cacheKey])) {
+    return($cache[$cacheKey]);
+  }
   $modules = array();
   foreach(glob("modules/"."*" , GLOB_ONLYDIR) as $mod_dir) {
       $mod_name = substr($mod_dir, 8);
@@ -156,6 +163,7 @@ function loadModules($category=NULL) {
         $modules[$mod_name] = $module;
       }
   }
+  $cache[$cacheKey] = $modules;
   return($modules);
 }
 

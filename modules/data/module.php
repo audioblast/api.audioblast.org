@@ -85,8 +85,10 @@ function data_info() {
 }
 
 function data_counts($params) {
-  $modules = loadModules();
-  $wc = WHEREclause(generateParams($modules["data"]["endpoints"]["fetch_data_counts"], $params));
+  // Only this module's endpoint definition is needed to build the cache key,
+  // so avoid loading every module until we know we have a cache miss.
+  $data_module = loadModule("data");
+  $wc = WHEREclause(generateParams($data_module["endpoints"]["fetch_data_counts"], $params));
   $speedbird_hash = hash("sha256", "dc".$wc);
   if($params["cache"]==true) {
     $ret = speedbird_get($speedbird_hash);
@@ -94,6 +96,7 @@ function data_counts($params) {
       return($ret);
     }
   }
+  $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
   foreach ($modules as $name => $info) {
