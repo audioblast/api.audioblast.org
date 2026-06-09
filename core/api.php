@@ -134,10 +134,10 @@ function moduleAPI($db) {
     }
     if (isset($_GET["s"])) {
       $op = "starts";
-      $value = $_GET["s"];
+      $value = mysqli_real_escape_string($db, $_GET["s"]);
     } else if (isset($_GET["c"])) {
       $op = "contains";
-      $value = $_GET["c"];
+      $value = mysqli_real_escape_string($db, $_GET["c"]);
     } else {
       $op = "none";
       $value = "";
