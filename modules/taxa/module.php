@@ -18,6 +18,7 @@ function taxa_info() {
         "default" => "",
         "column" => "taxon",
         "op" => "=",
+        "fulltext" => TRUE,
         "autocomplete" => TRUE
       ),
       "rank" => array(
