@@ -63,7 +63,8 @@ function annomate_info() {
         "default" => "",
         "column" => "recording_url",
         "op" => "contains",
-        "autocomplete" => FALSE
+        "autocomplete" => FALSE,
+        "ac" => "ac:accessURI"
       ),
       "time_start" => array(
         "desc" => "Start time",
@@ -106,7 +107,8 @@ function annomate_info() {
         "default" => "",
         "column" => "lat",
         "op" => "contains",
-        "autocomplete" => FALSE
+        "autocomplete" => FALSE,
+        "ac" => "dwc:decimalLatitude"
       ),
       "lon" => array(
         "desc" => "Longitude",
@@ -114,7 +116,8 @@ function annomate_info() {
         "default" => "",
         "column" => "lon",
         "op" => "contains",
-        "autocomplete" => FALSE
+        "autocomplete" => FALSE,
+        "ac" => "dwc:decimalLongitude"
       ),
       "contact" => array(
         "desc" => "Contact",
@@ -125,7 +128,7 @@ function annomate_info() {
         "autocomplete" => TRUE
       ),
       "format" => array(
-        "desc" => "Data represenation to return.",
+        "desc" => "Data representation to return.",
         "type" => "string",
         "allowed" => array(
           "internal",

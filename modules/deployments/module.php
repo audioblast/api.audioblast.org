@@ -9,6 +9,14 @@ function deployments_info() {
     "hname" => "Deployments",
     "desc" => "This endpoint allows for listing equipment deployments.",
     "params" => array(
+      "source" => array(
+        "desc" => "Source",
+        "type" => "string",
+        "default" => "",
+        "column" => "source",
+        "op" => "contains",
+        "autocomplete" => TRUE
+      ),
       "id" => array(
         "desc" => "ID",
         "type" => "string",
@@ -24,6 +32,24 @@ function deployments_info() {
         "column" => "name",
         "op" => "contains",
         "autocomplete" => TRUE
+      ),
+      "lat" => array(
+        "desc" => "Latitude",
+        "type" => "string",
+        "default" => "",
+        "column" => "lat",
+        "op" => "contains",
+        "autocomplete" => FALSE,
+        "ac" => "dwc:decimalLatitude"
+      ),
+      "lon" => array(
+        "desc" => "Longitude",
+        "type" => "string",
+        "default" => "",
+        "column" => "lon",
+        "op" => "contains",
+        "autocomplete" => FALSE,
+        "ac" => "dwc:decimalLongitude"
       ),
       "output" => array(
         "desc" => "The format of the returned data",

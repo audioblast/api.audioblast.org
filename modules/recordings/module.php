@@ -52,7 +52,8 @@ function recordings_info() {
         "type" => "string",
         "default" => "",
         "column" => "file",
-        "op" => "contains"
+        "op" => "contains",
+        "ac" => "ac:accessURI"
       ),
       "author" => array(
         "desc" => "Author",
@@ -64,7 +65,8 @@ function recordings_info() {
         "suggest" => array(
           "desc" => "By same contributor in source",
           "same_source" => TRUE
-        )
+        ),
+        "ac" => "dc:creator"
       ),
       "post_date" => array(
         "desc" => "Date the content was uploaded",
@@ -107,7 +109,8 @@ function recordings_info() {
         "type" => "string",
         "column" => "Date",
         "default" => "",
-        "op" => "none"
+        "op" => "none",
+        "ac" => "xmp:CreateDate"
       ),
       "time" => array(
         "desc" => "Time",
@@ -124,8 +127,15 @@ function recordings_info() {
         "op" => "range",
         "ac" => "ac:mediaDuration"
       ),
+      "deployment" => array(
+        "desc" => "Deployment",
+        "type" => "string",
+        "column" => "deployment",
+        "default" => "",
+        "op" => "="
+      ),
       "format" => array(
-        "desc" => "Data represenation to return.",
+        "desc" => "Data representation to return.",
         "type" => "string",
         "allowed" => array(
           "internal",
@@ -207,7 +217,7 @@ function recordings_embed_info() {
 function recordings_embed($f) {
   global $db;
   $sql  = "SELECT * FROM recordings WHERE source = '".$f['source']."' ";
-  $sql .= "AND id = ".$f['id'].";";
+  $sql .= "AND id = '".$f['id']."';";
   $res  = $db->query($sql);
   $file = $res->fetch_assoc();
   switch($f['output']) {

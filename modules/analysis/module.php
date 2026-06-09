@@ -6,7 +6,7 @@ function analysis_info() {
     "version" => 1.0,
     "category" => "standalone",
     "hname" => "Generic access to analysis information",
-    "desc" => "Provide information about analyses perfomed",
+    "desc" => "Provide information about analyses performed",
     "endpoints" => array(
       "fetch_analysis_counts" => array(
         "callback" => "analysis_counts",
@@ -36,7 +36,7 @@ function analysis_info() {
             "op" => "="
           ),
           "cache" => array(
-            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "desc" => "This query can be slow. Using the cache is highly recommended.",
             "type" => "boolean",
             "default" => 1,
             "op" => "="
@@ -64,7 +64,7 @@ function analysis_info() {
             "op" => "=",
           ),
           "cache" => array(
-            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "desc" => "This query can be slow. Using the cache is highly recommended.",
             "type" => "boolean",
             "default" => 1,
             "op" => "="

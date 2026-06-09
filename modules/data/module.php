@@ -36,7 +36,7 @@ function data_info() {
             "op" => "="
           ),
           "cache" => array(
-            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "desc" => "This query can be slow. Using the cache is highly recommended.",
             "type" => "boolean",
             "default" => 1,
             "op" => "="
@@ -64,7 +64,7 @@ function data_info() {
         "returns" => "data",
         "params" => array(
           "cache" => array(
-            "desc" => "This query can be slow. Using the cache is highly reccommended.",
+            "desc" => "This query can be slow. Using the cache is highly recommended.",
             "type" => "boolean",
             "default" => 1,
             "op" => "="

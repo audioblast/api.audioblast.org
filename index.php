@@ -14,6 +14,29 @@ if ($page == "API") {
     <head>
       <title>audioBLAST! API</title>
       <link rel="stylesheet" href="https://audioblast.org/ab-api.css">
+      <style>
+        /* Local contrast guard in case external stylesheet colors regress */
+        .module,
+        .module p,
+        .module li,
+        .module h3,
+        .module h4,
+        .module strong,
+        .module td,
+        .module th {
+          color: #e9eef6;
+        }
+
+        .module a {
+          color: #b8dcff;
+        }
+
+        .module table,
+        .module table td,
+        .module table th {
+          color: #1f2b3d;
+        }
+      </style>
     </head>
     <body>
       <div id="title">
