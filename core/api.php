@@ -33,7 +33,7 @@ function moduleAPI($db) {
   //Check module type is set and exists
   if (isset($parts[1]) && $parts[1] != "embed") {
     if (!in_array($parts[1], listModuleTypes())) {
-      print("Module type `".$parts[1]."` is not recognised.");
+      print("Module type `".htmlspecialchars($parts[1], ENT_QUOTES)."` is not recognised.");
       exit;
     }
   }
@@ -45,7 +45,7 @@ function moduleAPI($db) {
     } else if ($parts[2]=="embed"){
       $module = loadModule($parts[3]);
     } else {
-      print("Module `".$parts[2]."` is not recognised.");
+      print("Module `".htmlspecialchars($parts[2], ENT_QUOTES)."` is not recognised.");
       exit;
     }
   } else {
@@ -180,16 +180,23 @@ function moduleAPI($db) {
     $select = SELECTclause($module, NULL, "table", $format);
     $where = generateParams($module, $params);
   } else if ($parts[1] == "embed") {
-    $execute_query = FALSE;
+    //HTML response: emit it and return. Falling through to the JSON output
+    //switch at the end would append a JSON body (and Content-Type) after the
+    //embed markup.
     $mret = call_user_func($module["callback"], $params);
     print($mret["html"]);
+    return;
   } else {
     //Standalone
     $execute_query=FALSE;
     switch ($module["returns"]) {
       case "html":
+        //HTML response: emit and return. Without the return this fell through
+        //into the "data" case below -- invoking the callback a second time --
+        //and then on into the JSON output switch.
         $mret = call_user_func($module["callback"], $params);
         print $mret["html"];
+        return;
       case "data":
         $mret = call_user_func($module["callback"], $params);
         if (isset($mret["data"])) {
@@ -219,10 +226,16 @@ function moduleAPI($db) {
   if ($execute_query) {
     $query_start_time = microtime(true);
 
-    //Pagination
+    //Pagination. Floor the client-supplied values so the query stays valid:
+    //page_size must be at least 1 (page_size=0 previously reached the COUNT
+    //branch below and raised a divide-by-zero, HTTP 500; negatives produced a
+    //malformed LIMIT), and page at least 1 so the OFFSET can never go negative.
+    //No upper bound is imposed on page_size.
     $default_page = 50;
     $perPage = (isset($_GET["page_size"])) ? (int)$_GET["page_size"] : $default_page;
+    $perPage = max(1, $perPage);
     $page = (isset($_GET['page'])) ? (int)$_GET['page'] : 1;
+    $page = max(1, $page);
     $startAt = $perPage * ($page - 1);
     $sql = $select.WHEREclause($where);
     $sql .= " LIMIT ".$startAt.", ".$perPage.";";
@@ -263,13 +276,21 @@ function moduleAPI($db) {
   $ret["params"] = $params;
   $ret["notes"] = $notes;
   $ret["notes"]["total_execution_time"] = microtime(true) - $start_time;
-  switch($params["output"]) {
+  //Everything reaching this point is a data response (HTML paths returned
+  //earlier), so always declare JSON. "tabulator" consumes the same
+  //{data, last_page} envelope as JSON; the default stops an unrecognised
+  //output from silently returning an empty body.
+  header("Content-Type: application/json");
+  switch($params["output"] ?? "") {
     case "JSON":
+    case "tabulator":
       print(json_encode($ret));
       break;
     case "nakedJSON":
       if (!isset($ret["data"])) {$ret["data"] = array();}
       print(json_encode($ret["data"]));
       break;
+    default:
+      print(json_encode($ret));
   }
 }
