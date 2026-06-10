@@ -31,6 +31,7 @@ function recordings_info() {
         "default" => "",
         "column" => "Title",
         "op" => "contains",
+        "fulltext" => TRUE,
         "autocomplete" => TRUE,
         "ac" => "dcterms:title"
       ),
@@ -40,6 +41,7 @@ function recordings_info() {
         "default" => "",
         "column" => "taxon",
         "op" => "contains",
+        "fulltext" => TRUE,
         "autocomplete" => TRUE,
         "suggest" => array(
           "desc"  => "Recordings of same taxon",
@@ -61,6 +63,7 @@ function recordings_info() {
         "default" => "",
         "column" => "author",
         "op" => "contains",
+        "fulltext" => TRUE,
         "autocomplete" => TRUE,
         "suggest" => array(
           "desc" => "By same contributor in source",

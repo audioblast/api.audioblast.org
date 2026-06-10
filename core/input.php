@@ -26,7 +26,8 @@ function generateParams($params, $inputs) {
             "column" => $params["params"][$name]["column"],
             "op" => $params["params"][$name]["op"],
             "value" => $inputs[$name],
-            "type" => $params["params"][$name]["type"]
+            "type" => $params["params"][$name]["type"],
+            "fulltext" => !empty($params["params"][$name]["fulltext"])
           );
       }
     }

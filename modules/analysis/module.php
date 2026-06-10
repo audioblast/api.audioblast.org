@@ -107,8 +107,10 @@ function analysis_info() {
 }
 
 function analysis_counts($params) {
-  $modules = loadModules();
-  $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_counts"], $params));
+  // Only this module's endpoint definition is needed to build the cache key,
+  // so avoid loading every module until we know we have a cache miss.
+  $analysis_module = loadModule("analysis");
+  $wc = WHEREclause(generateParams($analysis_module["endpoints"]["fetch_analysis_counts"], $params));
   $speedbird_hash = hash("sha256", "ac".$wc);
   if($params["cache"]==true) {
     $ret = speedbird_get($speedbird_hash);
@@ -116,6 +118,7 @@ function analysis_counts($params) {
       return($ret);
     }
   }
+  $modules = loadModules();
   $sql = "SELECT ";
   $i = 0;
   
@@ -160,8 +163,10 @@ function analysis_list($params) {
 }
 
 function analysis_status($params) {
-  $modules = loadModules();
-  $wc = WHEREclause(generateParams($modules["analysis"]["endpoints"]["fetch_analysis_status"], $params));
+  // This endpoint never iterates the full module list, so load just the one
+  // module needed to build the cache key.
+  $analysis_module = loadModule("analysis");
+  $wc = WHEREclause(generateParams($analysis_module["endpoints"]["fetch_analysis_status"], $params));
   $speedbird_hash = hash("sha256", "as".$wc);
   if($params["cache"]==true) {
     $ret = speedbird_get($speedbird_hash);
