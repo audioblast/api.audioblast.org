@@ -12,17 +12,31 @@
 */
 
 function speedbird_put($key, $value) {
-  $sql = "INSERT INTO speedbird (`key`, `value`) VALUES ('$key', '$value') ON DUPLICATE KEY UPDATE `value`='$value';";
   global $db;
-  $db->query($sql);
+  // Parameterised upsert. $value is serialize() output, which can contain
+  // quotes and backslashes; the old raw-interpolated INSERT would corrupt or
+  // fail on those (and was injectable). The value is bound twice -- once for
+  // the INSERT, once for the UPDATE -- to avoid the deprecated VALUES().
+  $stmt = $db->prepare("INSERT INTO `speedbird` (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?;");
+  if (!$stmt) {return;}
+  $stmt->bind_param("sss", $key, $value, $value);
+  $stmt->execute();
+  $stmt->close();
 }
 
 function speedbird_get($key) {
-  $sql = "SELECT `value` FROM `speedbird` WHERE `key`='$key';";
   global $db;
-  $res = $db->query($sql);
-  if ($res->num_rows == 0) {
+  $stmt = $db->prepare("SELECT `value` FROM `speedbird` WHERE `key` = ?;");
+  if (!$stmt) {return(FALSE);}
+  $stmt->bind_param("s", $key);
+  $stmt->execute();
+  $res = $stmt->get_result();
+  $row = $res->fetch_assoc();
+  $stmt->close();
+  if ($row === NULL) {
     return(FALSE);
   }
-  return(unserialize($res->fetch_assoc()['value']));
+  // Cache contents are written only by speedbird_put (trusted, internal), so
+  // this unserialize() is not exposed to user-controlled input.
+  return(unserialize($row['value']));
 }

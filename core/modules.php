@@ -170,7 +170,7 @@ function loadModules($category=NULL) {
 /*
 List module names
 */
-function listModules($category=NULL) {
+function listModules() {
   $modules = array();
   foreach(glob("modules/"."*" , GLOB_ONLYDIR) as $mod_dir) {
       $modules[] = substr($mod_dir, 8);
