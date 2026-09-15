@@ -46,22 +46,33 @@ function filterMerge($f1, $f2) {
 }
 
 function filterABrange($column, $value, $type) {
+  //"min:max" is inclusive at both ends; either end may be left empty
   $rangesplit = strpos($value, ":");
-  if ($rangesplit != FALSE) {
+  if ($rangesplit !== FALSE) {
     return(array(
       array(
         "column" => $column,
-        "op" => ">",
+        "op" => ">=",
         "value" => substr($value, 0, $rangesplit),
         "type" => $type
       ),
       array(
         "column" => $column,
-        "op" => "<",
+        "op" => "<=",
         "value" => substr($value, $rangesplit+1),
         "type" => $type
       )
     ));
+  }
+  //">=x" and "<=x" are inclusive; ">x" and "<x" stay exclusive
+  $prefix = substr($value, 0, 2);
+  if ($prefix == ">=" || $prefix == "<=") {
+    return(array(array(
+      "column" => $column,
+      "op" => $prefix,
+      "value" => substr($value, 2),
+      "type" => $type
+    )));
   }
   $firstchar = substr($value, 0, 1);
   switch($firstchar) {

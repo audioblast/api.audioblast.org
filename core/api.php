@@ -110,11 +110,14 @@ function moduleAPI($db) {
   //Special processing for filters via Tabulator
   if (isset($_GET["filter"])) {
     foreach ($_GET["filter"] as $filter) {
-      if ($filter["type"] == "function") {
-        //Dealing with a range
-        if ($filter["value"]["start"] != "" && $filter["value"]["end"] != "") {$range = $filter["value"]["start"].":".$filter["value"]["end"];}
-        if ($filter["value"]["start"] == "" && $filter["value"]["end"] != "") {$range = "<".$filter["value"]["end"];}
-        if ($filter["value"]["start"] != "" && $filter["value"]["end"] == "") {$range = ">".$filter["value"]["start"];}
+      if ($filter["type"] == "function" && is_array($filter["value"])) {
+        //Dealing with a range: min and max are both inclusive
+        $start = $filter["value"]["start"] ?? "";
+        $end = $filter["value"]["end"] ?? "";
+        $range = "";
+        if ($start != "" && $end != "") {$range = $start.":".$end;}
+        if ($start == "" && $end != "") {$range = "<=".$end;}
+        if ($start != "" && $end == "") {$range = ">=".$start;}
         $params[mysqli_real_escape_string($db, $filter["field"])] = mysqli_real_escape_string($db, $range);
       } else {
         $params[mysqli_real_escape_string($db, $filter["field"])] = mysqli_real_escape_string($db, $filter["value"]);
