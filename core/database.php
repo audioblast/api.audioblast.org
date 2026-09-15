@@ -74,7 +74,14 @@ function WHEREclause($filters) {
       continue;
     }
 
-    $wc .= "`".$filter["column"]."` ";
+    // Range columns can be stored as text, which MySQL compares
+    // alphabetically ('127' falls between '10' and '20'), so compare them
+    // as numbers instead.
+    if ($filter["type"] == "range") {
+      $wc .= "CAST(`".$filter["column"]."` AS DECIMAL(65,10)) ";
+    } else {
+      $wc .= "`".$filter["column"]."` ";
+    }
     switch ($filter["op"]) {
       case "=":
         $wc .= "= ";
@@ -84,6 +91,12 @@ function WHEREclause($filters) {
         break;
       case "<":
         $wc .= "< ";
+        break;
+      case ">=":
+        $wc .= ">= ";
+        break;
+      case "<=":
+        $wc .= "<= ";
         break;
       case "contains":
         $wc .= "LIKE ";
@@ -107,8 +120,13 @@ function WHEREclause($filters) {
             $wc .= "'".$filter["value"]."' ";
         }
         break;
+      case "range":
+        // Keep the already-escaped value quoted, and cast it to match the
+        // column cast above.
+        $wc .= "CAST('".$filter["value"]."' AS DECIMAL(65,10)) ";
+        break;
       default:
-        // Non-string types (integer/range/boolean) are numeric. Quote the
+        // Non-string types (integer/boolean) are numeric. Quote the
         // already-escaped value so it cannot break out of the literal;
         // MySQL coerces the quoted value when comparing numeric columns.
         $wc .= "'".$filter["value"]."' ";
