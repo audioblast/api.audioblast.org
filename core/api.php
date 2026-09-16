@@ -246,6 +246,9 @@ function moduleAPI($db) {
 
     $result = $db->query($sql);
 
+    //Always return a data array, even when no rows match: Tabulator rejects a
+    //response without one ("Expecting: array Received: undefined").
+    $ret["data"] = array();
     if ($result) {
 
       while ($row = $result->fetch_array(MYSQLI_ASSOC)) {
@@ -254,14 +257,13 @@ function moduleAPI($db) {
       }
       $result->close();
     } else {
-      $ret["data"] = array();
       $notes[] = "Query failed on database.";
     }
 
     //Pagination total. This COUNT(*) is a second full scan of the filtered
     //set, so only run it when the result is actually needed and cannot be
     //derived for free from the page we already fetched.
-    $rowsReturned = isset($ret["data"]) ? count($ret["data"]) : 0;
+    $rowsReturned = count($ret["data"]);
     if (($params["output"] ?? "") == "nakedJSON") {
       //last_page is not part of nakedJSON output, so the count is never used.
     } else if ($page == 1 && $rowsReturned < $perPage) {
