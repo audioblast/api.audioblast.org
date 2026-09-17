@@ -137,6 +137,22 @@ function recordings_info() {
         "default" => "",
         "op" => "="
       ),
+      "lat" => array(
+        "desc" => "Latitude, for recordings that are not part of a deployment",
+        "type" => "range",
+        "column" => "lat",
+        "default" => "",
+        "op" => "range",
+        "ac" => "dwc:decimalLatitude"
+      ),
+      "lon" => array(
+        "desc" => "Longitude, for recordings that are not part of a deployment",
+        "type" => "range",
+        "column" => "lon",
+        "default" => "",
+        "op" => "range",
+        "ac" => "dwc:decimalLongitude"
+      ),
       "format" => array(
         "desc" => "Data representation to return.",
         "type" => "string",
