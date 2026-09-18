@@ -58,6 +58,13 @@ function bioacoustica_info() {
         )
       ),
       array(
+        "type" => "links",
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/links.csv",
+        "process" => array(
+          "sourceR"
+        )
+      ),
+      array(
         "type" => "ann-o-mate",
         "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/annotations.csv"
       )
