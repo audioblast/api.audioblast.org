@@ -1,4 +1,12 @@
 <?php
+//Answer pings before connecting to the database, so they show whether the web
+//server is up whatever the state of the database (which /dbping checks)
+if ($_SERVER['REQUEST_URI'] == "/ping") {
+  header("Cache-Control: no-store");
+  echo "pong";
+  exit;
+}
+
 include("homepage.php");
 include("modules.php");
 include("database.php");
