@@ -76,6 +76,14 @@ function WHEREclause($filters) {
     if ($filter["value"] == "") {continue;}
     if ($i > 0) { $wc .= "AND "; } else { $wc.= " WHERE ";}
 
+    // Rows with a value in the column (neither NULL nor empty), e.g. those
+    // with an identifier for RDF output
+    if ($filter["op"] == "notempty") {
+      $wc .= "`".$filter["column"]."` <> '' ";
+      $i++;
+      continue;
+    }
+
     // Opt-in index-backed full-text search for the `contains` op. Activated by
     // setting "fulltext" => TRUE on the param; requires a FULLTEXT index on the
     // column. Without the flag, `contains` keeps the LIKE '%value%' behaviour

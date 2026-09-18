@@ -7,7 +7,12 @@ function recordings_info() {
     "category" => "data",
     "table" => "recordings",
     "hname" => "Recordings",
-    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST!",
+    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle, recordings are given as RDF in Audiovisual Core terms, identified by their page at their source (info_url); recordings without one are left out.",
+    //Recordings as RDF (see core/rdf.php)
+    "rdf" => array(
+      "id" => "info_url",
+      "node" => "recordings_rdf_node"
+    ),
     "params" => array(
       "source" => array(
         "desc" => "Source",
@@ -203,13 +208,66 @@ function recordings_info() {
         "allowed" => array(
           "JSON",
           "nakedJSON",
-          "tabulator"
+          "tabulator",
+          "JSON-LD",
+          "Turtle"
         ),
         "default" => "JSON"
       )
     ),
   );
   return($info);
+}
+
+//A recording as an RDF node (see core/rdf.php), in Audiovisual Core terms. It
+//is identified by its page at its source, so a recording without one has no
+//node.
+function recordings_rdf_node($recording) {
+  static $providers = NULL;
+  if ($providers === NULL) {
+    $providers = array();
+    foreach (loadModules("source") as $source) {
+      $providers[$source["mname"]] = $source["hname"];
+    }
+  }
+  $page = rdfURL($recording["info_url"]);
+  if ($page === NULL) {return(NULL);}
+
+  $node = array(
+    "@id" => $recording["info_url"],
+    "@type" => array("http://rs.tdwg.org/ac/terms/Media", "http://purl.org/dc/dcmitype/Sound"),
+    "dcterms:type" => rdfIRI("http://purl.org/dc/dcmitype/Sound")
+  );
+  //Soundscapes are described by their content. Audiovisual Core's Content
+  //Description vocabulary has no term for them yet, so this is the literal.
+  //Other recordings of a taxon are recordings of organisms.
+  $soundscape = ($recording["recording_type"] == "Soundscape");
+  if ($soundscape) {
+    rdfAdd($node, "ac:CVtermLiteral", "Soundscape");
+  } else {
+    rdfAdd($node, "ac:tag", $recording["recording_type"]);
+    if ($recording["taxon"] != "") {
+      rdfAdd($node, "ac:subtype", rdfIRI("http://rs.tdwg.org/acsubtype/values/RecordedOrganism"));
+    }
+  }
+  rdfAdd($node, "dcterms:title", $recording["name"]);
+  rdfAdd($node, "dwc:scientificName", $recording["taxon"]);
+  rdfAdd($node, "dc:creator", $recording["author"]);
+  rdfAdd($node, "xmp:CreateDate", rdfDate($recording["date"], $recording["time"]));
+  rdfAdd($node, "ac:timeOfDay", $recording["time_of_day"]);
+  rdfAdd($node, "ac:mediaDuration", rdfDecimal($recording["duration"]));
+  rdfAdd($node, "dwc:decimalLatitude", rdfDecimal($recording["lat"]));
+  rdfAdd($node, "dwc:decimalLongitude", rdfDecimal($recording["lon"]));
+  rdfAdd($node, "ac:captureDevice", $recording["device"]);
+  rdfAdd($node, "dcterms:rights", rdfURL($recording["license"]));
+  rdfAdd($node, "ac:providerLiteral", $providers[$recording["source"]] ?? $recording["source"]);
+  rdfAdd($node, "ac:providerManagedID", $recording["id"]);
+  rdfAdd($node, "dcterms:available", rdfDate($recording["post_date"]));
+  rdfAdd($node, "ac:furtherInformationURL", $page);
+  //Not every file is at a URL
+  rdfAdd($node, "ac:accessURI", rdfURL($recording["filename"]));
+  rdfAdd($node, "dc:format", $recording["mime"]);
+  return($node);
 }
 
 function recordings_embed_info() {
