@@ -28,7 +28,9 @@ function bioacoustica_info() {
           "Duration" => "Duration"
         ),
         "override" => array(
-          "deployment" => ""
+          "deployment" => "",
+          //audioBlastIngest puts each recording's id in place of {id}
+          "info_url" => "https://bio.acousti.ca/node/{id}"
         ),
         "process" => array(
           "sourceR"
