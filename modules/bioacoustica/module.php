@@ -52,7 +52,7 @@ function bioacoustica_info() {
       ),
       array(
         "type" => "references",
-        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/references.bib",
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/references.csv",
         "process" => array(
           "sourceR"
         )
