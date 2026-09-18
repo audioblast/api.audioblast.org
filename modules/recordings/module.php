@@ -23,7 +23,8 @@ function recordings_info() {
         "default" => "",
         "column" => "id",
         "op" => "=",
-        "autocomplete" => TRUE
+        "autocomplete" => TRUE,
+        "ac" => "ac:providerManagedID"
       ),
       "name" => array(
         "desc" => "Recording name",
@@ -72,10 +73,11 @@ function recordings_info() {
         "ac" => "dc:creator"
       ),
       "post_date" => array(
-        "desc" => "Date the content was uploaded",
+        "desc" => "Date the content was uploaded (YYYY-MM-DD)",
         "type" => "string",
         "column" => "post_date",
-        "op" => "none"
+        "op" => "none",
+        "ac" => "dcterms:available"
       ),
       "human_size" => array(
         "desc" => "Human readble size of file",
@@ -108,7 +110,7 @@ function recordings_info() {
         "autocomplete" => TRUE
       ),
       "date" => array(
-        "desc" => "Date",
+        "desc" => "Date the recording was made (YYYY-MM-DD, or YYYY-MM or YYYY when only the month or year is known)",
         "type" => "string",
         "column" => "Date",
         "default" => "",
@@ -116,11 +118,19 @@ function recordings_info() {
         "ac" => "xmp:CreateDate"
       ),
       "time" => array(
-        "desc" => "Time",
+        "desc" => "Time the recording was made (HH:MM, 24-hour clock)",
         "type" => "string",
         "column" => "Time",
         "default" => "",
         "op" => "none"
+      ),
+      "time_of_day" => array(
+        "desc" => "Time of day in words, where it is not a clock time, e.g. morning",
+        "type" => "string",
+        "column" => "time_of_day",
+        "default" => "",
+        "op" => "none",
+        "ac" => "ac:timeOfDay"
       ),
       "duration" => array(
         "desc" => "Duration",
@@ -152,6 +162,31 @@ function recordings_info() {
         "default" => "",
         "op" => "range",
         "ac" => "dwc:decimalLongitude"
+      ),
+      "license" => array(
+        "desc" => "URL of the recording's licence",
+        "type" => "string",
+        "column" => "license",
+        "default" => "",
+        "op" => "=",
+        "autocomplete" => TRUE,
+        "ac" => "dcterms:rights"
+      ),
+      "info_url" => array(
+        "desc" => "URL of the recording's page at its source",
+        "type" => "string",
+        "column" => "info_url",
+        "default" => "",
+        "op" => "none",
+        "ac" => "ac:furtherInformationURL"
+      ),
+      "device" => array(
+        "desc" => "Device the recording was made with",
+        "type" => "string",
+        "column" => "device",
+        "default" => "",
+        "op" => "contains",
+        "ac" => "ac:captureDevice"
       ),
       "format" => array(
         "desc" => "Data representation to return.",

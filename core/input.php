@@ -17,6 +17,8 @@ function generateParams($params, $inputs) {
       if (in_array($name, listOutputColumns())) {continue;}
       if (isset($inputs[$name])) {
       if ($inputs[$name] == "") {continue;}
+      //Columns that can't be filtered on have no operator to build a condition with
+      if (($data["op"] ?? "") == "none") {continue;}
       switch ($params["params"][$name]["op"]) {
         case "range":
           $ret = filterMerge($ret, filterABrange($params["params"][$name]["column"], $inputs[$name], $params["params"][$name]["type"]));
