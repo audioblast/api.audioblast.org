@@ -86,6 +86,7 @@ function moduleAPI($db) {
 
   $params = array();
   $notes = array();
+  $rdf = FALSE;                   //Flag. Set when records are returned as RDF (see core/rdf.php).
 
   $notes["input_params"] = $_GET;
 
@@ -180,8 +181,20 @@ function moduleAPI($db) {
     $where = '';
   } else if (in_array(substr($parts[3],0, 1), array("", "?")) ) {
     $format = isset($params["format"]) ? $params["format"] : "internal";
+    $rdf = isset($module["rdf"]) && in_array($params["output"] ?? "", rdfOutputs());
+    //RDF nodes are made from records with their columns as named in the module
+    if ($rdf) {$format = "internal";}
     $select = SELECTclause($module, NULL, "table", $format);
     $where = generateParams($module, $params);
+    //Records without an identifier can't be given as RDF, so aren't returned
+    if ($rdf) {
+      $where[] = array(
+        "column" => $module["params"][$module["rdf"]["id"]]["column"],
+        "op" => "notempty",
+        "value" => "1",
+        "type" => "string"
+      );
+    }
   } else if ($parts[1] == "embed") {
     //HTML response: emit it and return. Falling through to the JSON output
     //switch at the end would append a JSON body (and Content-Type) after the
@@ -276,6 +289,14 @@ function moduleAPI($db) {
     }
 
     $notes["query_execution_time"] = microtime(true) - $query_start_time;
+  }
+
+  if ($rdf) {
+    //RDF has no notes to say that the query failed, so the status says it
+    if (!$result) {http_response_code(500);}
+    printRDF(rdfNodes($module, $ret["data"]), $params["output"],
+             ($page < ($ret["last_page"] ?? 0)) ? $page + 1 : NULL);
+    return;
   }
 
   $ret["params"] = $params;
