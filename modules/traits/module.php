@@ -7,7 +7,12 @@ function traits_info() {
     "category" => "data",
     "table" => "traits",
     "hname" => "Traits",
-    "desc" => "This endpoint allows for the querying of the organism traits held within audioBLAST!",
+    "desc" => "This endpoint allows for the querying of the organism traits held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), traits are given as RDF: Darwin Core MeasurementOrFacts whose types link to terms at vocab.audioblast.org. Each trait is identified by https://api.audioblast.org/trait/{source}/{id}, which gives the trait in the same way.",
+    //Traits as RDF (see core/rdf.php), identified by https://api.audioblast.org/trait/{source}/{id}
+    "rdf" => array(
+      "path" => "trait",
+      "node" => "traits_rdf_node"
+    ),
     "endpoints" => array(
       "list_text_values" => array(
         "callback" => "traits_list_text_values",
@@ -109,16 +114,39 @@ function traits_info() {
         "op" => "="
       ),
       "output" => array(
-        "desc" => "At present just an array",
+        "desc" => "The format of the returned data",
         "type" => "string",
         "allowed" => array(
-          "JSON"
+          "JSON",
+          "JSON-LD",
+          "Turtle"
         ),
         "default" => "JSON"
       )
     )
   );
   return($info);
+}
+
+//A trait as an RDF node (see core/rdf.php) at its URI: a Darwin Core
+//MeasurementOrFact about a taxon, whose type is linked to its term in the
+//vocabulary at vocab.audioblast.org. The call type and temperature it was
+//measured at are given with the vocabulary's terms for them. Values are given
+//as they are held.
+function traits_rdf_node($trait, $uri) {
+  $node = array(
+    "@id" => $uri,
+    "@type" => "http://rs.tdwg.org/dwc/terms/MeasurementOrFact"
+  );
+  rdfAdd($node, "dwc:measurementID", $trait["id"]);
+  rdfAdd($node, "dwc:scientificName", $trait["taxon"]);
+  rdfAdd($node, "dwc:measurementType", $trait["trait"]);
+  rdfAdd($node, "dwciri:measurementType", rdfURL($trait["trait_ontology"]));
+  rdfAdd($node, "dwc:measurementValue", $trait["value"]);
+  rdfAdd($node, "dwc:sex", $trait["sex"]);
+  rdfAdd($node, "vocab:CallType", $trait["call_type"]);
+  rdfAdd($node, "vocab:Temperature", $trait["temperature"]);
+  return($node);
 }
 
 function traits_list_text_values() {
