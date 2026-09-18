@@ -5,9 +5,12 @@ include("core/core.php");
 $page = "API";
 if (isHomepage()) {$page = "home";}
 if (isEmbedPage()) {$page = "embed";}
+if (isRecordPage()) {$page = "record";}
 
 if ($page == "API") {
   moduleAPI($db);
+} else if ($page == "record") {
+  recordAPI($db);
 } else {
   ?>
   <html>

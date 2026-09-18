@@ -108,6 +108,13 @@ function moduleAPI($db) {
     }
   }
 
+  //Without an output parameter, clients of a module that gives RDF can ask for
+  //it in their Accept header
+  if (isset($module["rdf"]) && !isset($_GET["output"])) {
+    header("Vary: Accept");
+    $params["output"] = rdfNegotiate($_SERVER["HTTP_ACCEPT"] ?? "") ?? $params["output"];
+  }
+
   //Special processing for filters via Tabulator
   if (isset($_GET["filter"])) {
     foreach ($_GET["filter"] as $filter) {
@@ -186,15 +193,6 @@ function moduleAPI($db) {
     if ($rdf) {$format = "internal";}
     $select = SELECTclause($module, NULL, "table", $format);
     $where = generateParams($module, $params);
-    //Records without an identifier can't be given as RDF, so aren't returned
-    if ($rdf) {
-      $where[] = array(
-        "column" => $module["params"][$module["rdf"]["id"]]["column"],
-        "op" => "notempty",
-        "value" => "1",
-        "type" => "string"
-      );
-    }
   } else if ($parts[1] == "embed") {
     //HTML response: emit it and return. Falling through to the JSON output
     //switch at the end would append a JSON body (and Content-Type) after the
