@@ -1,12 +1,14 @@
 -- Table for the references module (modules/references/module.php).
 --
--- Filled by uploadReferences() in audioBlastIngest, from BibTeX sources such
--- as the BioAcoustica bibliography. References are keyed by their BibTeX key
--- (for BioAcoustica, the node id of the reference) within each source. Fields
--- that a reference does not have are NULL.
+-- Filled by uploadReferences() in audioBlastIngest, from BibTeX or CSV sources
+-- such as the BioAcoustica bibliography. References are keyed by their id
+-- within each source (a BibTeX entry's key, and for BioAcoustica the node id
+-- of the reference). Fields that a reference does not have are NULL.
 --
 -- Create the table before deploying the module: data/fetch_data_counts counts
--- every data module's table, so it fails while this one is missing.
+-- every data module's table, so it fails while this one is missing. To add the
+-- columns from type_name on to a table created before they were, run
+-- references-add-columns.sql instead.
 
 CREATE TABLE `references` (
   `source` varchar(100) NOT NULL,
@@ -40,5 +42,9 @@ CREATE TABLE `references` (
   `attachments` text,
   `keywords` text,
   `abstract` text,
+  `type_name` varchar(100) COMMENT 'The source''s own name for the type of reference, e.g. Journal Article',
+  `journal_abbreviation` text COMMENT 'Abbreviated title of the journal, e.g. Anim Behav',
+  `pmid` varchar(20) COMMENT 'PubMed ID',
+  `info_url` text COMMENT 'URL of the reference''s page at its source',
   PRIMARY KEY (`source`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
