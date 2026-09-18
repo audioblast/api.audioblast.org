@@ -7,10 +7,10 @@ function recordings_info() {
     "category" => "data",
     "table" => "recordings",
     "hname" => "Recordings",
-    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle, recordings are given as RDF in Audiovisual Core terms, identified by their page at their source (info_url); recordings without one are left out.",
-    //Recordings as RDF (see core/rdf.php)
+    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way.",
+    //Recordings as RDF (see core/rdf.php), identified by https://api.audioblast.org/recording/{source}/{id}
     "rdf" => array(
-      "id" => "info_url",
+      "path" => "recording",
       "node" => "recordings_rdf_node"
     ),
     "params" => array(
@@ -219,10 +219,9 @@ function recordings_info() {
   return($info);
 }
 
-//A recording as an RDF node (see core/rdf.php), in Audiovisual Core terms. It
-//is identified by its page at its source, so a recording without one has no
-//node.
-function recordings_rdf_node($recording) {
+//A recording as an RDF node (see core/rdf.php) at its URI, in Audiovisual Core
+//terms. Its page at its source is where more information about it is.
+function recordings_rdf_node($recording, $uri) {
   static $providers = NULL;
   if ($providers === NULL) {
     $providers = array();
@@ -230,11 +229,9 @@ function recordings_rdf_node($recording) {
       $providers[$source["mname"]] = $source["hname"];
     }
   }
-  $page = rdfURL($recording["info_url"]);
-  if ($page === NULL) {return(NULL);}
 
   $node = array(
-    "@id" => $recording["info_url"],
+    "@id" => $uri,
     "@type" => array("http://rs.tdwg.org/ac/terms/Media", "http://purl.org/dc/dcmitype/Sound"),
     "dcterms:type" => rdfIRI("http://purl.org/dc/dcmitype/Sound")
   );
@@ -263,7 +260,7 @@ function recordings_rdf_node($recording) {
   rdfAdd($node, "ac:providerLiteral", $providers[$recording["source"]] ?? $recording["source"]);
   rdfAdd($node, "ac:providerManagedID", $recording["id"]);
   rdfAdd($node, "dcterms:available", rdfDate($recording["post_date"]));
-  rdfAdd($node, "ac:furtherInformationURL", $page);
+  rdfAdd($node, "ac:furtherInformationURL", rdfURL($recording["info_url"]));
   //Not every file is at a URL
   rdfAdd($node, "ac:accessURI", rdfURL($recording["filename"]));
   rdfAdd($node, "dc:format", $recording["mime"]);
