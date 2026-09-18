@@ -1,11 +1,13 @@
 <?php
 
 /*
-RDF output (output=JSON-LD or output=Turtle) for modules that describe their
-records in RDF. Such a module has an "rdf" entry in its info giving "node", the
-function that turns a record into a node, and "id", the parameter whose value
-identifies a record: records without one are left out. JSON-LD and Turtle are
-written from the same nodes, so both formats always say the same thing.
+RDF output (output=JSON-LD or output=Turtle, or asked for by media type, see
+rdfNegotiate()) for modules that describe their records in RDF. Such a module
+has an "rdf" entry in its info giving "path", the start of its records' URIs
+(see rdfRecordURI()), and "node", the function that turns a record and its URI
+into a node. Records are identified by their source and id parameters. JSON-LD
+and Turtle are written from the same nodes, so both formats always say the same
+thing.
 
 A node is an array of properties (prefixed names, see rdfContext()) and their
 values, with "@id" and "@type" (full IRIs) as in JSON-LD. A value is a string,
@@ -15,6 +17,48 @@ an IRI (rdfIRI()) or a typed literal (rdfTyped()).
 //The outputs that give records as RDF
 function rdfOutputs() {
   return(array("JSON-LD", "Turtle"));
+}
+
+//The RDF output a client asks for in its Accept header, or NULL where it
+//prefers JSON (the API's default) or doesn't say. The media range with the
+//highest quality wins, and of those with the same quality the most specific.
+function rdfNegotiate($accept) {
+  $outputs = array(
+    "text/turtle" => "Turtle",
+    "application/ld+json" => "JSON-LD",
+    "application/json" => NULL,
+    "application/*" => NULL,
+    "*/*" => NULL
+  );
+  $best = NULL;
+  $bestQuality = 0;
+  $bestSpecific = FALSE;
+  foreach (explode(",", $accept) as $range) {
+    $parts = array_map("trim", explode(";", $range));
+    $type = strtolower($parts[0]);
+    if (!array_key_exists($type, $outputs)) {continue;}
+    $quality = 1;
+    foreach (array_slice($parts, 1) as $parameter) {
+      if (preg_match('/^q=([0-9.]+)$/i', $parameter, $matches)) {$quality = (float)$matches[1];}
+    }
+    //A quality of 0 says the type is not acceptable
+    if ($quality <= 0) {continue;}
+    $specific = (strpos($type, "*") === FALSE);
+    if ($quality > $bestQuality || ($quality == $bestQuality && $specific && !$bestSpecific)) {
+      $best = $outputs[$type];
+      $bestQuality = $quality;
+      $bestSpecific = $specific;
+    }
+  }
+  return($best);
+}
+
+//The URI of a module's record, e.g. https://api.audioblast.org/recording/bio.acousti.ca/12883
+//for a recording. Source names never have a /, so all of the rest is the id,
+//and a / in an id is kept as one.
+function rdfRecordURI($module, $source, $id) {
+  return("https://api.audioblast.org/".$module["rdf"]["path"]."/".rawurlencode($source)."/"
+    .implode("/", array_map("rawurlencode", explode("/", $id))));
 }
 
 //The prefixes of the vocabularies records are described with
@@ -76,9 +120,13 @@ function rdfDate($date, $time = NULL) {
   return(NULL);
 }
 
-//The nodes of records, leaving out records that the module gives no node for
+//The nodes of records
 function rdfNodes($module, $records) {
-  return(array_values(array_filter(array_map($module["rdf"]["node"], $records))));
+  $nodes = array();
+  foreach ($records as $record) {
+    $nodes[] = call_user_func($module["rdf"]["node"], $record, rdfRecordURI($module, $record["source"], $record["id"]));
+  }
+  return($nodes);
 }
 
 function rdfJSONLD($nodes) {

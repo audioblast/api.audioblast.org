@@ -15,5 +15,6 @@ include("speedbird.php");
 include("input.php");
 include("api.php");
 include("rdf.php");
+include("record.php");
 include("embed.php");
 include("cdn.php");
