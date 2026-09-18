@@ -8,7 +8,7 @@ function references_info() {
     "table" => "references",
     "hname" => "References",
     "desc" => "This endpoint allows for the querying of the bibliographic references held within audioBLAST!",
-    "source_notes" => "References are ingested from BibTeX, and are identified by their BibTeX key within each source.",
+    "source_notes" => "References are ingested from BibTeX or CSV, and are identified by their id within each source (for BibTeX, the entry's key).",
     "params" => array(
       "source" => array(
         "desc" => "Source",
@@ -19,7 +19,7 @@ function references_info() {
         "autocomplete" => TRUE
       ),
       "id" => array(
-        "desc" => "ID of the reference within its source (its BibTeX key)",
+        "desc" => "ID of the reference within its source (for BibTeX, its key)",
         "type" => "string",
         "default" => "",
         "column" => "id",
@@ -27,7 +27,7 @@ function references_info() {
         "autocomplete" => TRUE
       ),
       "type" => array(
-        "desc" => "Type of reference (BibTeX entry type), e.g. article, book or mastersthesis",
+        "desc" => "Type of reference, as a BibTeX entry type whatever the source's format, e.g. article, book or phdthesis",
         "type" => "string",
         "default" => "",
         "column" => "type",
@@ -64,7 +64,7 @@ function references_info() {
         "op" => "range"
       ),
       "month" => array(
-        "desc" => "Month of publication. Some sources, e.g. BioAcoustica, give the date of publication.",
+        "desc" => "Month of publication",
         "type" => "string",
         "default" => "",
         "column" => "month",
@@ -213,7 +213,7 @@ function references_info() {
         "op" => "contains"
       ),
       "attachments" => array(
-        "desc" => "URLs of files attached to the reference",
+        "desc" => "URLs of files attached to the reference, separated by semicolons",
         "type" => "string",
         "default" => "",
         "column" => "attachments",
@@ -232,6 +232,35 @@ function references_info() {
         "default" => "",
         "column" => "abstract",
         "op" => "contains"
+      ),
+      "type_name" => array(
+        "desc" => "Type of reference as the source names it, e.g. Journal Article, Book Chapter or Audiovisual",
+        "type" => "string",
+        "default" => "",
+        "column" => "type_name",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
+      "journal_abbreviation" => array(
+        "desc" => "Abbreviated title of the journal, e.g. Anim Behav",
+        "type" => "string",
+        "default" => "",
+        "column" => "journal_abbreviation",
+        "op" => "contains"
+      ),
+      "pmid" => array(
+        "desc" => "PubMed ID",
+        "type" => "string",
+        "default" => "",
+        "column" => "pmid",
+        "op" => "="
+      ),
+      "info_url" => array(
+        "desc" => "URL of the reference's page at its source",
+        "type" => "string",
+        "default" => "",
+        "column" => "info_url",
+        "op" => "none"
       ),
       "output" => array(
         "desc" => "The format of the returned data",
