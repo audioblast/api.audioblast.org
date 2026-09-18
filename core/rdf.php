@@ -61,15 +61,16 @@ function rdfRecordURI($module, $source, $id) {
     .implode("/", array_map("rawurlencode", explode("/", $id))));
 }
 
-//The prefixes of the vocabularies records are described with
+//The prefixes of the vocabularies records are described with. abv is the
+//prefix the vocabulary at vocab.audioblast.org gives itself.
 function rdfContext() {
   return(array(
+    "abv" => "https://vocab.audioblast.org/",
     "ac" => "http://rs.tdwg.org/ac/terms/",
     "dc" => "http://purl.org/dc/elements/1.1/",
     "dcterms" => "http://purl.org/dc/terms/",
     "dwc" => "http://rs.tdwg.org/dwc/terms/",
     "dwciri" => "http://rs.tdwg.org/dwc/iri/",
-    "vocab" => "https://vocab.audioblast.org/",
     "xmp" => "http://ns.adobe.com/xap/1.0/",
     "xsd" => "http://www.w3.org/2001/XMLSchema#"
   ));

@@ -144,8 +144,8 @@ function traits_rdf_node($trait, $uri) {
   rdfAdd($node, "dwciri:measurementType", rdfURL($trait["trait_ontology"]));
   rdfAdd($node, "dwc:measurementValue", $trait["value"]);
   rdfAdd($node, "dwc:sex", $trait["sex"]);
-  rdfAdd($node, "vocab:CallType", $trait["call_type"]);
-  rdfAdd($node, "vocab:Temperature", $trait["temperature"]);
+  rdfAdd($node, "abv:CallType", $trait["call_type"]);
+  rdfAdd($node, "abv:Temperature", $trait["temperature"]);
   return($node);
 }
 
