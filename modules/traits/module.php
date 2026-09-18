@@ -79,11 +79,32 @@ function traits_info() {
         "op" => "="
       ),
       "call_type" => array(
-        "desc" => "Type of call the trait applies to",
+        "desc" => "Type of call the trait applies to, as written",
         "type" => "string",
         "default" => "",
         "column" => "Call.Type",
         "op" => "="
+      ),
+      "call_type_ontology" => array(
+        "desc" => "Link to the call type's term in the Type of Call vocabulary",
+        "type" => "string",
+        "default" => "",
+        "column" => "Call.Type.Link",
+        "op" => "="
+      ),
+      "call_part" => array(
+        "desc" => "Part of the call the trait describes, e.g. B of a call whose parts follow the pattern A:B:C",
+        "type" => "string",
+        "default" => "",
+        "column" => "Call.Part",
+        "op" => "="
+      ),
+      "call_qualifier" => array(
+        "desc" => "What else the call type says, e.g. Night in Calling Call (Night)",
+        "type" => "string",
+        "default" => "",
+        "column" => "Call.Qualifier",
+        "op" => "contains"
       ),
       "sex" => array(
         "desc" => "Sex",
@@ -130,9 +151,11 @@ function traits_info() {
 
 //A trait as an RDF node (see core/rdf.php) at its URI: a Darwin Core
 //MeasurementOrFact about a taxon, whose type is linked to its term in the
-//vocabulary at vocab.audioblast.org. The call type and temperature it was
-//measured at are given with the vocabulary's terms for them. Values are given
-//as they are held.
+//vocabulary at vocab.audioblast.org. The call it was measured on and the
+//temperature are given with the vocabulary's terms for them: the call type as
+//its term in the Type of Call vocabulary where it has been linked to one (or as
+//written where not), and the part of the call. Anything else the call type says
+//is a remark. Values are given as they are held.
 function traits_rdf_node($trait, $uri) {
   $node = array(
     "@id" => $uri,
@@ -144,8 +167,12 @@ function traits_rdf_node($trait, $uri) {
   rdfAdd($node, "dwciri:measurementType", rdfURL($trait["trait_ontology"]));
   rdfAdd($node, "dwc:measurementValue", $trait["value"]);
   rdfAdd($node, "dwc:sex", $trait["sex"]);
-  rdfAdd($node, "abv:CallType", $trait["call_type"]);
+  rdfAdd($node, "abv:CallType", rdfURL($trait["call_type_ontology"]) ?? $trait["call_type"]);
+  rdfAdd($node, "abv:CallPart", $trait["call_part"]);
   rdfAdd($node, "abv:Temperature", $trait["temperature"]);
+  if (($trait["call_qualifier"] ?? "") !== "") {
+    rdfAdd($node, "dwc:measurementRemarks", "Call: ".$trait["call_qualifier"]);
+  }
   return($node);
 }
 
