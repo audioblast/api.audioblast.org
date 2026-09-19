@@ -58,7 +58,7 @@ function recordAPI($db) {
 
   $records = ($record === NULL) ? array() : array($record);
   if (in_array($output, rdfOutputs())) {
-    printRDF(rdfNodes($module, $records), $output);
+    printRecordRDF($db, $module, $records, $output);
   } else {
     header("Content-Type: application/json");
     print(json_encode(($output == "nakedJSON") ? $records : array("data" => $records)));

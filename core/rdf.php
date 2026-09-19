@@ -156,6 +156,15 @@ function rdfTurtle($nodes) {
     $statements = array();
     foreach ($node as $property => $values) {
       if ($property == "@id") {continue;}
+      if ($property == "@reverse") {
+        foreach ($values as $predicate => $subjects) {
+          $predicate = preg_match("#^https?://#", $predicate) ? turtleIRI($predicate) : $predicate;
+          foreach ($subjects as $subject) {
+            $out .= "\n".turtleIRI($subject["@id"])." ".$predicate." ".turtleIRI($node["@id"])." .\n";
+          }
+        }
+        continue;
+      }
       //A property has a single value or a list of them
       if (!is_array($values) || !array_key_exists(0, $values)) {
         $values = array($values);
@@ -167,7 +176,7 @@ function rdfTurtle($nodes) {
         $statements[] = $predicate." ".implode(", ", array_map("turtleValue", $values));
       }
     }
-    $out .= "\n".turtleIRI($node["@id"])." ".implode(" ;\n    ", $statements)." .\n";
+    if ($statements) {$out .= "\n".turtleIRI($node["@id"])." ".implode(" ;\n    ", $statements)." .\n";}
   }
   return($out);
 }
@@ -216,4 +225,123 @@ function pageURI($requestURI, $page) {
   parse_str($uri["query"] ?? "", $query);
   $query["page"] = $page;
   return($uri["path"]."?".http_build_query($query));
+}
+
+// Add one-hop incoming and outgoing assertions for modules that opt in.
+// Query a page in batches, rather than querying once per returned record.
+// FALSE means a failed lookup, not a record with no relationships.
+function rdfResponseNodes($db, $module, $records) {
+  $nodes = rdfNodes($module, $records);
+  if (empty($module["rdf"]["links"]) || !$records) {return($nodes);}
+  $links = loadModule("links");
+  $seen = array();
+  foreach (array_chunk($records, 100) as $batch) {
+    foreach (array("subject", "object") as $side) {
+      $values = array($module["mname"]);
+      $pairs = array();
+      foreach ($batch as $record) {
+        $pairs[] = "(?, ?)";
+        $values[] = $record["source"];
+        $values[] = $record["id"];
+      }
+      $sql = SELECTclause($links, NULL, "table", "internal");
+      $sql .= " WHERE `".$side."_type` = ? AND (`".$side."_source`, `".$side."_id`) IN (".implode(", ", $pairs).");";
+      $stmt = $db->prepare($sql);
+      if (!$stmt) {return(FALSE);}
+      if (!$stmt->bind_param(str_repeat("s", count($values)), ...$values) || !$stmt->execute()) {
+        $stmt->close();
+        return(FALSE);
+      }
+      $result = $stmt->get_result();
+      if (!$result) {$stmt->close(); return(FALSE);}
+      while ($link = $result->fetch_assoc()) {
+        $key = json_encode(array($link["source"], $link["id"]));
+        if (isset($seen[$key])) {continue;}
+        $seen[$key] = TRUE;
+        foreach (rdfNodes($links, array($link)) as $node) {$nodes[] = $node;}
+      }
+      $result->close();
+      $stmt->close();
+    }
+  }
+  $focus = array();
+  foreach ($records as $record) {
+    $focus[] = rdfRecordURI($module, $record["source"], $record["id"]);
+  }
+  return(rdfFrameIncoming(rdfMergeNodes($nodes), $focus));
+}
+
+// Combine descriptions of the same subject, retaining all distinct values.
+// This puts outgoing relationships on the record's own JSON-LD node too.
+function rdfMergeNodes($nodes) {
+  $merged = array();
+  foreach ($nodes as $node) {
+    $id = $node["@id"];
+    if (!isset($merged[$id])) {$merged[$id] = $node; continue;}
+    foreach ($node as $property => $value) {
+      if ($property === "@id") {continue;}
+      if (!array_key_exists($property, $merged[$id])) {
+        $merged[$id][$property] = $value;
+        continue;
+      }
+      $old = $merged[$id][$property];
+      $values = is_array($old) && array_key_exists(0, $old) ? $old : array($old);
+      $additions = is_array($value) && array_key_exists(0, $value) ? $value : array($value);
+      foreach ($additions as $addition) {
+        if (!in_array($addition, $values, TRUE)) {$values[] = $addition;}
+      }
+      $merged[$id][$property] = count($values) === 1 ? $values[0] : $values;
+    }
+  }
+  return(array_values($merged));
+}
+
+function printRecordRDF($db, $module, $records, $output, $nextPage = NULL) {
+  $nodes = rdfResponseNodes($db, $module, $records);
+  if ($nodes === FALSE) {
+    http_response_code(500);
+    printRDF(array(), $output);
+    return;
+  }
+  printRDF($nodes, $output, $nextPage);
+}
+
+// Compact only safe local names so the same predicate also works in Turtle.
+function rdfCompactIRI($iri) {
+  foreach (rdfContext() as $prefix => $namespace) {
+    if (strpos($iri, $namespace) !== 0) {continue;}
+    $local = substr($iri, strlen($namespace));
+    if (preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $local)) {return($prefix.":".$local);}
+  }
+  return($iri);
+}
+
+// Present incoming assertions on requested records without inventing inverse terms.
+// Other endpoints keep only their URI, not a recursively expanded description.
+function rdfFrameIncoming($nodes, $focus) {
+  $byID = array_column($nodes, NULL, "@id");
+  $requested = array_fill_keys($focus, TRUE);
+  foreach ($nodes as $node) {
+    if (!isset($node["rdf:subject"]["@id"], $node["rdf:predicate"]["@id"], $node["rdf:object"]["@id"])) {continue;}
+    $subject = $node["rdf:subject"]["@id"];
+    $object = $node["rdf:object"]["@id"];
+    $predicate = rdfCompactIRI($node["rdf:predicate"]["@id"]);
+    if (!isset($requested[$object], $byID[$object])) {continue;}
+    $incoming = rdfIRI($subject);
+    if (!isset($byID[$object]["@reverse"][$predicate])) {$byID[$object]["@reverse"][$predicate] = array();}
+    if (!in_array($incoming, $byID[$object]["@reverse"][$predicate], TRUE)) {
+      $byID[$object]["@reverse"][$predicate][] = $incoming;
+    }
+    // If both endpoints are requested, keep the forward property on its record too.
+    if (isset($requested[$subject]) || !isset($byID[$subject][$predicate])) {continue;}
+    $old = $byID[$subject][$predicate];
+    $values = is_array($old) && array_key_exists(0, $old) ? $old : array($old);
+    $values = array_values(array_filter($values, function($value) use ($object) {
+      return($value !== rdfIRI($object));
+    }));
+    if (!$values) {unset($byID[$subject][$predicate]);}
+    else {$byID[$subject][$predicate] = count($values) === 1 ? $values[0] : $values;}
+    if (count($byID[$subject]) === 1) {unset($byID[$subject]);}
+  }
+  return(array_values($byID));
 }

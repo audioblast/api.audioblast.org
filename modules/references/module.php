@@ -9,7 +9,7 @@ function references_info() {
     "hname" => "References",
     "desc" => "This endpoint allows for the querying of the bibliographic references held within audioBLAST!",
     "source_notes" => "References are ingested from BibTeX or CSV, and are identified by their id within each source (for BibTeX, the entry's key).",
-    "rdf" => array("path" => "reference", "node" => "references_rdf_node", "related" => "references_rdf_related"),
+    "rdf" => array("links" => TRUE, "path" => "reference", "node" => "references_rdf_node", "related" => "references_rdf_related"),
     "params" => array(
       "source" => array(
         "desc" => "Source",
@@ -290,8 +290,7 @@ function references_rdf_node($ref, $uri) {
     "mastersthesis" => "thesis", "techreport" => "report", "manual" => "manual"
   );
   $node = array("@id" => $uri,
-    "@type" => "http://purl.org/dc/terms/BibliographicResource",
-    "dwc:referenceID" => $uri);
+    "@type" => "http://purl.org/dc/terms/BibliographicResource");
   $type = $ref["type"] ?? "";
   rdfAdd($node, "dwc:referenceType", $types[$type] ?? $type);
   foreach (array(

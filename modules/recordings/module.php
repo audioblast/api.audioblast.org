@@ -10,6 +10,7 @@ function recordings_info() {
     "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way.",
     //Recordings as RDF (see core/rdf.php), identified by https://api.audioblast.org/recording/{source}/{id}
     "rdf" => array(
+      "links" => TRUE,
       "path" => "recording",
       "node" => "recordings_rdf_node"
     ),
