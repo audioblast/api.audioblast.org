@@ -124,3 +124,30 @@ multiple attachments, cross-source links, qualifiers, distinct assertions,
 URI encoding, negotiation, JSON compatibility, 301/404 handling, embedded
 incoming/outgoing links, batching, query failures, reverse framing, multiple
 assertions and graph equivalence before and after framing. Production data and dangling-target counts have not been queried.
+
+## Annotation regions of interest
+
+`/data/annomate/?output=JSON-LD` (or `output=Turtle`) describes annotations as
+Audiovisual Core `ac:RegionOfInterest` resources. The individual route is
+`/annotation/{source}/{annotation_id}` and also negotiates RDF through Accept.
+Ordinary JSON retains `annotation_id` and `source_id` with their existing meanings.
+Modules may set `rdf.id` to select an existing ID parameter; the default is `id`.
+
+Each ROI uses `ac:startTime` and `ac:endTime` for offsets in seconds, and
+`ac:isROIOf` to identify `/recording/{source}/{source_id}`. The annotation graph
+also includes the recording's inverse `ac:hasROI` relationship and, when supplied,
+its `ac:accessURI`. This does not fetch or expand all annotations in recording
+responses. Missing recording identifiers do not produce a fabricated recording URI.
+
+Annotator, annotation date, information URL, taxon name and annotation category
+use `dcterms:creator`, `dcterms:created`, `rdfs:seeAlso`, `dwc:scientificName` and
+`dc:type`. Latitude and longitude use the corresponding Darwin Core decimal
+properties. Numeric bounds and coordinates are typed as decimals; zero values
+are retained. Date-only ISO dates are typed; other source date strings and
+nondecimal source values are retained as literals without correction.
+`contact` remains available in JSON but is not mapped to RDF. There are no
+frequency bounds in this table. No new vocabulary terms are needed.
+
+Incoming and outgoing links use the existing module type `annomate` and
+`annotation_id` as their source-local identity. Link predicates remain unchanged.
+See the [Audiovisual Core ROI terms](https://ac.tdwg.org/termlist/#ac_RegionOfInterest).

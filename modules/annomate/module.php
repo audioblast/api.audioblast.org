@@ -7,7 +7,9 @@ function annomate_info() {
     "category" => "data",
     "table" => "annomate",
     "hname" => "ann-o-mate",
-    "desc" => "This endpoint allows for the querying of ann-o-mate.",
+    "desc" => "Query annotations, including JSON-LD and Turtle descriptions as Audiovisual Core regions of interest. Individual annotations are available at /annotation/{source}/{annotation_id}.",
+    "rdf" => array("path" => "annotation", "id" => "annotation_id",
+      "links" => TRUE, "node" => "annomate_rdf_node", "related" => "annomate_rdf_related"),
     "params" => array(
       "source" => array(
         "desc" => "Recording source",
@@ -142,11 +144,47 @@ function annomate_info() {
         "allowed" => array(
           "JSON",
           "nakedJSON",
-          "tabulator"
+          "tabulator",
+          "JSON-LD",
+          "Turtle"
         ),
         "default" => "JSON"
       )
     ),
   );
   return($info);
+}
+
+// Annotation identity differs from the recording ID; preserve existing JSON keys.
+function annomate_rdf_recording($annotation) {
+  if (($annotation["source"] ?? "") === "" || ($annotation["source_id"] ?? "") === "") {return(NULL);}
+  return(rdfRecordURI(loadModule("recordings"), $annotation["source"], $annotation["source_id"]));
+}
+
+function annomate_rdf_node($annotation, $uri) {
+  $node = array("@id" => $uri, "@type" => "http://rs.tdwg.org/ac/terms/RegionOfInterest");
+  $recording = annomate_rdf_recording($annotation);
+  if ($recording !== NULL) {$node["ac:isROIOf"] = rdfIRI($recording);}
+  foreach (array("time_start" => "ac:startTime", "time_end" => "ac:endTime",
+    "lat" => "dwc:decimalLatitude", "lon" => "dwc:decimalLongitude") as $field => $property) {
+    $value = $annotation[$field] ?? NULL;
+    rdfAdd($node, $property, rdfDecimal($value) ?? $value);
+  }
+  foreach (array("annotator" => "dcterms:creator", "taxon" => "dwc:scientificName",
+    "type" => "dc:type") as $field => $property) {
+    rdfAdd($node, $property, $annotation[$field] ?? NULL);
+  }
+  $date = $annotation["annotation_date"] ?? NULL;
+  rdfAdd($node, "dcterms:created", rdfDate($date) ?? $date);
+  rdfAdd($node, "rdfs:seeAlso", rdfURL($annotation["annotation_info_url"] ?? NULL));
+  return($node);
+}
+
+function annomate_rdf_related($annotation, $uri) {
+  $recording = annomate_rdf_recording($annotation);
+  if ($recording === NULL) {return(array());}
+  $node = array("@id" => $recording, "ac:hasROI" => rdfIRI($uri));
+  // Match the recording module's access metadata; the URL is not the ROI itself.
+  rdfAdd($node, "ac:accessURI", rdfURL($annotation["recording_url"] ?? NULL));
+  return(array($node));
 }

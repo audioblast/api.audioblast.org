@@ -119,7 +119,7 @@ class FixtureDB {
   function prepare($sql) {
     $this->queries[] = $sql;
     if (strpos($sql, 'FROM links WHERE') !== FALSE) {return(new LinkFixtureStatement($this));}
-    check(preg_match('/WHERE `source` = \? AND `(id|traitID)` = \? LIMIT 1/', $sql) === 1, 'Exact prepared lookup using module ID column');
+    check(preg_match('/WHERE `source` = \? AND `(id|traitID|annotation_id)` = \? LIMIT 1/', $sql) === 1, 'Exact prepared lookup using module ID column');
     return(new FixtureStatement($this->row));
   }
 }
@@ -279,6 +279,39 @@ $_SERVER['HTTP_ACCEPT'] = 'text/turtle';
 ob_start(); recordAPI($taxonDB); $taxonTTL = ob_get_clean();
 check($taxonTTL === rdfTurtle($taxonNodes), 'Taxon URI serves embedded Turtle');
 $nodes = array_merge($nodes, $taxonNodes, $publicationNodes);
+
+// Annotations use their own ID, never the recording ID, and retain ordinary JSON.
+$annotationModule = loadModule('annomate');
+$annotation = array('source' => 'fixture', 'annotation_id' => $ref['id'], 'source_id' => 'rec1',
+  'time_start' => '0', 'time_end' => '1.25', 'annotator' => 'Observer',
+  'annotation_date' => '2026-09-19', 'annotation_info_url' => 'https://example.org/annotation',
+  'recording_url' => 'https://example.org/audio.wav', 'taxon' => 'Example species',
+  'type' => 'Call', 'lat' => '0', 'lon' => '-1.5', 'contact' => 'Unmapped');
+$annotationURI = rdfRecordURI($annotationModule, 'fixture', $annotation['annotation_id']);
+$annotationNodes = rdfNodes($annotationModule, array($annotation));
+check($annotationNodes[0]['@id'] === $annotationURI, 'Annotation identity uses annotation_id');
+check($annotationNodes[0]['ac:startTime'] === rdfTyped('0', 'xsd:decimal'), 'Zero time preserved');
+check(!isset($annotationNodes[0]['ac:accessURI']), 'Access URL belongs to recording');
+$sparseAnnotation = array('source' => 'fixture', 'annotation_id' => 'sparse');
+check(count(rdfNodes($annotationModule, array($sparseAnnotation))) === 1, 'Missing recording creates no invented target');
+check(count(annomate_rdf_node($sparseAnnotation, 'https://example.org/roi')) === 2, 'Missing values omitted');
+$annotationDB = new FixtureDB($annotation);
+$_SERVER['REQUEST_URI'] = '/annotation/fixture/book/a%20%231';
+$_GET = array('output' => 'JSON');
+ob_start(); recordAPI($annotationDB); $annotationJSON = json_decode(ob_get_clean(), TRUE);
+check($annotationJSON['data'][0] === $annotation && count($annotationDB->queries) === 1, 'Annotation JSON keys unchanged');
+$_GET = array(); $_SERVER['HTTP_ACCEPT'] = 'application/ld+json';
+ob_start(); recordAPI($annotationDB); $annotationLD = json_decode(ob_get_clean(), TRUE);
+check($annotationLD['@graph'] === $annotationNodes, 'Annotation URI negotiates JSON-LD');
+$_SERVER['HTTP_ACCEPT'] = 'text/turtle';
+ob_start(); recordAPI($annotationDB); $annotationTTL = ob_get_clean();
+check($annotationTTL === rdfTurtle($annotationNodes), 'Annotation URI negotiates Turtle');
+$annotationLink = $citation;
+$annotationLink['subject_type'] = 'annomate'; $annotationLink['subject_id'] = $annotation['annotation_id'];
+$annotationDB->links = array($annotationLink); $annotationDB->bound = array();
+$linkedAnnotations = rdfResponseNodes($annotationDB, $annotationModule, array($annotation));
+check($annotationDB->bound[0] === array('annomate', 'fixture', $annotation['annotation_id']), 'Link lookup uses annotation identity');
+$nodes = array_merge($nodes, $linkedAnnotations);
 
 // Framing must retain every triple, including when both ends are requested.
 $recordingURI = 'https://api.audioblast.org/recording/fixture/rec1';

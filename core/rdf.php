@@ -132,7 +132,7 @@ function rdfDate($date, $time = NULL) {
 function rdfNodes($module, $records) {
   $nodes = array();
   foreach ($records as $record) {
-    $uri = rdfRecordURI($module, $record["source"], $record["id"]);
+    $uri = rdfRecordURI($module, $record["source"], $record[$module["rdf"]["id"] ?? "id"]);
     $nodes[] = call_user_func($module["rdf"]["node"], $record, $uri);
     if (isset($module["rdf"]["related"])) {
       foreach (call_user_func($module["rdf"]["related"], $record, $uri) as $related) {
@@ -242,7 +242,7 @@ function rdfResponseNodes($db, $module, $records) {
       foreach ($batch as $record) {
         $pairs[] = "(?, ?)";
         $values[] = $record["source"];
-        $values[] = $record["id"];
+        $values[] = $record[$module["rdf"]["id"] ?? "id"];
       }
       $sql = SELECTclause($links, NULL, "table", "internal");
       $sql .= " WHERE `".$side."_type` = ? AND (`".$side."_source`, `".$side."_id`) IN (".implode(", ", $pairs).");";
@@ -266,7 +266,7 @@ function rdfResponseNodes($db, $module, $records) {
   }
   $focus = array();
   foreach ($records as $record) {
-    $focus[] = rdfRecordURI($module, $record["source"], $record["id"]);
+    $focus[] = rdfRecordURI($module, $record["source"], $record[$module["rdf"]["id"] ?? "id"]);
   }
   return(rdfFrameIncoming(rdfMergeNodes($nodes), $focus));
 }
