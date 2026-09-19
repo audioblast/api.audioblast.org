@@ -7,9 +7,10 @@ function traits_info() {
     "category" => "data",
     "table" => "traits",
     "hname" => "Traits",
-    "desc" => "This endpoint allows for the querying of the organism traits held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), traits are given as RDF: Darwin Core MeasurementOrFacts whose types link to terms at vocab.audioblast.org. Each trait is identified by https://api.audioblast.org/trait/{source}/{id}, which gives the trait in the same way.",
+    "desc" => "This endpoint allows for the querying of the organism traits held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), traits are given as RDF: Darwin Core MeasurementOrFacts whose types link to terms at vocab.audioblast.org. Each trait is identified by https://api.audioblast.org/trait/{source}/{id}, which gives the trait in the same way. RDF responses include incoming and outgoing relationships from the links table, including source references and taxa.",
     //Traits as RDF (see core/rdf.php), identified by https://api.audioblast.org/trait/{source}/{id}
     "rdf" => array(
+      "links" => TRUE,
       "path" => "trait",
       "node" => "traits_rdf_node"
     ),
@@ -138,7 +139,7 @@ function traits_rdf_node($trait, $uri) {
     "@id" => $uri,
     "@type" => "http://rs.tdwg.org/dwc/terms/MeasurementOrFact"
   );
-  rdfAdd($node, "dwc:measurementID", $trait["id"]);
+  rdfAdd($node, "dcterms:identifier", $trait["id"]);
   rdfAdd($node, "dwc:scientificName", $trait["taxon"]);
   rdfAdd($node, "dwc:measurementType", $trait["trait"]);
   rdfAdd($node, "dwciri:measurementType", rdfURL($trait["trait_ontology"]));

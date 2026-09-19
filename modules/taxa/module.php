@@ -7,11 +7,11 @@ function taxa_info() {
     "category" => "data",
     "table" => "taxa",
     "hname" => "Taxa",
-    "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST!",
+    "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST! RDF responses include incoming and outgoing links to recordings, traits and references, with relationship provenance.",
     "see_also" => array(
       "<a href='#recordingstaxa'>Recordings-Taxa</a> provides autocompletes on taxon ranks with recordings.</a>"
     ),
-    "rdf" => array("path" => "taxon", "node" => "taxa_rdf_node"),
+    "rdf" => array("links" => TRUE, "path" => "taxon", "node" => "taxa_rdf_node"),
     "params" => array(
       "source" => array("desc" => "Source of the taxon", "type" => "string",
         "default" => "", "column" => "source", "op" => "="),
@@ -115,8 +115,7 @@ function taxa_info() {
 
 // Source-local taxon concepts; names alone do not establish cross-source identity.
 function taxa_rdf_node($taxon, $uri) {
-  $node = array("@id" => $uri, "@type" => "http://rs.tdwg.org/dwc/terms/Taxon",
-    "dwc:taxonID" => $uri);
+  $node = array("@id" => $uri, "@type" => "http://rs.tdwg.org/dwc/terms/Taxon");
   rdfAdd($node, "dwc:scientificName", $taxon["taxon"] ?? NULL);
   rdfAdd($node, "dwc:taxonRank", $taxon["rank"] ?? NULL);
   foreach (array("genus", "subfamily", "family", "order", "class", "kingdom") as $rank) {

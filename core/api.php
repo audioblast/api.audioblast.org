@@ -292,7 +292,7 @@ function moduleAPI($db) {
   if ($rdf) {
     //RDF has no notes to say that the query failed, so the status says it
     if (!$result) {http_response_code(500);}
-    printRDF(rdfNodes($module, $ret["data"]), $params["output"],
+    printRecordRDF($db, $module, $ret["data"], $params["output"],
              ($page < ($ret["last_page"] ?? 0)) ? $page + 1 : NULL);
     return;
   }
