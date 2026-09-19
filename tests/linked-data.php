@@ -51,7 +51,12 @@ check($linkNodes[0]['rdf:object']['@id'] === 'https://api.audioblast.org/taxon/o
 check($linkNodes[0]['dwc:relationshipAccordingTo'] === 'curator', 'Asserting source');
 check($linkNodes[0]['dwc:relationshipRemarks'] === 'p. 12', 'Relationship remarks');
 check($linkNodes[0]['dcterms:type']['@id'] === $link['qualifier'], 'Qualifier IRI');
-check(isset($linkNodes[1][$link['predicate']]), 'Direct assertion');
+check(isset($linkNodes[1][rdfCompactIRI($link['predicate'])]), 'Direct assertion');
+check($linkNodes[0]['@type'] === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement', 'RDF-native assertion');
+foreach (array('resourceID', 'relatedResourceID', 'relationshipOfResourceID', 'resourceRelationshipID') as $field) {
+  check(!isset($linkNodes[0]['dwc:'.$field]), 'No duplicated Darwin Core ID fields');
+}
+check(!isset($nodes[0]['dwc:referenceID']), 'Reference identity is its IRI');
 $nodes = array_merge($nodes, $linkNodes);
 $link['id'] = 'link2'; $link['remarks'] = 'p. 14';
 $nodes = array_merge($nodes, rdfNodes($links, array($link)));
@@ -86,11 +91,35 @@ class FixtureStatement {
   function execute() {return(TRUE);}
   function get_result() {return(new FixtureResult($this->row));}
 }
+class LinkFixtureResult {
+  private $rows;
+  function __construct($rows) {$this->rows = $rows;}
+  function fetch_assoc() {return(array_shift($this->rows));}
+  function close() {}
+}
+class LinkFixtureStatement {
+  private $db;
+  function __construct($db) {$this->db = $db;}
+  function bind_param($types, &...$values) {
+    check(strlen($types) === count($values), 'All lookup values are bound');
+    $this->db->bound[] = $values;
+    return(TRUE);
+  }
+  function execute() {return(!$this->db->fail);}
+  function get_result() {return(new LinkFixtureResult($this->db->links));}
+  function close() {}
+}
 class FixtureDB {
   private $row;
+  public $links = array();
+  public $bound = array();
+  public $queries = array();
+  public $fail = FALSE;
   function __construct($row) {$this->row = $row;}
   function prepare($sql) {
-    check(strpos($sql, 'WHERE `source` = ? AND `id` = ? LIMIT 1') !== FALSE, 'Exact prepared lookup');
+    $this->queries[] = $sql;
+    if (strpos($sql, 'FROM links WHERE') !== FALSE) {return(new LinkFixtureStatement($this));}
+    check(preg_match('/WHERE `source` = \? AND `(id|traitID)` = \? LIMIT 1/', $sql) === 1, 'Exact prepared lookup using module ID column');
     return(new FixtureStatement($this->row));
   }
 }
@@ -109,7 +138,174 @@ $canonical = $ref; $canonical['source'] = 'Fixture';
 ob_start(); recordAPI(new FixtureDB($canonical)); $body = ob_get_clean();
 check(http_response_code() === 301 && $body === '', 'Canonical case redirect');
 http_response_code(200);
+// A recording-reference assertion appears from either endpoint, only once.
+$citation = array('source' => 'curator', 'id' => 'citation',
+  'subject_type' => 'recordings', 'subject_source' => 'fixture', 'subject_id' => 'rec1',
+  'predicate' => 'http://purl.org/dc/terms/isReferencedBy',
+  'object_type' => 'references', 'object_source' => 'fixture', 'object_id' => $ref['id'],
+  'qualifier' => 'https://vocab.audioblast.org/cv/referenceContent#Oscillogram',
+  'remarks' => 'p. 7');
+$db = new FixtureDB($ref);
+$db->links = array($citation);
+$embedded = rdfResponseNodes($db, $module, array($ref));
+check(count($db->queries) === 2, 'Two directional lookups per batch');
+check($db->bound[0] === array('references', 'fixture', $ref['id']), 'Exact source and ID, not asserting source');
+check(strpos($db->queries[0], $ref['id']) === FALSE, 'Record ID is not interpolated into SQL');
+$byID = array_column($embedded, NULL, '@id');
+check($byID[$uri]['@reverse']['dcterms:isReferencedBy'][0]['@id'] === 'https://api.audioblast.org/recording/fixture/rec1', 'Incoming triple is on reference via reverse');
+check($byID['https://api.audioblast.org/link/curator/citation']['dwc:relationshipRemarks'] === 'p. 7', 'Assertion provenance retained');
+check(count($embedded) === count(rdfNodes($module, array($ref))) + 1, 'Link found from both sides is deduplicated');
+$recordingModule = loadModule('recordings');
+$recording = array_fill_keys(array_keys($recordingModule['params']), NULL);
+$recording['source'] = 'fixture'; $recording['id'] = 'rec1';
+$outgoing = rdfResponseNodes($db, $recordingModule, array($recording));
+check(isset($outgoing[0][rdfCompactIRI($citation['predicate'])]), 'Outgoing triple is on the recording node');
+$nodes = array_merge($nodes, $embedded, $outgoing);
+// No relationships means an unchanged record graph; empty pages make no queries.
+$empty = new FixtureDB(NULL);
+check(rdfResponseNodes($empty, $module, array($ref)) === rdfNodes($module, array($ref)), 'Unlinked reference unchanged');
+$empty->queries = array();
+check(rdfResponseNodes($empty, $module, array()) === array() && !$empty->queries, 'Empty page skips links');
+check(rdfResponseNodes($empty, $links, array()) === array() && !$empty->queries, 'No recursive traversal');
+$batch = array();
+for ($i = 0; $i < 101; $i++) {$batch[] = array('source' => 'fixture', 'id' => (string)$i);}
+rdfResponseNodes($empty, $module, $batch);
+check(count($empty->queries) === 4, '101 records use four bounded queries, not 202');
+// Failure is distinguishable from having no links and yields no partial graph.
+$db->fail = TRUE;
+check(rdfResponseNodes($db, $module, array($ref)) === FALSE, 'Failed lookup propagates');
+ob_start(); printRecordRDF($db, $module, array($ref), 'JSON-LD'); $failure = json_decode(ob_get_clean(), TRUE);
+check(http_response_code() === 500 && $failure['@graph'] === array(), 'Failure yields HTTP 500 and empty graph');
+http_response_code(200);
+$db->fail = FALSE;
+$_GET = array('output' => 'JSON');
+$db->queries = array();
+ob_start(); recordAPI($db); $plain = json_decode(ob_get_clean(), TRUE);
+check(count($db->queries) === 1 && $plain['data'][0] === $ref, 'JSON does not query links');
+$_GET = array('output' => 'JSON-LD');
+ob_start(); recordAPI($db); $withLinks = json_decode(ob_get_clean(), TRUE);
+check(count($withLinks['@graph']) === count($embedded), 'Record handler includes assertions');
+// Trait responses embed source references and taxa, retaining measurement metadata.
+$traitModule = loadModule('traits');
+$trait = array_fill_keys(array_keys($traitModule['params']), NULL);
+$trait['source'] = 'fixture'; $trait['id'] = $ref['id'];
+$trait['trait'] = 'Duration'; $trait['value'] = '12.5';
+$trait['trait_ontology'] = 'https://vocab.audioblast.org/Duration';
+$traitURI = rdfRecordURI($traitModule, $trait['source'], $trait['id']);
+$traitReference = $citation;
+$traitReference['id'] = 'trait-reference';
+$traitReference['subject_type'] = 'traits';
+$traitReference['subject_id'] = $trait['id'];
+$traitReference['predicate'] = 'http://purl.org/dc/terms/source';
+$traitTaxon = $traitReference;
+$traitTaxon['id'] = 'trait-taxon';
+$traitTaxon['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000136';
+$traitTaxon['object_type'] = 'taxa'; $traitTaxon['object_source'] = 'other-source'; $traitTaxon['object_id'] = '42';
+$traitTaxon['qualifier'] = NULL; $traitTaxon['remarks'] = NULL;
+// Synthetic incoming relation verifies the generic reverse handling for traits.
+$traitIncoming = $citation;
+$traitIncoming['id'] = 'trait-incoming';
+$traitIncoming['predicate'] = 'http://purl.org/dc/terms/relation';
+$traitIncoming['object_type'] = 'traits'; $traitIncoming['object_id'] = $trait['id'];
+$traitDB = new FixtureDB($trait);
+$traitDB->links = array($traitReference, $traitTaxon, $traitIncoming);
+$traitNodes = rdfResponseNodes($traitDB, $traitModule, array($trait));
+$traitByID = array_column($traitNodes, NULL, '@id');
+check($traitDB->bound[0] === array('traits', 'fixture', $trait['id']), 'Trait identity used in link lookup');
+check($traitByID[$traitURI]['dcterms:source']['@id'] === $uri, 'Trait links to reference');
+check($traitByID[$traitURI]['http://purl.obolibrary.org/obo/IAO_0000136']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Trait links across sources to taxon');
+check($traitByID[$traitURI]['dwc:measurementValue'] === '12.5', 'Trait measurement retained');
+check($traitByID[$traitURI]['@reverse']['dcterms:relation'][0]['@id'] === 'https://api.audioblast.org/recording/fixture/rec1', 'Incoming trait relation');
+check($traitByID['https://api.audioblast.org/link/curator/trait-reference']['dwc:relationshipRemarks'] === 'p. 7', 'Trait link assertion metadata');
+$traitEmpty = new FixtureDB($trait);
+check(rdfResponseNodes($traitEmpty, $traitModule, array($trait)) === rdfNodes($traitModule, array($trait)), 'Unlinked trait still returned');
+$_SERVER['REQUEST_URI'] = '/trait/fixture/book/a%20%231';
+$_GET = array('output' => 'JSON');
+$traitDB->queries = array();
+ob_start(); recordAPI($traitDB); $traitJSON = json_decode(ob_get_clean(), TRUE);
+check($traitJSON['data'][0] === $trait && count($traitDB->queries) === 1, 'Trait JSON unchanged and skips links');
+$_GET = array();
+$_SERVER['HTTP_ACCEPT'] = 'application/ld+json';
+ob_start(); recordAPI($traitDB); $traitLD = json_decode(ob_get_clean(), TRUE);
+check($traitLD['@graph'] === $traitNodes, 'Trait route negotiates embedded JSON-LD');
+$_SERVER['HTTP_ACCEPT'] = 'text/turtle';
+ob_start(); recordAPI($traitDB); $traitTTL = ob_get_clean();
+check($traitTTL === rdfTurtle($traitNodes), 'Trait route negotiates equivalent Turtle');
+$nodes = array_merge($nodes, $traitNodes);
+
+// Taxa expose incoming recordings, traits and references and outgoing publications.
+$taxonModule = loadModule('taxa');
+$taxon = array('source' => 'fixture', 'id' => $ref['id'],
+  'taxon' => 'Example species', 'rank' => 'species', 'genus' => 'Example');
+$taxonURI = rdfRecordURI($taxonModule, $taxon['source'], $taxon['id']);
+$taxonLinks = array();
+foreach (array('recordings', 'traits', 'references') as $type) {
+  $entry = $traitTaxon;
+  $entry['id'] = 'taxon-incoming-'.$type;
+  $entry['subject_type'] = $type;
+  $entry['subject_id'] = 'incoming';
+  $entry['object_source'] = $taxon['source']; $entry['object_id'] = $taxon['id'];
+  $taxonLinks[] = $entry;
+}
+$publication = $traitReference;
+$publication['id'] = 'name-publication'; $publication['subject_type'] = 'taxa';
+$publication['subject_id'] = $taxon['id'];
+$publication['predicate'] = 'http://rs.tdwg.org/dwc/terms/namePublishedInID';
+$publication['qualifier'] = NULL;
+$taxonLinks[] = $publication;
+$taxonDB = new FixtureDB($taxon); $taxonDB->links = $taxonLinks;
+$taxonNodes = rdfResponseNodes($taxonDB, $taxonModule, array($taxon));
+$taxonByID = array_column($taxonNodes, NULL, '@id');
+check($taxonDB->bound[0] === array('taxa', 'fixture', $taxon['id']), 'Taxon-specific lookup');
+check(count($taxonDB->queries) === 2, 'Taxon incoming and outgoing queries');
+check(count($taxonByID[$taxonURI]['@reverse']['http://purl.obolibrary.org/obo/IAO_0000136']) === 3, 'Recordings, traits and references all appear');
+check($taxonByID[$taxonURI]['dwc:scientificName'] === 'Example species' && $taxonByID[$taxonURI]['dwc:taxonRank'] === 'species', 'Taxonomy retained');
+check($taxonByID[$taxonURI]['dwc:namePublishedInID']['@id'] === $uri, 'Name publication preserves the source predicate');
+check($taxonByID['https://api.audioblast.org/link/curator/name-publication']['rdf:predicate']['@id'] === 'http://rs.tdwg.org/dwc/terms/namePublishedInID', 'Assertion predicate matches direct triple');
+check($publication['predicate'] === 'http://rs.tdwg.org/dwc/terms/namePublishedInID', 'Stored predicate unchanged');
+$publicationDB = new FixtureDB($ref); $publicationDB->links = array($publication);
+$publicationNodes = rdfResponseNodes($publicationDB, $module, array($ref));
+$publicationByID = array_column($publicationNodes, NULL, '@id');
+check($publicationByID[$uri]['@reverse']['dwc:namePublishedInID'][0]['@id'] === $taxonURI, 'Reference uses matching reverse publication property');
+check(rdfResponseNodes(new FixtureDB($taxon), $taxonModule, array($taxon)) === rdfNodes($taxonModule, array($taxon)), 'Taxon without links remains unchanged');
+$_SERVER['REQUEST_URI'] = '/taxon/fixture/book/a%20%231';
+$_GET = array('output' => 'JSON'); $taxonDB->queries = array();
+ob_start(); recordAPI($taxonDB); $taxonJSON = json_decode(ob_get_clean(), TRUE);
+check($taxonJSON['data'][0] === $taxon && count($taxonDB->queries) === 1, 'Taxon JSON unchanged, no link query');
+$_GET = array(); $_SERVER['HTTP_ACCEPT'] = 'application/ld+json';
+ob_start(); recordAPI($taxonDB); $taxonLD = json_decode(ob_get_clean(), TRUE);
+check($taxonLD['@graph'] === $taxonNodes, 'Taxon URI serves embedded JSON-LD');
+$_SERVER['HTTP_ACCEPT'] = 'text/turtle';
+ob_start(); recordAPI($taxonDB); $taxonTTL = ob_get_clean();
+check($taxonTTL === rdfTurtle($taxonNodes), 'Taxon URI serves embedded Turtle');
+$nodes = array_merge($nodes, $taxonNodes, $publicationNodes);
+
+// Framing must retain every triple, including when both ends are requested.
+$recordingURI = 'https://api.audioblast.org/recording/fixture/rec1';
+$frameInput = rdfMergeNodes(array_merge(rdfNodes($module, array($ref)),
+  rdfNodes($recordingModule, array($recording)), rdfNodes($links, array($citation))));
+$both = rdfFrameIncoming($frameInput, array($uri, $recordingURI));
+$bothByID = array_column($both, NULL, '@id');
+check(isset($bothByID[$uri]['@reverse']['dcterms:isReferencedBy']), 'Both endpoints: reverse retained');
+check(isset($bothByID[$recordingURI]['dcterms:isReferencedBy']), 'Both endpoints: forward retained');
+$repeated = $citation; $repeated['id'] = 'citation-other'; $repeated['remarks'] = 'p. 8';
+$several = rdfFrameIncoming(rdfMergeNodes(array_merge($frameInput, rdfNodes($links, array($repeated)))), array($uri));
+$severalByID = array_column($several, NULL, '@id');
+check(count($severalByID[$uri]['@reverse']['dcterms:isReferencedBy']) === 1, 'Repeated assertion has one reverse value');
+check(isset($severalByID['https://api.audioblast.org/link/curator/citation-other']), 'Independent assertion retained');
+// Two distinct incoming recordings, plus a self-link, keep all targets.
+$another = $citation; $another['id'] = 'citation-another'; $another['subject_id'] = 'rec2';
+$self = $citation; $self['id'] = 'citation-self'; $self['subject_type'] = 'references'; $self['subject_id'] = $ref['id'];
+$manyInput = rdfMergeNodes(array_merge($frameInput, rdfNodes($links, array($another, $self))));
+$many = rdfFrameIncoming($manyInput, array($uri));
+$manyByID = array_column($many, NULL, '@id');
+check(count($manyByID[$uri]['@reverse']['dcterms:isReferencedBy']) === 3, 'Multiple incoming and self links retained');
+check(rdfCompactIRI('http://purl.org/dc/terms/isReferencedBy') === 'dcterms:isReferencedBy', 'Known predicate compacted');
+check(rdfCompactIRI('https://example.org/custom') === 'https://example.org/custom', 'Unknown predicate retained');
 if (isset($argv[1])) {
+  file_put_contents($argv[1].'/framing-before.ttl', rdfTurtle($manyInput));
+  file_put_contents($argv[1].'/framing-after.jsonld', rdfJSONLD($many));
+  file_put_contents($argv[1].'/framing-after.ttl', rdfTurtle($many));
   file_put_contents($argv[1].'/linked-data.jsonld', rdfJSONLD($nodes));
   file_put_contents($argv[1].'/linked-data.ttl', rdfTurtle($nodes));
 }

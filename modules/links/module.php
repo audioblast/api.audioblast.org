@@ -125,25 +125,20 @@ function links_rdf_endpoint($link, $side) {
 
 function links_rdf_node($link, $uri) {
   $node = array("@id" => $uri,
-    "@type" => "http://rs.tdwg.org/dwc/terms/ResourceRelationship",
-    "dwc:resourceRelationshipID" => $uri);
+    "@type" => "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement");
   rdfAdd($node, "dwc:relationshipAccordingTo", $link["source"] ?? NULL);
   rdfAdd($node, "dwc:relationshipRemarks", $link["remarks"] ?? NULL);
-  rdfAdd($node, "dwc:relationshipOfResourceID", $link["predicate"] ?? NULL);
   rdfAdd($node, "dcterms:type", rdfURL($link["qualifier"] ?? NULL));
-  $subject = links_rdf_endpoint($link, "subject");
-  $object = links_rdf_endpoint($link, "object");
-  foreach (array("subject" => "resourceID", "object" => "relatedResourceID") as $side => $property) {
-    $endpoint = ($side === "subject") ? $subject : $object;
-    $node["dwc:".$property] = $endpoint["@id"] ?? json_encode(array(
-      $link[$side."_type"], $link[$side."_source"], $link[$side."_id"]), JSON_UNESCAPED_SLASHES);
-  }
-  $predicate = rdfURL($link["predicate"] ?? NULL);
-  if ($subject !== NULL && $object !== NULL && $predicate !== NULL) {
-    $node["@type"] = array($node["@type"], "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement");
-    $node["rdf:subject"] = $subject;
-    $node["rdf:predicate"] = $predicate;
-    $node["rdf:object"] = $object;
+  rdfAdd($node, "rdf:predicate", rdfURL($link["predicate"] ?? NULL));
+  foreach (array("subject", "object") as $side) {
+    $endpoint = links_rdf_endpoint($link, $side);
+    if ($endpoint !== NULL) {
+      $node["rdf:".$side] = $endpoint;
+    } else {
+      // Preserve unresolved source-local identifiers without treating literals as resources.
+      $node["rdfs:comment"][] = "Unresolved ".$side.": ".json_encode(array(
+        $link[$side."_type"], $link[$side."_source"], $link[$side."_id"]), JSON_UNESCAPED_SLASHES);
+    }
   }
   return($node);
 }
@@ -154,5 +149,5 @@ function links_rdf_related($link, $uri) {
   $object = links_rdf_endpoint($link, "object");
   $predicate = rdfURL($link["predicate"] ?? NULL);
   if ($subject === NULL || $object === NULL || $predicate === NULL) {return(array());}
-  return(array(array("@id" => $subject["@id"], $predicate["@id"] => $object)));
+  return(array(array("@id" => $subject["@id"], rdfCompactIRI($predicate["@id"]) => $object)));
 }

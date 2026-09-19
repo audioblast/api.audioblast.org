@@ -16,7 +16,7 @@ No schema migration is needed.
 | Data | RDF |
 | --- | --- |
 | Publication | dcterms:BibliographicResource |
-| Canonical audioBLAST URI | @id and dwc:referenceID |
+| Canonical audioBLAST URI | @id |
 | BibTeX type | dwc:referenceType (article -> journalArticle; inbook/incollection -> bookSection; conference/inproceedings -> proceedingsPaper; theses -> thesis; other types retained) |
 | Source type label | dc:type |
 | Title, abstract, year | dcterms:title, dcterms:abstract, dcterms:issued |
@@ -46,22 +46,58 @@ This avoids assigning uncertain publication roles from those free-text fields.
 
 ## Relationships
 
-Each reference advertises two rdfs:seeAlso links to `/data/links/`, filtered by
-its subject identity and object identity respectively. Follow both to find
-outgoing relationships and incoming citations. No per-pair views or joins are
-introduced and no relationship query is added to each reference lookup.
+Recording, reference, trait and taxon RDF responses include their one-hop incoming and outgoing
+relationships from the central links table. This applies both to canonical record
+URIs and to paginated `/data/recordings/`, `/data/references/`, `/data/traits/` and `/data/taxa/` responses.
+Outgoing triples are merged onto the record node using compact predicate names
+where a known prefix exists. Incoming links appear under @reverse on the requested
+record in JSON-LD; Turtle writes the equivalent forward triples. If both endpoints
+are requested, both records expose the relationship without changing its direction. Each assertion also retains its
+own link URI, source, qualifier and remarks. Linked records are identified by URI;
+their full descriptions are not recursively fetched.
 
-Each link has its own URI and dwc:ResourceRelationship description. Its
-asserting source, predicate, endpoint identifiers and remarks use the existing
-Darwin Core fields. Its qualifier is an IRI-valued dcterms:type of the
-relationship. Where both endpoints resolve to RDF identities, the link is
-also an rdf:Statement, and the direct subject-predicate-object triple is
-included. Assertions differing only in remarks stay distinct.
+For example, a recording isReferencedBy a reference appears in the RDF returned
+for either endpoint. The reference response does not invent an inverse predicate.
+References still advertise the two filtered `/data/links/` discovery URLs.
+Traits include their source publications via dcterms:source and their taxa via
+IAO is about, using the stored predicates. Measurement values and ontology links
+remain on the trait node. Relationships come exclusively from the links table;
+no reference or taxon links are inferred from free-text trait fields.
+Taxa include incoming recordings, traits and references under @reverse, plus
+outgoing links from the same table. Taxonomic names and ranks remain intact.
+Relationship predicates are emitted exactly as stored, including
+dwc:namePublishedInID in the existing name-publication links. Any correction to
+that predicate or its meaning will be made at source later, not in API output.
+Prefix compaction changes only the spelling of an IRI, not its identity.
+
+Lookups use prepared parameters for the returned records' exact type/source/id,
+in batches of at most 100 records, once for each direction. The asserting source
+is not restricted to the records' source. Duplicate assertions found from both
+sides or across batches are included once by their source/id. Pagination continues
+to count records, not the additional graph nodes. A failed relationship query
+returns HTTP 500 and an empty RDF graph rather than silently returning incomplete
+data. Empty pages and JSON responses do not query relationships. No schema changes
+or per-pair views are required.
+
+Each link has its own URI and rdf:Statement description. rdf:subject,
+rdf:predicate and rdf:object identify the relationship using IRIs. The asserting
+source and remarks retain dwc:relationshipAccordingTo and dwc:relationshipRemarks;
+the qualifier is an IRI-valued dcterms:type of the assertion. The direct triple
+is included too: describing a statement alone does not assert it. Assertions
+differing only in source, qualifier or remarks remain distinct.
+
+Redundant Darwin Core ID fields are retained in tabular JSON but are not copied
+into RDF. This does not rewrite predicates supplied by the links table.
+RDF uses @id to identify references, taxa and link assertions, and its subject,
+predicate and object terms for links. Traits retain their source-local ID under
+dcterms:identifier. This follows the Darwin Core RDF guide, section 2.6:
+https://dwc.tdwg.org/rdf/#26-darwin-core-id-terms-and-rdf-normative
 
 Endpoint module types use the registered record URI paths. `term` and `iri`
 use their supplied HTTP(S) IRI directly. Unsupported module types preserve
-endpoint type/source/id as a JSON tuple literal in the corresponding Darwin
-Core ID field, without inventing a resolvable URI or emitting a direct triple.
+endpoint type/source/id as a JSON tuple in an rdfs:comment labelled with the
+unresolved endpoint. Such incomplete assertion descriptions omit that RDF
+endpoint and do not emit a direct triple or invent a resolvable URI.
 No existence checks are made: missing records remain dangling targets, as in
 the links table, and return 404 when looked up.
 
@@ -85,5 +121,6 @@ Use the same output directory for both runtimes (Cygwin /tmp is C:/cygwin64/tmp
 for Windows Python). The fixtures use a mock database, never settings/db.php.
 They cover Unicode and escaping, sparse records, date precision, contributors,
 multiple attachments, cross-source links, qualifiers, distinct assertions,
-URI encoding, negotiation, JSON compatibility, 301/404 handling and graph
-equivalence. Production data and dangling-target counts have not been queried.
+URI encoding, negotiation, JSON compatibility, 301/404 handling, embedded
+incoming/outgoing links, batching, query failures, reverse framing, multiple
+assertions and graph equivalence before and after framing. Production data and dangling-target counts have not been queried.

@@ -67,6 +67,15 @@ This is an export inventory, not a check of the current production database.
   already used in the export, rather than new definitions.
 - Call-type and page detail remains in relationship remarks where the export
   puts it; do not create a compound term solely for those remarks.
-- No new audioBLAST property is required by the current reference mapping:
-  it uses Darwin Core, Dublin Core, BIBO, FOAF and RDF/RDFS.
+- No new audioBLAST property is introduced by the reference and taxon RDF
+  implementation. Link predicates are preserved as supplied.
 - Extend this list whenever another missing vocabulary term is encountered.
+
+## Source correction deferred
+
+The links export currently uses
+http://rs.tdwg.org/dwc/terms/namePublishedInID for taxon name-publication links.
+The user chose to correct this at source later. Preserve that predicate in the
+API; do not map it to a different vocabulary property during serialization.
+Confirm the intended relationship before selecting or defining a replacement.
+No NamePublishedIn property is currently requested for the audioBLAST vocabulary.
