@@ -136,7 +136,7 @@ Modules may set `rdf.id` to select an existing ID parameter; the default is `id`
 Each ROI uses `ac:startTime` and `ac:endTime` for offsets in seconds, and
 `ac:isROIOf` to identify `/recording/{source}/{source_id}`. The annotation graph
 also includes the recording's inverse `ac:hasROI` relationship and, when supplied,
-its `ac:accessURI`. This does not fetch or expand all annotations in recording
+a service access point holding its `ac:accessURI`. This does not fetch or expand all annotations in recording
 responses. Missing recording identifiers do not produce a fabricated recording URI.
 
 Annotator, annotation date, information URL, taxon name and annotation category
@@ -151,3 +151,37 @@ frequency bounds in this table. No new vocabulary terms are needed.
 Incoming and outgoing links use the existing module type `annomate` and
 `annotation_id` as their source-local identity. Link predicates remain unchanged.
 See the [Audiovisual Core ROI terms](https://ac.tdwg.org/termlist/#ac_RegionOfInterest).
+
+## Recording representations and service access points
+
+Recording RDF links through `ac:hasServiceAccessPoint` to a separate
+`ac:ServiceAccessPoint` node. `ac:accessURI` and the literal MIME type (`dc:format`)
+are on that representation node, not on the recording or annotation ROI. Ordinary
+JSON and the existing flat `format=ac` output are unchanged.
+
+The current source schema supplies one recording file. Future audio variants,
+spectrograms and thumbnails can each have their own access point, including
+several representations with the same MIME type. No future representations or
+quality labels are fabricated. Recording-level title, creator, taxon, capture
+date, duration, rights and information page stay on the recording: the current
+schema does not provide separate representation-specific values for these.
+
+Until sources supply stable representation IDs, access-point fragment IDs use a
+SHA-256 digest of the exact URL, scoped to the recording URI. Recording and
+annotation responses share an access-point identity when both recording identity
+and URL match. Different URLs stay distinct; there is no URL normalization or
+assumption that their encodings or timelines match. A URL change changes this
+fallback identity. Source representation IDs should replace this fallback when
+a representation inventory is available; that will require an identity migration.
+
+A MIME-only record retains a partial access-point description without inventing
+an access URL. Its fallback identity is scoped to the recording and MIME value;
+this does not identify multiple same-format representations without URLs. An
+annotation with no valid recording URL adds no access-point description. MIME
+values are never inferred from filename extensions. No new vocabulary terms are
+needed. See the [Audiovisual Core service access point vocabulary](https://ac.tdwg.org/termlist/#7-11-service-access-point-vocabulary).
+
+Annotations still describe regions of the recording. Any future spectrogram
+pixel coordinates must identify the particular image representation. Recording
+responses still do not query annotations directly; discovery awaits links-table
+relationships.

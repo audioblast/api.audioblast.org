@@ -345,3 +345,16 @@ function rdfFrameIncoming($nodes, $focus) {
   }
   return(array_values($byID));
 }
+
+// A representation has its own identity, shared across recording and ROI graphs.
+// Keep exact source URLs distinct; do not infer variants or rewrite access URLs.
+function rdfServiceAccessPoint($recordingURI, $url, $mime = NULL) {
+  $access = rdfURL($url);
+  if ($access === NULL && ($mime === NULL || $mime === "")) {return(NULL);}
+  $key = $access !== NULL ? "url:".$access["@id"] : "format:".$mime;
+  $node = array("@id" => $recordingURI."#service-".hash("sha256", $key),
+    "@type" => "http://rs.tdwg.org/ac/terms/ServiceAccessPoint");
+  rdfAdd($node, "ac:accessURI", $access);
+  rdfAdd($node, "dc:format", $mime);
+  return($node);
+}
