@@ -184,7 +184,8 @@ function annomate_rdf_related($annotation, $uri) {
   $recording = annomate_rdf_recording($annotation);
   if ($recording === NULL) {return(array());}
   $node = array("@id" => $recording, "ac:hasROI" => rdfIRI($uri));
-  // Match the recording module's access metadata; the URL is not the ROI itself.
-  rdfAdd($node, "ac:accessURI", rdfURL($annotation["recording_url"] ?? NULL));
-  return(array($node));
+  $service = rdfServiceAccessPoint($recording, $annotation["recording_url"] ?? NULL);
+  if ($service === NULL) {return(array($node));}
+  $node["ac:hasServiceAccessPoint"] = rdfIRI($service["@id"]);
+  return(array($node, $service));
 }

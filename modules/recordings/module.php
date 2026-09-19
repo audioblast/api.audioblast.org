@@ -12,7 +12,8 @@ function recordings_info() {
     "rdf" => array(
       "links" => TRUE,
       "path" => "recording",
-      "node" => "recordings_rdf_node"
+      "node" => "recordings_rdf_node",
+      "related" => "recordings_rdf_related"
     ),
     "params" => array(
       "source" => array(
@@ -262,10 +263,14 @@ function recordings_rdf_node($recording, $uri) {
   rdfAdd($node, "ac:providerManagedID", $recording["id"]);
   rdfAdd($node, "dcterms:available", rdfDate($recording["post_date"]));
   rdfAdd($node, "ac:furtherInformationURL", rdfURL($recording["info_url"]));
-  //Not every file is at a URL
-  rdfAdd($node, "ac:accessURI", rdfURL($recording["filename"]));
-  rdfAdd($node, "dc:format", $recording["mime"]);
+  $service = rdfServiceAccessPoint($uri, $recording["filename"] ?? NULL, $recording["mime"] ?? NULL);
+  if ($service !== NULL) {$node["ac:hasServiceAccessPoint"] = rdfIRI($service["@id"]);}
   return($node);
+}
+
+function recordings_rdf_related($recording, $uri) {
+  $service = rdfServiceAccessPoint($uri, $recording["filename"] ?? NULL, $recording["mime"] ?? NULL);
+  return($service === NULL ? array() : array($service));
 }
 
 function recordings_embed_info() {

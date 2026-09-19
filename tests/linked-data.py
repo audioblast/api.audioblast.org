@@ -54,6 +54,19 @@ assert (roi, AC.isROIOf, recording) in a
 assert (recording, AC.hasROI, roi) in a
 assert (roi, AC.startTime, Literal("0", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
 assert (roi, AC.endTime, Literal("1.25", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
-assert (recording, AC.accessURI, URIRef("https://example.org/audio.wav")) in a
+services = list(a.objects(recording, AC.hasServiceAccessPoint))
+assert len(services) == 1
+assert (services[0], RDF.type, AC.ServiceAccessPoint) in a
+assert (services[0], AC.accessURI, URIRef("https://example.org/audio.wav")) in a
+assert (services[0], URIRef("http://purl.org/dc/elements/1.1/format"), Literal("audio/wav")) in a
+assert not list(a.objects(recording, AC.accessURI))
+assert not list(a.objects(recording, URIRef("http://purl.org/dc/elements/1.1/format")))
 assert not list(a.objects(roi, AC.accessURI))
 print("Annotation ROI bounds, recording relationships and access metadata verified")
+
+services_json = Graph().parse(base / "service-access.jsonld", format="json-ld")
+services_turtle = Graph().parse(base / "service-access.ttl", format="turtle")
+assert isomorphic(services_json, services_turtle)
+assert len(list(services_json.objects(recording, AC.hasServiceAccessPoint))) == 3
+assert len(list(services_json.subjects(RDF.type, AC.ServiceAccessPoint))) == 3
+print("Multiple audio/image service access points serialize equivalently")

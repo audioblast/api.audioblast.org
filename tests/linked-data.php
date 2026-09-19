@@ -313,6 +313,39 @@ $linkedAnnotations = rdfResponseNodes($annotationDB, $annotationModule, array($a
 check($annotationDB->bound[0] === array('annomate', 'fixture', $annotation['annotation_id']), 'Link lookup uses annotation identity');
 $nodes = array_merge($nodes, $linkedAnnotations);
 
+// Access metadata describes representations, shared by recording and ROI graphs.
+$accessRecording = $recording;
+$accessRecording['filename'] = $annotation['recording_url'];
+$accessRecording['mime'] = 'audio/wav';
+$accessNodes = rdfNodes($recordingModule, array($accessRecording));
+$service = $accessNodes[1];
+check($annotationNodes[2]['@id'] === $service['@id'], 'Recording and ROI share access point identity');
+check(!isset($accessNodes[0]['ac:accessURI']) && !isset($accessNodes[0]['dc:format']), 'Representation metadata moved off recording');
+check($service['dc:format'] === 'audio/wav', 'MIME belongs to service');
+check(rdfServiceAccessPoint($recordingURI ?? 'https://example.org/recording', '', '') === NULL, 'No empty service');
+$formatOnly = rdfServiceAccessPoint('https://example.org/recording', 'local.wav', 'audio/wav');
+check(!isset($formatOnly['ac:accessURI']) && $formatOnly['dc:format'] === 'audio/wav', 'Format retained without invented URL');
+$alternate = rdfServiceAccessPoint($accessNodes[0]['@id'], 'https://example.org/audio.mp3', 'audio/mpeg');
+check($alternate['@id'] !== $service['@id'], 'Distinct URLs have distinct access points');
+// Multiple representations remain separate even when they share a MIME type.
+$spectrogram = rdfServiceAccessPoint($accessNodes[0]['@id'], 'https://example.org/spectrogram.png', 'image/png');
+$thumbnail = rdfServiceAccessPoint($accessNodes[0]['@id'], 'https://example.org/thumbnail.png', 'image/png');
+check($spectrogram['@id'] !== $thumbnail['@id'], 'Same-format representations have distinct identities');
+$representations = array($service, $spectrogram, $thumbnail);
+$representationGraph = $representations;
+foreach ($representations as $representation) {
+  $representationGraph[] = array('@id' => $accessNodes[0]['@id'],
+    'ac:hasServiceAccessPoint' => rdfIRI($representation['@id']));
+}
+$representationGraph = rdfMergeNodes($representationGraph);
+$representationByID = array_column($representationGraph, NULL, '@id');
+check(count($representationByID[$accessNodes[0]['@id']]['ac:hasServiceAccessPoint']) === 3, 'Recording can have audio, spectrogram and thumbnail services');
+if (isset($argv[1])) {
+  file_put_contents($argv[1].'/service-access.jsonld', rdfJSONLD($representationGraph));
+  file_put_contents($argv[1].'/service-access.ttl', rdfTurtle($representationGraph));
+}
+$nodes = array_merge($nodes, $accessNodes);
+
 // Framing must retain every triple, including when both ends are requested.
 $recordingURI = 'https://api.audioblast.org/recording/fixture/rec1';
 $frameInput = rdfMergeNodes(array_merge(rdfNodes($module, array($ref)),
