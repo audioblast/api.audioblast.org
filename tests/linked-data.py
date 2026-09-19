@@ -18,3 +18,30 @@ assert (URIRef("https://api.audioblast.org/link/curator/link1"), DWC.relationshi
 assert (URIRef("https://api.audioblast.org/link/curator/link2"), DWC.relationshipRemarks, Literal("p. 14")) in a
 assert (URIRef(reference), URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), URIRef("https://api.audioblast.org/taxon/other-source/42")) in a
 print(f"Equivalent RDF graphs: {len(a)} triples; author order and distinct assertions verified")
+
+assert (URIRef("https://api.audioblast.org/recording/fixture/rec1"), URIRef("http://purl.org/dc/terms/isReferencedBy"), URIRef(reference)) in a
+assert (URIRef("https://api.audioblast.org/link/curator/citation"), DWC.relationshipRemarks, Literal("p. 7")) in a
+print("Embedded recording-reference relationship and assertion metadata verified")
+
+before = Graph().parse(base / "framing-before.ttl", format="turtle")
+after_json = Graph().parse(base / "framing-after.jsonld", format="json-ld")
+after_turtle = Graph().parse(base / "framing-after.ttl", format="turtle")
+assert isomorphic(before, after_json) and isomorphic(before, after_turtle), "Framing changed the graph"
+for local in ("referenceID", "resourceRelationshipID", "resourceID", "relatedResourceID", "relationshipOfResourceID", "taxonID", "measurementID"):
+    assert not list(a.triples((None, DWC[local], None))), f"Tabular ID leaked into RDF: {local}"
+print("Reverse framing preserves all triples; no redundant Darwin Core ID fields remain")
+
+trait = URIRef("https://api.audioblast.org/trait/fixture/book/a%20%231")
+assert (trait, URIRef("http://purl.org/dc/terms/source"), URIRef(reference)) in a
+assert (trait, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), URIRef("https://api.audioblast.org/taxon/other-source/42")) in a
+assert (URIRef("https://api.audioblast.org/recording/fixture/rec1"), URIRef("http://purl.org/dc/terms/relation"), trait) in a
+assert (trait, DWC.measurementValue, Literal("12.5")) in a
+print("Trait-reference, trait-taxon and incoming relationships verified")
+
+taxon = URIRef("https://api.audioblast.org/taxon/fixture/book/a%20%231")
+for kind in ("recording", "trait", "reference"):
+    assert (URIRef(f"https://api.audioblast.org/{kind}/fixture/incoming"), URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), taxon) in a
+assert (taxon, URIRef("http://rs.tdwg.org/dwc/terms/namePublishedInID"), URIRef(reference)) in a
+assert (URIRef("https://api.audioblast.org/link/curator/name-publication"), RDF.predicate, URIRef("http://rs.tdwg.org/dwc/terms/namePublishedInID")) in a
+assert not list(a.triples((None, URIRef("https://vocab.audioblast.org/NamePublishedIn"), None)))
+print("Taxon incoming links and unchanged source publication predicate verified")
