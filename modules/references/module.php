@@ -9,6 +9,7 @@ function references_info() {
     "hname" => "References",
     "desc" => "This endpoint allows for the querying of the bibliographic references held within audioBLAST!",
     "source_notes" => "References are ingested from BibTeX or CSV, and are identified by their id within each source (for BibTeX, the entry's key).",
+    "rdf" => array("path" => "reference", "node" => "references_rdf_node", "related" => "references_rdf_related"),
     "params" => array(
       "source" => array(
         "desc" => "Source",
@@ -268,11 +269,128 @@ function references_info() {
         "allowed" => array(
           "JSON",
           "nakedJSON",
-          "tabulator"
+          "tabulator",
+          "JSON-LD",
+          "Turtle"
         ),
         "default" => "JSON"
       )
     )
   );
   return($info);
+}
+
+// A publication is distinct from the catalogue page describing it.
+function references_rdf_node($ref, $uri) {
+  $types = array(
+    "article" => "journalArticle", "book" => "book", "booklet" => "book",
+    "inbook" => "bookSection", "incollection" => "bookSection",
+    "inproceedings" => "proceedingsPaper", "conference" => "proceedingsPaper",
+    "proceedings" => "proceedings", "phdthesis" => "thesis",
+    "mastersthesis" => "thesis", "techreport" => "report", "manual" => "manual"
+  );
+  $node = array("@id" => $uri,
+    "@type" => "http://purl.org/dc/terms/BibliographicResource",
+    "dwc:referenceID" => $uri);
+  $type = $ref["type"] ?? "";
+  rdfAdd($node, "dwc:referenceType", $types[$type] ?? $type);
+  foreach (array(
+    "title" => "dcterms:title", "note" => "dwc:referenceRemarks",
+    "abstract" => "dcterms:abstract", "doi" => "bibo:doi",
+    "pmid" => "bibo:pmid", "isbn" => "bibo:isbn",
+    "volume" => "bibo:volume", "number" => "bibo:issue",
+    "pages" => "bibo:pages", "chapter" => "bibo:chapter",
+    "edition" => "bibo:edition", "type_name" => "dc:type"
+  ) as $field => $property) {
+    rdfAdd($node, $property, $ref[$field] ?? NULL);
+  }
+  // Keep unusual date strings as supplied; corrections belong in the ingest.
+  $year = $ref["year"] ?? NULL;
+  rdfAdd($node, "dcterms:issued", rdfDate($year) ?? $year);
+  $node["rdfs:seeAlso"] = array();
+  foreach (array("info_url", "url") as $field) {
+    $url = rdfURL($ref[$field] ?? NULL);
+    if ($url !== NULL) {$node["rdfs:seeAlso"][] = $url;}
+  }
+  if (rdfURL($ref["url"] ?? NULL) !== NULL) {
+    $node["bibo:uri"] = rdfTyped($ref["url"], "xsd:anyURI");
+  }
+  // Discover incoming and outgoing assertions without extra database queries.
+  foreach (array("subject", "object") as $side) {
+    $node["rdfs:seeAlso"][] = rdfIRI("https://api.audioblast.org/data/links/?".http_build_query(array(
+      $side."_type" => "references", $side."_source" => $ref["source"],
+      $side."_id" => $ref["id"])));
+  }
+  // Literal names preserve source order and corporate-name braces.
+  rdfAdd($node, "dc:creator", $ref["author"] ?? NULL);
+  rdfAdd($node, "dc:publisher", $ref["publisher"] ?? NULL);
+  $keywords = references_rdf_values($ref["keywords"] ?? "");
+  if ($keywords) {$node["dc:subject"] = $keywords;}
+  $attachments = array();
+  foreach (references_rdf_values($ref["attachments"] ?? "") as $url) {
+    $value = rdfURL($url);
+    if ($value !== NULL) {$attachments[] = $value;}
+  }
+  if ($attachments) {$node["dcterms:relation"] = $attachments;}
+  foreach (array("journal", "booktitle", "series") as $field) {
+    if (($ref[$field] ?? "") !== "") {
+      $node["dcterms:isPartOf"][] = rdfIRI($uri."#".$field);
+    }
+  }
+  foreach (array("author" => "dcterms:creator", "editor" => "bibo:editor") as $role => $property) {
+    $names = references_rdf_values($ref[$role] ?? "");
+    if (!$names) {continue;}
+    $node["bibo:".$role."List"] = rdfIRI($uri."#".$role."s");
+    foreach ($names as $index => $name) {
+      $node[$property][] = rdfIRI($uri."#".$role."-".($index + 1));
+    }
+  }
+  $identifiers = array();
+  if (!empty($ref["doi"]) && preg_match('#^10[.][0-9]+/[^\s]+$#', $ref["doi"])) {
+    $identifiers[] = rdfIRI("https://doi.org/".implode("/", array_map("rawurlencode", explode("/", $ref["doi"]))));
+  }
+  if (!empty($ref["pmid"]) && preg_match("/^[0-9]+$/", (string)$ref["pmid"])) {
+    $identifiers[] = rdfIRI("https://pubmed.ncbi.nlm.nih.gov/".$ref["pmid"]."/");
+  }
+  if ($identifiers) {
+    $node["dcterms:identifier"] = array_map(function($value) {return($value["@id"]);}, $identifiers);
+    $node["rdfs:seeAlso"] = array_merge($node["rdfs:seeAlso"], $identifiers);
+  }
+  if (empty($ref["journal"])) {rdfAdd($node, "bibo:issn", $ref["issn"] ?? NULL);}
+  return($node);
+}
+
+// Related descriptions have local fragment identifiers, not invented global identities.
+function references_rdf_related($ref, $uri) {
+  $nodes = array();
+  foreach (array("journal" => "Journal", "booktitle" => "Document", "series" => "Series") as $field => $type) {
+    if (($ref[$field] ?? "") === "") {continue;}
+    $node = array("@id" => $uri."#".$field,
+      "@type" => "http://purl.org/ontology/bibo/".$type,
+      "dcterms:title" => $ref[$field]);
+    if ($field === "journal") {
+      rdfAdd($node, "bibo:issn", $ref["issn"] ?? NULL);
+      rdfAdd($node, "bibo:shortTitle", $ref["journal_abbreviation"] ?? NULL);
+    }
+    $nodes[] = $node;
+  }
+  foreach (array("author", "editor") as $role) {
+    $names = references_rdf_values($ref[$role] ?? "");
+    if (!$names) {continue;}
+    $sequence = array("@id" => $uri."#".$role."s",
+      "@type" => "http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq");
+    foreach ($names as $index => $name) {
+      $id = $uri."#".$role."-".($index + 1);
+      $sequence["rdf:_".($index + 1)] = rdfIRI($id);
+      $nodes[] = array("@id" => $id,
+        "@type" => "http://xmlns.com/foaf/0.1/Agent", "foaf:name" => $name);
+    }
+    $nodes[] = $sequence;
+  }
+  return($nodes);
+}
+
+function references_rdf_values($text) {
+  return(array_values(array_filter(array_map("trim", explode(";", (string)$text)),
+    function($value) {return($value !== "");})));
 }
