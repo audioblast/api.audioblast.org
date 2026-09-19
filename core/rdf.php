@@ -5,8 +5,9 @@ RDF output (output=JSON-LD or output=Turtle, or asked for by media type, see
 rdfNegotiate()) for modules that describe their records in RDF. Such a module
 has an "rdf" entry in its info giving "path", the start of its records' URIs
 (see rdfRecordURI()), and "node", the function that turns a record and its URI
-into a node. Records are identified by their source and id parameters. JSON-LD
-and Turtle are written from the same nodes, so both formats always say the same
+into a node. An optional "related" callback returns additional nodes describing
+contributors, containers or assertions. Records are identified by their source
+and id parameters. JSON-LD and Turtle are written from the same nodes, so both formats always say the same
 thing.
 
 A node is an array of properties (prefixed names, see rdfContext()) and their
@@ -66,6 +67,10 @@ function rdfRecordURI($module, $source, $id) {
 function rdfContext() {
   return(array(
     "abv" => "https://vocab.audioblast.org/",
+    "bibo" => "http://purl.org/ontology/bibo/",
+    "foaf" => "http://xmlns.com/foaf/0.1/",
+    "rdf" => "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs" => "http://www.w3.org/2000/01/rdf-schema#",
     "ac" => "http://rs.tdwg.org/ac/terms/",
     "dc" => "http://purl.org/dc/elements/1.1/",
     "dcterms" => "http://purl.org/dc/terms/",
@@ -127,7 +132,13 @@ function rdfDate($date, $time = NULL) {
 function rdfNodes($module, $records) {
   $nodes = array();
   foreach ($records as $record) {
-    $nodes[] = call_user_func($module["rdf"]["node"], $record, rdfRecordURI($module, $record["source"], $record["id"]));
+    $uri = rdfRecordURI($module, $record["source"], $record["id"]);
+    $nodes[] = call_user_func($module["rdf"]["node"], $record, $uri);
+    if (isset($module["rdf"]["related"])) {
+      foreach (call_user_func($module["rdf"]["related"], $record, $uri) as $related) {
+        $nodes[] = $related;
+      }
+    }
   }
   return($nodes);
 }
@@ -152,7 +163,8 @@ function rdfTurtle($nodes) {
       if ($property == "@type") {
         $statements[] = "a ".implode(", ", array_map("turtleIRI", $values));
       } else {
-        $statements[] = $property." ".implode(", ", array_map("turtleValue", $values));
+        $predicate = preg_match("#^https?://#", $property) ? turtleIRI($property) : $property;
+        $statements[] = $predicate." ".implode(", ", array_map("turtleValue", $values));
       }
     }
     $out .= "\n".turtleIRI($node["@id"])." ".implode(" ;\n    ", $statements)." .\n";

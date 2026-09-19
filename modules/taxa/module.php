@@ -11,7 +11,12 @@ function taxa_info() {
     "see_also" => array(
       "<a href='#recordingstaxa'>Recordings-Taxa</a> provides autocompletes on taxon ranks with recordings.</a>"
     ),
+    "rdf" => array("path" => "taxon", "node" => "taxa_rdf_node"),
     "params" => array(
+      "source" => array("desc" => "Source of the taxon", "type" => "string",
+        "default" => "", "column" => "source", "op" => "="),
+      "id" => array("desc" => "Taxon ID within its source", "type" => "string",
+        "default" => "", "column" => "id", "op" => "="),
       "taxon" => array(
         "desc" => "Taxonomic name",
         "type" => "string",
@@ -97,11 +102,25 @@ function taxa_info() {
         "type" => "string",
         "allowed" => array(
           "JSON",
-          "nakedJSON"
+          "nakedJSON",
+          "JSON-LD",
+          "Turtle"
         ),
         "default" => "JSON"
       )
     )
   );
   return($info);
+}
+
+// Source-local taxon concepts; names alone do not establish cross-source identity.
+function taxa_rdf_node($taxon, $uri) {
+  $node = array("@id" => $uri, "@type" => "http://rs.tdwg.org/dwc/terms/Taxon",
+    "dwc:taxonID" => $uri);
+  rdfAdd($node, "dwc:scientificName", $taxon["taxon"] ?? NULL);
+  rdfAdd($node, "dwc:taxonRank", $taxon["rank"] ?? NULL);
+  foreach (array("genus", "subfamily", "family", "order", "class", "kingdom") as $rank) {
+    rdfAdd($node, "dwc:".$rank, $taxon[$rank] ?? NULL);
+  }
+  return($node);
 }

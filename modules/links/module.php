@@ -9,6 +9,7 @@ function links_info() {
     "hname" => "Links",
     "desc" => "This endpoint allows for the querying of the links between records held within audioBLAST!, e.g. references and the taxa they are about, or recordings and the references they are published in. A link relates a subject to an object, each identified by its type (a data module, term for a vocabulary term, or iri), the source that holds it and its id there, so links can join the records of different sources. Links follow the Darwin Core Resource Relationship.",
     "source_notes" => "Links are ingested from each source's links, and replace the links that the source gave before.",
+    "rdf" => array("path" => "link", "node" => "links_rdf_node", "related" => "links_rdf_related"),
     "params" => array(
       "source" => array(
         "desc" => "Source that gives the link (dwc:relationshipAccordingTo)",
@@ -100,11 +101,58 @@ function links_info() {
         "allowed" => array(
           "JSON",
           "nakedJSON",
-          "tabulator"
+          "tabulator",
+          "JSON-LD",
+          "Turtle"
         ),
         "default" => "JSON"
       )
     )
   );
   return($info);
+}
+
+// Resolve endpoints using the same module registration as the record router.
+// Unknown module types remain in the relationship record as source-local IDs.
+function links_rdf_endpoint($link, $side) {
+  $type = $link[$side."_type"] ?? "";
+  $id = $link[$side."_id"] ?? "";
+  if ($type === "term" || $type === "iri") {return(rdfURL($id));}
+  $modules = loadModules();
+  if (!isset($modules[$type]["rdf"])) {return(NULL);}
+  return(rdfIRI(rdfRecordURI($modules[$type], $link[$side."_source"], $id)));
+}
+
+function links_rdf_node($link, $uri) {
+  $node = array("@id" => $uri,
+    "@type" => "http://rs.tdwg.org/dwc/terms/ResourceRelationship",
+    "dwc:resourceRelationshipID" => $uri);
+  rdfAdd($node, "dwc:relationshipAccordingTo", $link["source"] ?? NULL);
+  rdfAdd($node, "dwc:relationshipRemarks", $link["remarks"] ?? NULL);
+  rdfAdd($node, "dwc:relationshipOfResourceID", $link["predicate"] ?? NULL);
+  rdfAdd($node, "dcterms:type", rdfURL($link["qualifier"] ?? NULL));
+  $subject = links_rdf_endpoint($link, "subject");
+  $object = links_rdf_endpoint($link, "object");
+  foreach (array("subject" => "resourceID", "object" => "relatedResourceID") as $side => $property) {
+    $endpoint = ($side === "subject") ? $subject : $object;
+    $node["dwc:".$property] = $endpoint["@id"] ?? json_encode(array(
+      $link[$side."_type"], $link[$side."_source"], $link[$side."_id"]), JSON_UNESCAPED_SLASHES);
+  }
+  $predicate = rdfURL($link["predicate"] ?? NULL);
+  if ($subject !== NULL && $object !== NULL && $predicate !== NULL) {
+    $node["@type"] = array($node["@type"], "http://www.w3.org/1999/02/22-rdf-syntax-ns#Statement");
+    $node["rdf:subject"] = $subject;
+    $node["rdf:predicate"] = $predicate;
+    $node["rdf:object"] = $object;
+  }
+  return($node);
+}
+
+// Publish the assertion too, while keeping each qualified/provenanced link separate.
+function links_rdf_related($link, $uri) {
+  $subject = links_rdf_endpoint($link, "subject");
+  $object = links_rdf_endpoint($link, "object");
+  $predicate = rdfURL($link["predicate"] ?? NULL);
+  if ($subject === NULL || $object === NULL || $predicate === NULL) {return(array());}
+  return(array(array("@id" => $subject["@id"], $predicate["@id"] => $object)));
 }
