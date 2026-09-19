@@ -36,7 +36,7 @@ function recordAPI($db) {
 
   //Source and id are matched exactly, which the table's key on them makes quick
   $sql  = SELECTclause($module, NULL, "table", "internal");
-  $sql .= " WHERE `".$module["params"]["source"]["column"]."` = ? AND `".$module["params"]["id"]["column"]."` = ? LIMIT 1;";
+  $sql .= " WHERE `".$module["params"]["source"]["column"]."` = ? AND `".$module["params"][$module["rdf"]["id"] ?? "id"]["column"]."` = ? LIMIT 1;";
   $stmt = $db->prepare($sql);
   $result = FALSE;
   if ($stmt) {
@@ -49,10 +49,10 @@ function recordAPI($db) {
     http_response_code(500);
   } else if ($record === NULL) {
     http_response_code(404);
-  } else if ($record["source"] !== $source || $record["id"] !== $id) {
+  } else if ($record["source"] !== $source || $record[$module["rdf"]["id"] ?? "id"] !== $id) {
     //The database compares text regardless of case, but each record has one URI
     $query = parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY);
-    header("Location: ".rdfRecordURI($module, $record["source"], $record["id"]).(($query === NULL) ? "" : "?".$query), TRUE, 301);
+    header("Location: ".rdfRecordURI($module, $record["source"], $record[$module["rdf"]["id"] ?? "id"]).(($query === NULL) ? "" : "?".$query), TRUE, 301);
     return;
   }
 
