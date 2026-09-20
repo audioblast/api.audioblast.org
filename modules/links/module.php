@@ -50,7 +50,7 @@ function links_info() {
         "op" => "="
       ),
       "predicate" => array(
-        "desc" => "IRI of the relationship (dwc:relationshipOfResourceID), e.g. http://purl.obolibrary.org/obo/IAO_0000136 (is about) or http://rs.tdwg.org/dwc/terms/namePublishedInID",
+        "desc" => "IRI of the relationship (dwc:relationshipOfResourceID), e.g. http://purl.obolibrary.org/obo/IAO_0000136 (is about) or http://purl.org/dc/terms/isReferencedBy",
         "type" => "string",
         "default" => "",
         "column" => "predicate",

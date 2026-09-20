@@ -233,7 +233,7 @@ ob_start(); recordAPI($traitDB); $traitTTL = ob_get_clean();
 check($traitTTL === rdfTurtle($traitNodes), 'Trait route negotiates equivalent Turtle');
 $nodes = array_merge($nodes, $traitNodes);
 
-// Taxa expose incoming recordings, traits and references and outgoing publications.
+// Taxa expose incoming recordings, traits and references, and their own outgoing links.
 $taxonModule = loadModule('taxa');
 $taxon = array('source' => 'fixture', 'id' => $ref['id'],
   'taxon' => 'Example species', 'rank' => 'species', 'genus' => 'Example');
@@ -247,12 +247,13 @@ foreach (array('recordings', 'traits', 'references') as $type) {
   $entry['object_source'] = $taxon['source']; $entry['object_id'] = $taxon['id'];
   $taxonLinks[] = $entry;
 }
-$publication = $traitReference;
-$publication['id'] = 'name-publication'; $publication['subject_type'] = 'taxa';
-$publication['subject_id'] = $taxon['id'];
-$publication['predicate'] = 'http://rs.tdwg.org/dwc/terms/namePublishedInID';
-$publication['qualifier'] = NULL;
-$taxonLinks[] = $publication;
+// An outgoing taxon link keeps whichever predicate its source gives it.
+$concept = $traitReference;
+$concept['id'] = 'taxon-concept'; $concept['subject_type'] = 'taxa';
+$concept['subject_id'] = $taxon['id'];
+$concept['predicate'] = 'http://rs.tdwg.org/dwc/terms/nameAccordingToID';
+$concept['qualifier'] = NULL;
+$taxonLinks[] = $concept;
 $taxonDB = new FixtureDB($taxon); $taxonDB->links = $taxonLinks;
 $taxonNodes = rdfResponseNodes($taxonDB, $taxonModule, array($taxon));
 $taxonByID = array_column($taxonNodes, NULL, '@id');
@@ -260,13 +261,13 @@ check($taxonDB->bound[0] === array('taxa', 'fixture', $taxon['id']), 'Taxon-spec
 check(count($taxonDB->queries) === 2, 'Taxon incoming and outgoing queries');
 check(count($taxonByID[$taxonURI]['@reverse']['http://purl.obolibrary.org/obo/IAO_0000136']) === 3, 'Recordings, traits and references all appear');
 check($taxonByID[$taxonURI]['dwc:scientificName'] === 'Example species' && $taxonByID[$taxonURI]['dwc:taxonRank'] === 'species', 'Taxonomy retained');
-check($taxonByID[$taxonURI]['dwc:namePublishedInID']['@id'] === $uri, 'Name publication preserves the source predicate');
-check($taxonByID['https://api.audioblast.org/link/curator/name-publication']['rdf:predicate']['@id'] === 'http://rs.tdwg.org/dwc/terms/namePublishedInID', 'Assertion predicate matches direct triple');
-check($publication['predicate'] === 'http://rs.tdwg.org/dwc/terms/namePublishedInID', 'Stored predicate unchanged');
-$publicationDB = new FixtureDB($ref); $publicationDB->links = array($publication);
-$publicationNodes = rdfResponseNodes($publicationDB, $module, array($ref));
-$publicationByID = array_column($publicationNodes, NULL, '@id');
-check($publicationByID[$uri]['@reverse']['dwc:namePublishedInID'][0]['@id'] === $taxonURI, 'Reference uses matching reverse publication property');
+check($taxonByID[$taxonURI]['dwc:nameAccordingToID']['@id'] === $uri, 'Outgoing taxon link preserves the source predicate');
+check($taxonByID['https://api.audioblast.org/link/curator/taxon-concept']['rdf:predicate']['@id'] === 'http://rs.tdwg.org/dwc/terms/nameAccordingToID', 'Assertion predicate matches direct triple');
+check($concept['predicate'] === 'http://rs.tdwg.org/dwc/terms/nameAccordingToID', 'Stored predicate unchanged');
+$conceptDB = new FixtureDB($ref); $conceptDB->links = array($concept);
+$conceptNodes = rdfResponseNodes($conceptDB, $module, array($ref));
+$conceptByID = array_column($conceptNodes, NULL, '@id');
+check($conceptByID[$uri]['@reverse']['dwc:nameAccordingToID'][0]['@id'] === $taxonURI, 'Reference uses the matching reverse property');
 check(rdfResponseNodes(new FixtureDB($taxon), $taxonModule, array($taxon)) === rdfNodes($taxonModule, array($taxon)), 'Taxon without links remains unchanged');
 $_SERVER['REQUEST_URI'] = '/taxon/fixture/book/a%20%231';
 $_GET = array('output' => 'JSON'); $taxonDB->queries = array();
@@ -278,7 +279,7 @@ check($taxonLD['@graph'] === $taxonNodes, 'Taxon URI serves embedded JSON-LD');
 $_SERVER['HTTP_ACCEPT'] = 'text/turtle';
 ob_start(); recordAPI($taxonDB); $taxonTTL = ob_get_clean();
 check($taxonTTL === rdfTurtle($taxonNodes), 'Taxon URI serves embedded Turtle');
-$nodes = array_merge($nodes, $taxonNodes, $publicationNodes);
+$nodes = array_merge($nodes, $taxonNodes, $conceptNodes);
 
 // Annotations use their own ID, never the recording ID, and retain ordinary JSON.
 $annotationModule = loadModule('annomate');
