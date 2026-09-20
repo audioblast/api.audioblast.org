@@ -1,12 +1,12 @@
 # References and relationship RDF
 
-The references, links, taxa, specimens and locations modules support `output=JSON-LD` and
+The references, links, taxa, specimens, locations and descriptions modules support `output=JSON-LD` and
 `output=Turtle`. When `output` is absent, `Accept: application/ld+json` or
 `Accept: text/turtle` selects RDF. JSON remains the default. Existing filters
 and pagination apply; RDF pages advertise the next page in a Link header.
 
 Records resolve at `/reference/{source}/{id}`, `/link/{source}/{id}`,
-`/taxon/{source}/{id}`, `/specimen/{source}/{id}` and `/location/{source}/{id}`. These reuse the existing prepared record lookup,
+`/taxon/{source}/{id}`, `/specimen/{source}/{id}`, `/location/{source}/{id}` and `/description/{source}/{id}`. These reuse the existing prepared record lookup,
 canonical-case redirect and 404 handling. Taxa now expose the existing source
 and id columns, so they can be filtered and identified across sources.
 No schema migration is needed.
@@ -152,6 +152,25 @@ are relationships in the links table, not columns:
 the specimen. They appear in specimen responses in the usual way, incoming ones
 under @reverse, along with the two filtered `/data/links/` discovery URLs and
 the specimen's page at its source under `rdfs:seeAlso`.
+
+## Descriptions
+
+`/data/descriptions/?output=JSON-LD` (or `output=Turtle`) describes what a
+source says about something in prose as `dcmitype:Text` resources, and the
+individual route is `/description/{source}/{id}`. The prose is `dc:description`
+and the topic `dc:type`, as GBIF's Taxon Description extension gives them.
+
+Topics are each source's own words — `behaviour`, `morphology`, `diagnostic`,
+`general` for bio.acousti.ca's species profiles — and stay literals until the
+vocabulary has terms for them, as the names of details do.
+
+**What a description is about, and the references it rests on, are links**, so
+they reach the graph the way every other relationship does: IAO is about for
+the taxon, `dcterms:source` for a reference. That is the reason a description
+is a record rather than a detail. bio.acousti.ca writes its citations into the
+prose as `[bib]12290[/bib]`, and the export reads each one out as a link and
+takes it out of the sentence, so the text reads as written and the paper behind
+it is still there to follow.
 
 ## Locations
 
