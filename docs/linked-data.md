@@ -233,9 +233,14 @@ which is what denotation is. It is a subproperty of `IAO:0000136` (is about),
 so a name is still about its taxon under entailment, though a `/data/links/`
 query by predicate is a literal match and will not find it under is-about. The
 reference predicate is `dcterms:source`, as for trait values taken from
-references. Both appear in vernacular name responses in the usual way, and on a
-taxon's own response the names of it are incoming `IAO:0000219` assertions
-under @reverse.
+references.
+
+Both appear in vernacular name responses in the usual way. Links are looked up
+by the record at either end rather than by predicate, so the names of a taxon
+are on the taxon's own response as incoming `IAO:0000219` assertions under
+@reverse, next to the recordings and trait values that are about it. A taxon
+carries the names' URIs, not their text: a client follows them, as it does for
+everything else linked to a taxon.
 
 ## Annotation regions of interest
 
