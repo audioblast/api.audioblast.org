@@ -195,6 +195,47 @@ function recordings_info() {
         "op" => "contains",
         "ac" => "ac:captureDevice"
       ),
+      "rights_holder" => array(
+        "desc" => "Who holds the rights in the recording",
+        "type" => "string",
+        "column" => "rights_holder",
+        "default" => "",
+        "op" => "contains",
+        "autocomplete" => TRUE,
+        "ac" => "xmpRights:Owner"
+      ),
+      "country" => array(
+        "desc" => "ISO 3166-1 alpha-2 code of the country the recording was made in, e.g. GB",
+        "type" => "string",
+        "column" => "country",
+        "default" => "",
+        "op" => "=",
+        "autocomplete" => TRUE,
+        "ac" => "dwc:countryCode"
+      ),
+      "locality" => array(
+        "desc" => "Where the recording was made, which is not always where a specimen was collected",
+        "type" => "string",
+        "column" => "locality",
+        "default" => "",
+        "op" => "contains",
+        "ac" => "dwc:locality"
+      ),
+      "sample_rate" => array(
+        "desc" => "Samples a second of the recording, in Hz",
+        "type" => "range",
+        "column" => "sample_rate",
+        "default" => "",
+        "op" => "range",
+        "ac" => "mo:sample_rate"
+      ),
+      "channels" => array(
+        "desc" => "Number of channels the recording has, so that a stereo recording has 2",
+        "type" => "range",
+        "column" => "channels",
+        "default" => "",
+        "op" => "range"
+      ),
       "format" => array(
         "desc" => "Data representation to return.",
         "type" => "string",
@@ -258,7 +299,12 @@ function recordings_rdf_node($recording, $uri) {
   rdfAdd($node, "dwc:decimalLatitude", rdfDecimal($recording["lat"]));
   rdfAdd($node, "dwc:decimalLongitude", rdfDecimal($recording["lon"]));
   rdfAdd($node, "ac:captureDevice", $recording["device"]);
+  //Audiovisual Core has no term for the number of channels, so it is left out
+  rdfAdd($node, "mo:sample_rate", rdfDecimal($recording["sample_rate"]));
+  rdfAdd($node, "dwc:countryCode", $recording["country"]);
+  rdfAdd($node, "dwc:locality", $recording["locality"]);
   rdfAdd($node, "dcterms:rights", rdfURL($recording["license"]));
+  rdfAdd($node, "xmpRights:Owner", $recording["rights_holder"]);
   rdfAdd($node, "ac:providerLiteral", $providers[$recording["source"]] ?? $recording["source"]);
   rdfAdd($node, "ac:providerManagedID", $recording["id"]);
   rdfAdd($node, "dcterms:available", rdfDate($recording["post_date"]));

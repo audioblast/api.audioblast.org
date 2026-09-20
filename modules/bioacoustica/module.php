@@ -12,25 +12,11 @@ function bioacoustica_info() {
       array(
         "type" => "recordings",
         "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/recordings.csv",
-        "mapping" => array(
-          "id" => "id",
-          "Title" => "Title",
-          "taxon" => "taxon",
-          "file" => "file",
-          "author" => "author",
-          "post_date" => "post_date",
-          "size" => "size",
-          "size_raw" => "size_raw",
-          "type" => "type",
-          "NonSpecimen" => "NonSpecimen",
-          "Date" => "Date",
-          "Time" => "Time",
-          "Duration" => "Duration"
-        ),
+        //The export names its columns as the recordings table does, so they are
+        //taken by name and only the deployment, which BioAcoustica has none of,
+        //is set here
         "override" => array(
-          "deployment" => "",
-          //audioBlastIngest puts each recording's id in place of {id}
-          "info_url" => "https://bio.acousti.ca/node/{id}"
+          "deployment" => ""
         ),
         "process" => array(
           "sourceR"
@@ -58,8 +44,22 @@ function bioacoustica_info() {
         )
       ),
       array(
+        "type" => "specimens",
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/specimens.csv",
+        "process" => array(
+          "sourceR"
+        )
+      ),
+      array(
         "type" => "links",
         "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/links.csv",
+        "process" => array(
+          "sourceR"
+        )
+      ),
+      array(
+        "type" => "details",
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/details.csv",
         "process" => array(
           "sourceR"
         )
