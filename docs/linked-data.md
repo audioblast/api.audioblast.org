@@ -93,6 +93,13 @@ links and the ingest makes the link of it, so nothing has to know how a link's
 id is made. The citation is a link like any other and is found and served the
 same way.
 
+Links carry the links about them, as every other record does, so a relationship
+that a reference established **says so on the statement itself**:
+`dcterms:source` beside its `rdf:subject`, `rdf:predicate` and `rdf:object`.
+`dwc:relationshipAccordingTo` still names the source that asserts the link,
+which is the dataset; the reference is what established the relationship, and a
+reader of the statement alone should not have to go looking for it.
+
 Each link has its own URI and rdf:Statement description. rdf:subject,
 rdf:predicate and rdf:object identify the relationship using IRIs. The asserting
 source and remarks retain dwc:relationshipAccordingTo and dwc:relationshipRemarks;
