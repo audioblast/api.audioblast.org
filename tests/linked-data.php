@@ -490,6 +490,49 @@ ob_start(); recordAPI($vernacularDB); $vernacularTTL = ob_get_clean();
 check($vernacularTTL === rdfTurtle($vernacularNodes), 'Vernacular name URI serves embedded Turtle');
 $nodes = array_merge($nodes, $vernacularNodes);
 
+// Images are records of their own, so one scan covering several recordings is
+// described once, with the licence it is under, and linked to each of them.
+$imageModule = loadModule('images');
+$image = array('source' => 'fixture', 'id' => '134',
+  'title' => '399-3_Conocephalus_discolor_409_meta.jpg',
+  'url' => 'https://example.org/files/meta.jpg', 'kind' => 'Original metadata scan',
+  'creator' => 'Ashleigh Whiffin', 'license' => 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  'post_date' => '2019-09-11', 'mime' => 'image/jpeg', 'bytes' => '910718',
+  'width' => '1412', 'height' => '1183', 'caption' => 'The data sheet for tape 399-3');
+$imageURI = rdfRecordURI($imageModule, $image['source'], $image['id']);
+check(recordModule('/image/fixture/134')['mname'] === 'images', 'Image route');
+$documents = $citation;
+$documents['id'] = 'documents'; $documents['qualifier'] = NULL; $documents['remarks'] = NULL;
+$documents['subject_type'] = 'images'; $documents['subject_source'] = 'fixture';
+$documents['subject_id'] = $image['id'];
+$documents['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000136';
+$documents['object_type'] = 'recordings'; $documents['object_source'] = 'fixture';
+$documents['object_id'] = 'rec1';
+$imageDB = new FixtureDB($image);
+$imageDB->links = array($documents);
+$imageNodes = rdfResponseNodes($imageDB, $imageModule, array($image));
+$imageByID = array_column($imageNodes, NULL, '@id');
+check($imageByID[$imageURI]['@type'] === array('http://rs.tdwg.org/ac/terms/Media', 'http://purl.org/dc/dcmitype/StillImage'), 'Image is Audiovisual Core media and a still image');
+check($imageByID[$imageURI]['dcterms:rights']['@id'] === 'https://creativecommons.org/licenses/by-nc-sa/4.0/', 'Image carries the licence it is under');
+check($imageByID[$imageURI]['ac:subtypeLiteral'] === 'Original metadata scan', "The source's own kind of image is a literal");
+check($imageByID[$imageURI]['exif:PixelXDimension'] === rdfTyped('1412', 'xsd:decimal'), 'Pixel dimensions typed');
+check($imageByID[$imageURI]['ac:caption'] === 'The data sheet for tape 399-3', 'Caption kept');
+check($imageByID[$imageURI]['dc:creator'] === 'Ashleigh Whiffin', 'Creator credited');
+check($imageByID[$imageURI]['dcterms:available']['@type'] === 'xsd:date', 'Upload date typed');
+check($imageByID[$imageURI]['http://purl.obolibrary.org/obo/IAO_0000136']['@id'] === 'https://api.audioblast.org/recording/fixture/rec1', 'Image is about the recording it documents');
+$imageService = $imageByID[$imageURI]['ac:hasServiceAccessPoint']['@id'];
+check($imageByID[$imageService]['ac:accessURI']['@id'] === 'https://example.org/files/meta.jpg', 'The file itself is a service access point');
+check($imageByID[$imageService]['dc:format'] === 'image/jpeg', 'MIME belongs to the service');
+check(!isset($imageByID[$imageURI]['ac:accessURI']), 'Access URI belongs to the service, not the image');
+// An image whose source gives no licence is served without one rather than
+// with a licence it never had.
+$unlicensed = $image; $unlicensed['id'] = '20603'; $unlicensed['license'] = '';
+$unlicensed['creator'] = ''; $unlicensed['caption'] = '';
+$unlicensedNode = rdfNodes($imageModule, array($unlicensed))[0];
+check(!isset($unlicensedNode['dcterms:rights']), 'No licence invented');
+check(!isset($unlicensedNode['dc:creator']) && !isset($unlicensedNode['ac:caption']), 'Empty values omitted');
+$nodes = array_merge($nodes, $imageNodes);
+
 // The names of a taxon are on the taxon's own response: links are looked up by
 // the record at either end, not by predicate, so denotes is found there exactly
 // as is about is, next to the recordings and trait values of the same taxon.
