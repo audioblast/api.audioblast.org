@@ -64,6 +64,24 @@ assert not list(a.objects(recording, URIRef("http://purl.org/dc/elements/1.1/for
 assert not list(a.objects(roi, AC.accessURI))
 print("Annotation ROI bounds, recording relationships and access metadata verified")
 
+XSD = Namespace("http://www.w3.org/2001/XMLSchema#")
+specimen = URIRef("https://api.audioblast.org/specimen/fixture/book/a%20%231")
+assert (specimen, RDF.type, DWC.Occurrence) in a
+assert (specimen, DWC.occurrenceID, Literal(str(specimen))) in a
+assert (specimen, DWC.eventDate, Literal("1962-08", datatype=XSD.gYearMonth)) in a
+assert (specimen, DWC.decimalLatitude, Literal("50.6", datatype=XSD.decimal)) in a
+assert (specimen, URIRef("http://rs.tdwg.org/dwc/iri/toTaxon"), URIRef("https://api.audioblast.org/taxon/other-source/42")) in a
+assert (recording, AC.associatedSpecimenReference, specimen) in a
+print("Specimen occurrence, the taxon it is identified as and the recording of it verified")
+
+MO = Namespace("http://purl.org/ontology/mo/")
+XMP_RIGHTS = Namespace("http://ns.adobe.com/xap/1.0/rights/")
+assert (recording, MO.sample_rate, Literal("44100", datatype=XSD.decimal)) in a
+assert (recording, XMP_RIGHTS.Owner, Literal("Natural History Museum, London")) in a
+assert (recording, DWC.countryCode, Literal("GB")) in a
+assert (recording, DWC.locality, Literal("A place")) in a
+print("Recording sample rate, rights holder and place verified")
+
 services_json = Graph().parse(base / "service-access.jsonld", format="json-ld")
 services_turtle = Graph().parse(base / "service-access.ttl", format="turtle")
 assert isomorphic(services_json, services_turtle)

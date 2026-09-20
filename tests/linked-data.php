@@ -280,6 +280,73 @@ ob_start(); recordAPI($taxonDB); $taxonTTL = ob_get_clean();
 check($taxonTTL === rdfTurtle($taxonNodes), 'Taxon URI serves embedded Turtle');
 $nodes = array_merge($nodes, $taxonNodes, $publicationNodes);
 
+// Specimens are Darwin Core occurrences, with the recordings of them and the
+// taxa they are identified as coming from links.
+$specimenModule = loadModule('specimens');
+$specimen = array('source' => 'fixture', 'id' => $ref['id'],
+  'scientificName' => 'Example species', 'basisOfRecord' => 'PreservedSpecimen',
+  'institutionCode' => 'NHMUK', 'collectionCode' => 'BMNH(E)', 'catalogNumber' => '15',
+  'otherCatalogNumbers' => '', 'typeStatus' => 'Paratype', 'sex' => 'Male',
+  'lifeStage' => 'Adult', 'individualCount' => '1', 'recordedBy' => 'A. Collector',
+  'eventDate' => '1962-08', 'identifiedBy' => 'An Expert', 'dateIdentified' => '1963-01-02',
+  'identificationQualifier' => 'cf.', 'associatedSequences' => '', 'locality' => 'A place',
+  'countryCode' => 'GB', 'decimalLatitude' => '50.6', 'decimalLongitude' => '-1.95',
+  'occurrenceRemarks' => 'On reeds.', 'info_url' => 'https://example.org/specimen/1');
+$specimenURI = rdfRecordURI($specimenModule, $specimen['source'], $specimen['id']);
+check(recordModule('/specimen/fixture/sp1')['mname'] === 'specimens', 'Specimen route');
+$recordingOf = $citation;
+$recordingOf['id'] = 'recording-of'; $recordingOf['qualifier'] = NULL; $recordingOf['remarks'] = NULL;
+$recordingOf['subject_type'] = 'recordings'; $recordingOf['subject_id'] = 'rec1';
+$recordingOf['predicate'] = 'http://rs.tdwg.org/ac/terms/associatedSpecimenReference';
+$recordingOf['object_type'] = 'specimens'; $recordingOf['object_id'] = $specimen['id'];
+$identifiedAs = $recordingOf;
+$identifiedAs['id'] = 'identified-as';
+$identifiedAs['subject_type'] = 'specimens'; $identifiedAs['subject_id'] = $specimen['id'];
+$identifiedAs['predicate'] = 'http://rs.tdwg.org/dwc/iri/toTaxon';
+$identifiedAs['object_type'] = 'taxa'; $identifiedAs['object_source'] = 'other-source';
+$identifiedAs['object_id'] = '42';
+$specimenDB = new FixtureDB($specimen);
+$specimenDB->links = array($recordingOf, $identifiedAs);
+$specimenNodes = rdfResponseNodes($specimenDB, $specimenModule, array($specimen));
+$specimenByID = array_column($specimenNodes, NULL, '@id');
+check($specimenDB->bound[0] === array('specimens', 'fixture', $specimen['id']), 'Specimen identity used in link lookup');
+check($specimenByID[$specimenURI]['@type'] === 'http://rs.tdwg.org/dwc/terms/Occurrence', 'Specimen is an occurrence');
+check($specimenByID[$specimenURI]['dwc:occurrenceID'] === $specimenURI, 'Occurrence identified by its own URI');
+check($specimenByID[$specimenURI]['dwc:typeStatus'] === 'Paratype', 'Type status retained');
+check(!isset($specimenByID[$specimenURI]['dwc:otherCatalogNumbers']), 'Empty values omitted');
+check($specimenByID[$specimenURI]['dwc:eventDate']['@type'] === 'xsd:gYearMonth', 'Collecting month precision kept');
+check($specimenByID[$specimenURI]['dwc:decimalLatitude'] === rdfTyped('50.6', 'xsd:decimal'), 'Coordinates typed');
+check($specimenByID[$specimenURI]['dwc:geodeticDatum'] === 'EPSG:4326', 'Coordinates have a datum');
+check($specimenByID[$specimenURI]['dwciri:toTaxon']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Specimen identified as a taxon');
+check($specimenByID[$specimenURI]['@reverse']['ac:associatedSpecimenReference'][0]['@id'] === 'https://api.audioblast.org/recording/fixture/rec1', 'Recording of the specimen');
+check(count($specimenByID[$specimenURI]['rdfs:seeAlso']) === 3, 'Source page and incoming and outgoing links');
+$undated = $specimen; $undated['id'] = 'sp2'; $undated['eventDate'] = 'summer 1962';
+$undated['decimalLatitude'] = ''; $undated['decimalLongitude'] = ''; $undated['info_url'] = '';
+$undatedNodes = rdfNodes($specimenModule, array($undated));
+check($undatedNodes[0]['dwc:eventDate'] === 'summer 1962', 'Unusual date retained as given');
+check(!isset($undatedNodes[0]['dwc:geodeticDatum']), 'No datum without coordinates');
+check(count($undatedNodes[0]['rdfs:seeAlso']) === 2, 'Only the link queries without a source page');
+$_SERVER['REQUEST_URI'] = '/specimen/fixture/book/a%20%231';
+$_GET = array('output' => 'JSON'); $specimenDB->queries = array();
+ob_start(); recordAPI($specimenDB); $specimenJSON = json_decode(ob_get_clean(), TRUE);
+check($specimenJSON['data'][0] === $specimen && count($specimenDB->queries) === 1, 'Specimen JSON unchanged, no link query');
+$_GET = array(); $_SERVER['HTTP_ACCEPT'] = 'text/turtle';
+ob_start(); recordAPI($specimenDB); $specimenTTL = ob_get_clean();
+check($specimenTTL === rdfTurtle($specimenNodes), 'Specimen URI serves embedded Turtle');
+$nodes = array_merge($nodes, $specimenNodes);
+
+// A recording's sound, rights and place use the terms Audiovisual Core borrows.
+$described = $recording;
+$described['sample_rate'] = '44100'; $described['channels'] = '2';
+$described['rights_holder'] = 'Natural History Museum, London';
+$described['country'] = 'GB'; $described['locality'] = 'A place';
+$describedNode = rdfNodes($recordingModule, array($described))[0];
+check($describedNode['mo:sample_rate'] === rdfTyped('44100', 'xsd:decimal'), 'Sample rate from the Music Ontology');
+check($describedNode['xmpRights:Owner'] === $described['rights_holder'], 'Rights holder is the XMP owner');
+check($describedNode['dwc:countryCode'] === 'GB' && $describedNode['dwc:locality'] === 'A place', 'Where the recording was made');
+check(!in_array($described['channels'], $describedNode, TRUE), 'Channels are left out, as no term covers them');
+$nodes = array_merge($nodes, array($describedNode));
+
 // Annotations use their own ID, never the recording ID, and retain ordinary JSON.
 $annotationModule = loadModule('annomate');
 $annotation = array('source' => 'fixture', 'annotation_id' => $ref['id'], 'source_id' => 'rec1',
