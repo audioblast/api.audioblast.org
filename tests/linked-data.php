@@ -352,6 +352,32 @@ ob_start(); recordAPI($specimenDB); $specimenTTL = ob_get_clean();
 check($specimenTTL === rdfTurtle($specimenNodes), 'Specimen URI serves embedded Turtle');
 $nodes = array_merge($nodes, $specimenNodes);
 
+// A link that a reference established carries it, as the statement and as a
+// triple of its own, so what a relationship rests on is read off the relationship.
+$interaction = array('source' => 'bio.acousti.ca', 'id' => 'interaction1',
+  'subject_type' => 'taxa', 'subject_source' => 'bio.acousti.ca', 'subject_id' => '6138',
+  'predicate' => 'https://vocab.audioblast.org/cv/interaction#AcousticallyOrientatingParasiteOf',
+  'object_type' => 'taxa', 'object_source' => 'bio.acousti.ca', 'object_id' => '4841',
+  'qualifier' => NULL, 'remarks' => NULL);
+$establishedBy = array('source' => 'bio.acousti.ca', 'id' => 'cites1',
+  'subject_type' => 'links', 'subject_source' => 'bio.acousti.ca',
+  'subject_id' => $interaction['id'],
+  'predicate' => 'http://purl.org/dc/terms/source',
+  'object_type' => 'references', 'object_source' => 'fixture', 'object_id' => $ref['id'],
+  'qualifier' => NULL, 'remarks' => NULL);
+$interactionURI = rdfRecordURI($links, $interaction['source'], $interaction['id']);
+$citingDB = new FixtureDB($interaction);
+$citingDB->links = array($establishedBy);
+$citedNodes = rdfResponseNodes($citingDB, $links, array($interaction));
+$citedByID = array_column($citedNodes, NULL, '@id');
+check($citedByID[$interactionURI]['dcterms:source']['@id'] === $uri, 'A link carries the reference that established it');
+check($citedByID[$interactionURI]['rdf:subject']['@id'] === 'https://api.audioblast.org/taxon/bio.acousti.ca/6138', 'The statement still says what it relates');
+check($citedByID['https://api.audioblast.org/link/bio.acousti.ca/cites1']['rdf:object']['@id'] === $uri, 'The citation is a statement of its own');
+//A link with nothing said about it is unchanged
+check(rdfResponseNodes(new FixtureDB($interaction), $links, array($interaction)) ===
+      rdfNodes($links, array($interaction)), 'An uncited link is unchanged');
+$nodes = array_merge($nodes, $citedNodes);
+
 // A description says what it is about and what it cites through links.
 $descriptionModule = loadModule('descriptions');
 $description = array('source' => 'fixture', 'id' => '12289', 'topic' => 'behaviour',
