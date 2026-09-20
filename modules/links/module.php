@@ -8,8 +8,12 @@ function links_info() {
     "table" => "links",
     "hname" => "Links",
     "desc" => "This endpoint allows for the querying of the links between records held within audioBLAST!, e.g. references and the taxa they are about, or recordings and the references they are published in. A link relates a subject to an object, each identified by its type (a data module, term for a vocabulary term, or iri), the source that holds it and its id there, so links can join the records of different sources. Links follow the Darwin Core Resource Relationship.",
-    "source_notes" => "Links are ingested from each source's links, and replace the links that the source gave before.",
-    "rdf" => array("path" => "link", "node" => "links_rdf_node", "related" => "links_rdf_related"),
+    "source_notes" => "Links are ingested from each source's links, and replace the links that the source gave before. A link that a reference established is the subject of a link to that reference, so what a relationship rests on is itself a link.",
+    //A link is a record, so links about it are found as they are for any other:
+    //a link that a reference established is the subject of a dcterms:source
+    //link to that reference, and the statement carries it like any other triple
+    "rdf" => array("links" => TRUE, "path" => "link", "node" => "links_rdf_node",
+      "related" => "links_rdf_related"),
     "params" => array(
       "source" => array(
         "desc" => "Source that gives the link (dwc:relationshipAccordingTo)",

@@ -118,6 +118,16 @@ assert (description, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), URIRe
 assert (description, URIRef("http://purl.org/dc/terms/source"), URIRef(reference)) in a
 print("Description, its topic, its taxon and the reference it rests on verified")
 
+interaction = URIRef("https://api.audioblast.org/link/bio.acousti.ca/interaction1")
+parasite = URIRef("https://api.audioblast.org/taxon/bio.acousti.ca/6138")
+host = URIRef("https://api.audioblast.org/taxon/bio.acousti.ca/4841")
+parasite_of = URIRef("https://vocab.audioblast.org/cv/interaction#AcousticallyOrientatingParasiteOf")
+assert (parasite, parasite_of, host) in a
+assert (interaction, RDF.subject, parasite) in a
+assert (interaction, RDF.object, host) in a
+assert (interaction, URIRef("http://purl.org/dc/terms/source"), URIRef(reference)) in a
+print("Interaction, its statement and the reference that established it verified")
+
 services_json = Graph().parse(base / "service-access.jsonld", format="json-ld")
 services_turtle = Graph().parse(base / "service-access.ttl", format="turtle")
 assert isomorphic(services_json, services_turtle)
