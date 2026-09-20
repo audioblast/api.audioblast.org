@@ -57,6 +57,8 @@ This is an export inventory, not a check of the current production database.
 | https://vocab.audioblast.org/cv/topic#SoundscapeVisualisation | relationship target |
 | https://vocab.audioblast.org/cv/topic#Soundscapes | relationship target |
 | https://vocab.audioblast.org/cv/topic#Terminology | relationship target |
+| https://vocab.audioblast.org/cv/renderingType#Mnemonic | kind of a rendering |
+| https://vocab.audioblast.org/cv/renderingType#MusicalNotation | kind of a rendering |
 
 ## Curation notes
 
@@ -66,6 +68,12 @@ This is an export inventory, not a check of the current production database.
 - These are planned concepts. Confirm labels, definitions, hierarchy and
   supporting references when publishing them. The table records identifiers
   already used in the export, rather than new definitions.
+- renderingType terms are the kinds of rendering that no vocabulary names, so
+  onomatopoeia rows of those kinds carry no `dcterms:type` until these exist.
+  A mnemonic is the one that will grow: birdwatchers have many, and only one is
+  in the data so far. When minted, each should be `skos:exactMatch` to the
+  Wikidata item it names (`Q191062` mnemonic, `Q233861` musical notation), as
+  description topics would be to their info item.
 - Call-type and page detail remains in relationship remarks where the export
   puts it; do not create a compound term solely for those remarks.
 - No new audioBLAST property is introduced by the reference and taxon RDF
@@ -129,3 +137,29 @@ The name itself is a literal in the language it is in (an IETF BCP 47 language
 tag, which the ingest normalises and the API leaves off a literal it cannot
 read) rather than a new property. A language is never inferred from a name in
 the API; where a source gives none, the name has none.
+
+Onomatopoeia are covered too, apart from the two renderingType terms above. A
+rendering is a `http://purl.org/dc/dcmitype/Text`, and one whose kind names a
+word class also a `http://www.w3.org/ns/lemon/ontolex#LexicalEntry`, holding
+`rdfs:label`, `dc:type`, `dcterms:type`, `dcterms:language`, `dwc:sex`,
+`dwc:lifeStage`, `dwc:locality` and `dwc:taxonRemarks`.
+
+No standard has a property for the word a sound is rendered with, so the word
+is `rdfs:label`: `dwc:vernacularName` takes a name for the taxon, which a
+rendering is not, and `ontolex:writtenRep` has `ontolex:Form` for its domain
+and `rdf:langString` for its range, so it needs a second node per record and
+cannot carry a rendering that has no language. No audioBLAST property is
+requested for this.
+
+Of the vocabularies searched on 2026-09-20 — Darwin Core and its extensions,
+the GBIF VernacularName extension, ColDP, Audiovisual Core, the Species Profile
+Model, OntoLex-Lemon, lexinfo 2.0 and 3.0, SKOS, Dublin Core, Plinian Core,
+Wikidata and every ontology in the EBI's lookup service — only OLiA names
+onomatopoeia at all, as `olia:OnomatopoeticWord` and `olia:Ideophone`. Neither
+is ideal: OnomatopoeticWord carries "no definition given" and sits under
+`olia:Residual`, and Ideophone's `rdfs:isDefinedBy` points at ISOcat, which is
+gone. They are used because they are `owl:Class`, as the info items
+`dcterms:type` points at elsewhere are, and because the alternative was an
+English word nothing could match. Wikidata `Q170239` is the better-defined
+concept and is the `lexicalCategory` of 127 lexemes; it is the `skos:exactMatch`
+to record if OLiA is ever replaced.

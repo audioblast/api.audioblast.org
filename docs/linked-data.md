@@ -1,14 +1,15 @@
 # References and relationship RDF
 
-The references, links, taxa, specimens, locations, descriptions and
-vernacularnames modules support `output=JSON-LD` and
+The references, links, taxa, specimens, locations, descriptions,
+vernacularnames and onomatopoeia modules support `output=JSON-LD` and
 `output=Turtle`. When `output` is absent, `Accept: application/ld+json` or
 `Accept: text/turtle` selects RDF. JSON remains the default. Existing filters
 and pagination apply; RDF pages advertise the next page in a Link header.
 
 Records resolve at `/reference/{source}/{id}`, `/link/{source}/{id}`,
 `/taxon/{source}/{id}`, `/specimen/{source}/{id}`, `/location/{source}/{id}`,
-`/description/{source}/{id}` and `/vernacular-name/{source}/{id}`. These reuse
+`/description/{source}/{id}`, `/vernacular-name/{source}/{id}` and
+`/onomatopoeia/{source}/{id}`. These reuse
 the existing prepared record lookup,
 canonical-case redirect and 404 handling. Taxa now expose the existing source
 and id columns, so they can be filtered and identified across sources.
@@ -280,6 +281,58 @@ those records in batches of 100, binding every value, so a page costs a bounded
 number of queries rather than one per name. A failed lookup propagates as a
 failure rather than as a taxon with no names, and a page with nothing linked
 makes no extra query at all.
+
+## Onomatopoeia
+
+`/data/onomatopoeia/?output=JSON-LD` (or `output=Turtle`) describes the words a
+source renders an animal's sound with — `bow-wow`, `kikeriki`, `bark`, and the
+mnemonic a birdwatcher remembers a song by — and the individual route is
+`/onomatopoeia/{source}/{id}`. The word is `rdfs:label` in the language it is
+in, its kind `dc:type`, and `dwc:sex`, `dwc:lifeStage`, `dwc:locality` and
+`dwc:taxonRemarks` hold what else the source says about it.
+
+**These are not vernacular names, though they have a name's shape.** A
+vernacular name denotes its taxon, and denoting is what reads a name onto a
+taxon as one of the names it is known by. A rendering denotes the sound
+instead: `bark` picks out what a dog does, not the dog, and `Get the beer
+check` is a way of remembering a vireo's song rather than anything the bird is
+called. So the link to the taxon is `IAO:0000136` (is about) and never
+`IAO:0000219` (denotes). That one choice is what keeps `bark` out of the
+`dwc:vernacularName` of *Canis lupus familiaris*: the taxon's `rdf.embed`
+callback asks for what denotes the taxon, and being about it is not that. The
+reference a rendering was taken from is `dcterms:source`, as for vernacular
+names and trait values. Both appear in the usual way, and the two filtered
+`/data/links/` discovery URLs are in `rdfs:seeAlso` beside the rendering's page
+at its source.
+
+Every rendering is a `dcmitype:Text`. One whose kind names a class is also an
+`ontolex:LexicalEntry`, since the classes a kind can name are word classes, so
+a line of musical notation is never published as a word of some language. The
+word is `rdfs:label` rather than `ontolex:writtenRep`, whose domain is
+`ontolex:Form` rather than an entry and whose range is `rdf:langString`, which
+a rendering with no language could not satisfy. No standard has a property for
+the word a sound is rendered with, and `dwc:vernacularName` takes a name for
+the taxon, which this is not.
+
+A kind is its source's own word, kept as `dc:type`, and `dcterms:type` is the
+class that word names: `imitation` and `onomatopoeia verb` are both
+`http://purl.org/olia/olia.owl#OnomatopoeticWord`, differing in their part of
+speech rather than in being onomatopoeic, and the source's own word keeps the
+difference. OLiA is the only vocabulary that names these at all — Darwin Core,
+the GBIF vernacular name extension, Audiovisual Core, OntoLex-Lemon, lexinfo,
+Plinian Core and every ontology the EBI's lookup service indexes have no term
+for onomatopoeia, and no Darwin Core issue has ever proposed one (checked
+2026-09-20). Nothing names a mnemonic or musical notation, so those get no IRI
+rather than an invented one; see [vocabulary-backlog.md](vocabulary-backlog.md).
+
+The language is `dcterms:language`, typed `xsd:language`, whose lexical space
+is BCP 47 syntax. A rendering whose source never recorded a language is a plain
+literal with none: the two that the Lokele of the Congo use name a people
+rather than a language, which neither ISO 639-3 nor Glottolog registers under
+that name, and musical notation is in no language at all. None is inferred from
+the word. The ingest normalises a tag to the case BCP 47 writes it in, so
+`en-gb` is `en-GB`, which keeps the column consistent without claiming that
+British and unmarked English are the same.
 
 ## Annotation regions of interest
 
