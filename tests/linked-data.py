@@ -153,3 +153,19 @@ assert isomorphic(services_json, services_turtle)
 assert len(list(services_json.objects(recording, AC.hasServiceAccessPoint))) == 3
 assert len(list(services_json.subjects(RDF.type, AC.ServiceAccessPoint))) == 3
 print("Multiple audio/image service access points serialize equivalently")
+
+AC = Namespace("http://rs.tdwg.org/ac/terms/")
+EXIF = Namespace("http://ns.adobe.com/exif/1.0/")
+DCTERMS = Namespace("http://purl.org/dc/terms/")
+image = URIRef("https://api.audioblast.org/image/fixture/134")
+assert (image, RDF.type, URIRef("http://purl.org/dc/dcmitype/StillImage")) in a
+assert (image, RDF.type, AC.Media) in a
+assert (image, DCTERMS.rights, URIRef("https://creativecommons.org/licenses/by-nc-sa/4.0/")) in a
+assert (image, AC.subtypeLiteral, Literal("Original metadata scan")) in a
+assert (image, EXIF.PixelXDimension, Literal("1412", datatype=XSD.decimal)) in a
+assert (image, DC.creator, Literal("Ashleigh Whiffin")) in a
+assert (image, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), recording) in a
+service = next(a.objects(image, AC.hasServiceAccessPoint))
+assert (service, AC.accessURI, URIRef("https://example.org/files/meta.jpg")) in a
+assert not list(a.triples((image, AC.accessURI, None)))
+print("Image, its licence, its pixels, the file it is served from and what it documents verified")
