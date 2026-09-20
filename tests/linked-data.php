@@ -396,6 +396,52 @@ check($placeByID[$placeURI]['@reverse']['dwciri:inDescribedPlace'][0]['@id'] ===
 $given = $place; $given['id'] = 'p2'; $given['geodeticDatum'] = 'OSGB36';
 check(rdfNodes($locationModule, array($given))[0]['dwc:geodeticDatum'] === 'OSGB36', "A source's own datum is kept");
 $nodes = array_merge($nodes, $placeNodes);
+// Vernacular names are the names a taxon is known by in a language, with the
+// taxon they name and the reference they were taken from coming from links.
+$vernacularModule = loadModule('vernacularnames');
+$vernacular = array('source' => 'fixture', 'id' => $ref['id'],
+  'vernacularName' => 'le Criquet des pins', 'language' => 'fr', 'locality' => '',
+  'remarks' => '');
+$vernacularURI = rdfRecordURI($vernacularModule, $vernacular['source'], $vernacular['id']);
+check(recordModule('/vernacular-name/fixture/vn1')['mname'] === 'vernacularnames', 'Vernacular name route');
+$namesTaxon = $identifiedAs;
+$namesTaxon['id'] = 'names-taxon';
+$namesTaxon['subject_type'] = 'vernacularnames'; $namesTaxon['subject_id'] = $vernacular['id'];
+$namesTaxon['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000219';
+$namedIn = $namesTaxon;
+$namedIn['id'] = 'names-from';
+$namedIn['predicate'] = 'http://purl.org/dc/terms/source';
+$namedIn['object_type'] = 'references'; $namedIn['object_source'] = 'fixture';
+$namedIn['object_id'] = $ref['id'];
+$vernacularDB = new FixtureDB($vernacular);
+$vernacularDB->links = array($namesTaxon, $namedIn);
+$vernacularNodes = rdfResponseNodes($vernacularDB, $vernacularModule, array($vernacular));
+$vernacularByID = array_column($vernacularNodes, NULL, '@id');
+check($vernacularDB->bound[0] === array('vernacularnames', 'fixture', $vernacular['id']), 'Vernacular name identity used in link lookup');
+check($vernacularByID[$vernacularURI]['@type'] === 'http://rs.gbif.org/terms/1.0/VernacularName', 'Name is a Darwin Core vernacular name');
+check($vernacularByID[$vernacularURI]['dwc:vernacularName'] === array('@value' => 'le Criquet des pins', '@language' => 'fr'), 'Name is a literal in the language it is in, with the article a reference wrote it with');
+check($vernacularByID[$vernacularURI]['dcterms:language'] === 'fr', 'Language tag given on its own as well');
+check(!isset($vernacularByID[$vernacularURI]['dwc:locality']), 'Empty values omitted');
+check($vernacularByID[$vernacularURI]['http://purl.obolibrary.org/obo/IAO_0000219']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Name denotes the taxon it names');
+check($vernacularByID[$vernacularURI]['dcterms:source']['@id'] === $uri, 'Name was taken from a reference');
+check(strpos(rdfTurtle(array($vernacularByID[$vernacularURI])), '"le Criquet des pins"@fr') !== FALSE, 'Turtle carries the language tag');
+// A name whose language a source never recorded is a plain literal, not one in
+// a language guessed from the name.
+$unrecorded = $vernacular; $unrecorded['id'] = 'vn2'; $unrecorded['language'] = '';
+$unrecorded['vernacularName'] = 'North American hoary bat';
+$unrecordedNode = rdfNodes($vernacularModule, array($unrecorded))[0];
+check($unrecordedNode['dwc:vernacularName'] === 'North American hoary bat', 'Name without a language is a plain literal');
+check(!isset($unrecordedNode['dcterms:language']), 'No language invented');
+check(rdfLang('Anything', 'Not a tag') === 'Anything', 'A language that is not a tag is left off the literal');
+check(rdfLang('', 'fr') === NULL, 'No literal where there is no name');
+$_SERVER['REQUEST_URI'] = '/vernacular-name/fixture/book/a%20%231';
+$_GET = array('output' => 'JSON'); $vernacularDB->queries = array();
+ob_start(); recordAPI($vernacularDB); $vernacularJSON = json_decode(ob_get_clean(), TRUE);
+check($vernacularJSON['data'][0] === $vernacular && count($vernacularDB->queries) === 1, 'Vernacular name JSON unchanged, no link query');
+$_GET = array(); $_SERVER['HTTP_ACCEPT'] = 'text/turtle';
+ob_start(); recordAPI($vernacularDB); $vernacularTTL = ob_get_clean();
+check($vernacularTTL === rdfTurtle($vernacularNodes), 'Vernacular name URI serves embedded Turtle');
+$nodes = array_merge($nodes, $vernacularNodes);
 
 // A recording's sound, rights and place use the terms Audiovisual Core borrows.
 $described = $recording;
