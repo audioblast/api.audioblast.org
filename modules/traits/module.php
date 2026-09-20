@@ -122,18 +122,18 @@ function traits_info() {
         "op" => "range"
       ),
       "value_min" => array(
-        "desc" => "Value min",
-        "type" => "string",
+        "desc" => "Lower end of the range the value is written as, e.g. 4 for 4-6 or 3.5 for 4 ± 0.5; empty for a value that isn't a range",
+        "type" => "range",
         "default" => "",
         "column" => "min",
-        "op" => "="
+        "op" => "range"
       ),
       "value_max" => array(
-        "desc" => "Value max",
-        "type" => "string",
+        "desc" => "Upper end of the range the value is written as, e.g. 6 for 4-6",
+        "type" => "range",
         "default" => "",
         "column" => "max",
-        "op" => "="
+        "op" => "range"
       ),
       "output" => array(
         "desc" => "The format of the returned data",
