@@ -91,6 +91,14 @@ assert (place, DWC.geodeticDatum, Literal("EPSG:4326")) in a
 assert (recording, URIRef("http://rs.tdwg.org/dwc/iri/inDescribedPlace"), place) in a
 print("Place, its units and the recording made there verified")
 
+DC = Namespace("http://purl.org/dc/elements/1.1/")
+description = URIRef("https://api.audioblast.org/description/fixture/12289")
+assert (description, RDF.type, URIRef("http://purl.org/dc/dcmitype/Text")) in a
+assert (description, DC.type, Literal("behaviour")) in a
+assert (description, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), URIRef("https://api.audioblast.org/taxon/other-source/42")) in a
+assert (description, URIRef("http://purl.org/dc/terms/source"), URIRef(reference)) in a
+print("Description, its topic, its taxon and the reference it rests on verified")
+
 services_json = Graph().parse(base / "service-access.jsonld", format="json-ld")
 services_turtle = Graph().parse(base / "service-access.ttl", format="turtle")
 assert isomorphic(services_json, services_turtle)
