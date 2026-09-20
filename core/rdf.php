@@ -76,7 +76,9 @@ function rdfContext() {
     "dcterms" => "http://purl.org/dc/terms/",
     "dwc" => "http://rs.tdwg.org/dwc/terms/",
     "dwciri" => "http://rs.tdwg.org/dwc/iri/",
+    "mo" => "http://purl.org/ontology/mo/",
     "xmp" => "http://ns.adobe.com/xap/1.0/",
+    "xmpRights" => "http://ns.adobe.com/xap/1.0/rights/",
     "xsd" => "http://www.w3.org/2001/XMLSchema#"
   ));
 }

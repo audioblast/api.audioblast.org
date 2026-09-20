@@ -1,12 +1,12 @@
 # References and relationship RDF
 
-The references, links and taxa modules support `output=JSON-LD` and
+The references, links, taxa and specimens modules support `output=JSON-LD` and
 `output=Turtle`. When `output` is absent, `Accept: application/ld+json` or
 `Accept: text/turtle` selects RDF. JSON remains the default. Existing filters
 and pagination apply; RDF pages advertise the next page in a Link header.
 
-Records resolve at `/reference/{source}/{id}`, `/link/{source}/{id}` and
-`/taxon/{source}/{id}`. These reuse the existing prepared record lookup,
+Records resolve at `/reference/{source}/{id}`, `/link/{source}/{id}`,
+`/taxon/{source}/{id}` and `/specimen/{source}/{id}`. These reuse the existing prepared record lookup,
 canonical-case redirect and 404 handling. Taxa now expose the existing source
 and id columns, so they can be filtered and identified across sources.
 No schema migration is needed.
@@ -65,9 +65,12 @@ remain on the trait node. Relationships come exclusively from the links table;
 no reference or taxon links are inferred from free-text trait fields.
 Taxa include incoming recordings, traits and references under @reverse, plus
 outgoing links from the same table. Taxonomic names and ranks remain intact.
-Relationship predicates are emitted exactly as stored, including
-dwc:namePublishedInID in the existing name-publication links. Any correction to
-that predicate or its meaning will be made at source later, not in API output.
+Relationship predicates are emitted exactly as stored. BioAcoustica's links from
+a classification term to a work treating the taxon were corrected at source in
+September 2026: they now use IAO is about with a
+`referenceContent#TaxonomicTreatment` qualifier and the page in remarks, rather
+than dwc:namePublishedInID, which that field did not support.
+dwc:namePublishedInID remains available to a source that can assert it.
 Prefix compaction changes only the spelling of an IRI, not its identity.
 
 Lookups use prepared parameters for the returned records' exact type/source/id,
@@ -125,6 +128,31 @@ URI encoding, negotiation, JSON compatibility, 301/404 handling, embedded
 incoming/outgoing links, batching, query failures, reverse framing, multiple
 assertions and graph equivalence before and after framing. Production data and dangling-target counts have not been queried.
 
+## Specimens
+
+`/data/specimens/?output=JSON-LD` (or `output=Turtle`) describes the specimens
+and observations that recordings are of as Darwin Core `dwc:Occurrence`
+resources, and the individual route is `/specimen/{source}/{id}`. The table's
+columns are already named after the Darwin Core terms they hold, so each is
+emitted as its own `dwc:` property, and `dwc:occurrenceID` is the record's own
+URI: it is the identifier this API can be asked for the occurrence by, and no
+source-local ID is copied into the RDF.
+
+Coordinates and the individual count are typed as decimals, and a record with
+both coordinates gets `dwc:geodeticDatum` EPSG:4326, which is what decimal
+latitude and longitude mean here. Whole and partial ISO dates are typed;
+`eventDate` and `dateIdentified` strings that are neither are kept as given, as
+normalisation belongs in the ingest. What a source calls a sex, a life stage or
+a type status is left as it is: these are not mapped to a controlled vocabulary.
+Empty values are omitted rather than asserted as blank.
+
+The recording a specimen was recorded in, and the taxon it is identified as,
+are relationships in the links table, not columns:
+`ac:associatedSpecimenReference` from the recording and `dwciri:toTaxon` from
+the specimen. They appear in specimen responses in the usual way, incoming ones
+under @reverse, along with the two filtered `/data/links/` discovery URLs and
+the specimen's page at its source under `rdfs:seeAlso`.
+
 ## Annotation regions of interest
 
 `/data/annomate/?output=JSON-LD` (or `output=Turtle`) describes annotations as
@@ -165,6 +193,13 @@ several representations with the same MIME type. No future representations or
 quality labels are fabricated. Recording-level title, creator, taxon, capture
 date, duration, rights and information page stay on the recording: the current
 schema does not provide separate representation-specific values for these.
+
+The recording's sample rate, rights holder and place use the terms Audiovisual
+Core borrows for them: `mo:sample_rate` from the Music Ontology, `xmpRights:Owner`
+for who holds the rights, and `dwc:countryCode` and `dwc:locality` for where the
+recording was made, which is not always where a specimen was collected.
+Audiovisual Core has no term for the number of channels, so `channels` stays in
+JSON only rather than being given an invented property.
 
 Until sources supply stable representation IDs, access-point fragment IDs use a
 SHA-256 digest of the exact URL, scoped to the recording URI. Recording and
