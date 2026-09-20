@@ -85,6 +85,14 @@ returns HTTP 500 and an empty RDF graph rather than silently returning incomplet
 data. Empty pages and JSON responses do not query relationships. No schema changes
 or per-pair views are required.
 
+A link is a record with an id of its own, so it can be the subject of another
+link: a link that a reference established is the subject of a `dcterms:source`
+link to that reference, which is the predicate a trait already uses to cite the
+paper its value came from. A source gives that reference as a column of its
+links and the ingest makes the link of it, so nothing has to know how a link's
+id is made. The citation is a link like any other and is found and served the
+same way.
+
 Each link has its own URI and rdf:Statement description. rdf:subject,
 rdf:predicate and rdf:object identify the relationship using IRIs. The asserting
 source and remarks retain dwc:relationshipAccordingTo and dwc:relationshipRemarks;
@@ -155,6 +163,28 @@ are relationships in the links table, not columns:
 the specimen. They appear in specimen responses in the usual way, incoming ones
 under @reverse, along with the two filtered `/data/links/` discovery URLs and
 the specimen's page at its source under `rdfs:seeAlso`.
+
+## Ecological interactions
+
+One taxon eating, parasitising or listening for another is a relationship, so
+an interaction is a **link**, not a record of its own: the interaction is the
+predicate and the two taxa are the subject and object. bio.acousti.ca's nine
+use three terms of audioBLAST's own —
+`cv/interaction#AcousticallyOrientatingPredatorOf`,
+`#AcousticallyOrientatingParasiteOf` and `#RespondsToAlarmCallOf` — because no
+other standard names them. The rest of that vocabulary is the Relation
+Ontology's biotic interactions (`eats`, `pollinates`, `is parasite of`), which
+should take their RO IRIs when something uses them.
+
+Any term of `https://vocab.audioblast.org/cv/interaction#` is accepted as a
+predicate, by namespace rather than one at a time, since an interaction is a
+relationship by definition. Other namespaces of the vocabulary are not: a
+`referenceContent` term says what a link is *of*, not what it *is*.
+
+The `/data/ecoint/` endpoint is a view of those links, flattened to a taxon,
+what it interacts with, the interaction and the reference. It serves no RDF of
+its own — querying `/data/links/` by an interaction predicate gives the same
+relationships, with their assertions, and serves them as RDF.
 
 ## Descriptions
 
