@@ -93,3 +93,22 @@ recording has no Audiovisual Core term and is left in JSON rather than given an
 audioBLAST property. The names of details (tape, cd_track, temperature_start and
 the rest) are each source's own and are to be matched to vocabulary terms later;
 until then details are not published as RDF, so they need no IRIs yet.
+
+Vernacular names are covered as well. A name is a
+http://rs.gbif.org/terms/1.0/VernacularName holding dwc:vernacularName,
+dcterms:language, dwc:locality and dwc:taxonRemarks.
+
+Darwin Core's vernacularName takes the name, not the taxon, so no Darwin Core
+property joins the two, and dwc:relationshipOfResourceID asks for an OBO
+relation (checked against dwc.tdwg.org/terms on 2026-09-20). The link to the
+taxon is therefore IAO:0000219 (denotes), which is defined as the relation
+holding when an information content entity is made to pick something out. It
+is a subproperty of IAO:0000136 (is about), so a name is still about its taxon
+under entailment; links queries match a predicate literally, so a query by
+is-about does not return vernacular names. No new audioBLAST property is
+requested for this.
+
+The name itself is a literal in the language it is in (an IETF BCP 47 language
+tag, which the ingest normalises and the API leaves off a literal it cannot
+read) rather than a new property. A language is never inferred from a name in
+the API; where a source gives none, the name has none.

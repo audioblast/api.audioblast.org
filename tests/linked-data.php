@@ -109,9 +109,24 @@ class LinkFixtureStatement {
   function get_result() {return(new LinkFixtureResult($this->db->links));}
   function close() {}
 }
+// Records read onto a response by an embed callback, looked up by (source, id)
+// rather than one at a time.
+class EmbedFixtureStatement {
+  private $db;
+  function __construct($db) {$this->db = $db;}
+  function bind_param($types, &...$values) {
+    check(strlen($types) === count($values), 'All embedded values are bound');
+    $this->db->bound[] = $values;
+    return(TRUE);
+  }
+  function execute() {return(!$this->db->fail);}
+  function get_result() {return(new LinkFixtureResult($this->db->embedded));}
+  function close() {}
+}
 class FixtureDB {
   private $row;
   public $links = array();
+  public $embedded = array();
   public $bound = array();
   public $queries = array();
   public $fail = FALSE;
@@ -119,6 +134,8 @@ class FixtureDB {
   function prepare($sql) {
     $this->queries[] = $sql;
     if (strpos($sql, 'FROM links WHERE') !== FALSE) {return(new LinkFixtureStatement($this));}
+    //An embed reads many records by (source, id); a record route reads one
+    if (strpos($sql, '(`source`, `id`) IN (') !== FALSE) {return(new EmbedFixtureStatement($this));}
     check(preg_match('/WHERE `source` = \? AND `(id|traitID|annotation_id)` = \? LIMIT 1/', $sql) === 1, 'Exact prepared lookup using module ID column');
     return(new FixtureStatement($this->row));
   }
@@ -396,6 +413,108 @@ check($placeByID[$placeURI]['@reverse']['dwciri:inDescribedPlace'][0]['@id'] ===
 $given = $place; $given['id'] = 'p2'; $given['geodeticDatum'] = 'OSGB36';
 check(rdfNodes($locationModule, array($given))[0]['dwc:geodeticDatum'] === 'OSGB36', "A source's own datum is kept");
 $nodes = array_merge($nodes, $placeNodes);
+// Vernacular names are the names a taxon is known by in a language, with the
+// taxon they name and the reference they were taken from coming from links.
+$vernacularModule = loadModule('vernacularnames');
+$vernacular = array('source' => 'fixture', 'id' => $ref['id'],
+  'vernacularName' => 'le Criquet des pins', 'language' => 'fr', 'locality' => '',
+  'remarks' => '');
+$vernacularURI = rdfRecordURI($vernacularModule, $vernacular['source'], $vernacular['id']);
+check(recordModule('/vernacular-name/fixture/vn1')['mname'] === 'vernacularnames', 'Vernacular name route');
+$namesTaxon = $identifiedAs;
+$namesTaxon['id'] = 'names-taxon';
+$namesTaxon['subject_type'] = 'vernacularnames'; $namesTaxon['subject_id'] = $vernacular['id'];
+$namesTaxon['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000219';
+$namedIn = $namesTaxon;
+$namedIn['id'] = 'names-from';
+$namedIn['predicate'] = 'http://purl.org/dc/terms/source';
+$namedIn['object_type'] = 'references'; $namedIn['object_source'] = 'fixture';
+$namedIn['object_id'] = $ref['id'];
+$vernacularDB = new FixtureDB($vernacular);
+$vernacularDB->links = array($namesTaxon, $namedIn);
+$vernacularNodes = rdfResponseNodes($vernacularDB, $vernacularModule, array($vernacular));
+$vernacularByID = array_column($vernacularNodes, NULL, '@id');
+check($vernacularDB->bound[0] === array('vernacularnames', 'fixture', $vernacular['id']), 'Vernacular name identity used in link lookup');
+check($vernacularByID[$vernacularURI]['@type'] === 'http://rs.gbif.org/terms/1.0/VernacularName', 'Name is a Darwin Core vernacular name');
+check($vernacularByID[$vernacularURI]['dwc:vernacularName'] === array('@value' => 'le Criquet des pins', '@language' => 'fr'), 'Name is a literal in the language it is in, with the article a reference wrote it with');
+check($vernacularByID[$vernacularURI]['dcterms:language'] === 'fr', 'Language tag given on its own as well');
+check(!isset($vernacularByID[$vernacularURI]['dwc:locality']), 'Empty values omitted');
+check($vernacularByID[$vernacularURI]['http://purl.obolibrary.org/obo/IAO_0000219']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Name denotes the taxon it names');
+check($vernacularByID[$vernacularURI]['dcterms:source']['@id'] === $uri, 'Name was taken from a reference');
+check(strpos(rdfTurtle(array($vernacularByID[$vernacularURI])), '"le Criquet des pins"@fr') !== FALSE, 'Turtle carries the language tag');
+// A name whose language a source never recorded is a plain literal, not one in
+// a language guessed from the name.
+$unrecorded = $vernacular; $unrecorded['id'] = 'vn2'; $unrecorded['language'] = '';
+$unrecorded['vernacularName'] = 'North American hoary bat';
+$unrecordedNode = rdfNodes($vernacularModule, array($unrecorded))[0];
+check($unrecordedNode['dwc:vernacularName'] === 'North American hoary bat', 'Name without a language is a plain literal');
+check(!isset($unrecordedNode['dcterms:language']), 'No language invented');
+check(rdfLang('Anything', 'Not a tag') === 'Anything', 'A language that is not a tag is left off the literal');
+check(rdfLang('', 'fr') === NULL, 'No literal where there is no name');
+$_SERVER['REQUEST_URI'] = '/vernacular-name/fixture/book/a%20%231';
+$_GET = array('output' => 'JSON'); $vernacularDB->queries = array();
+ob_start(); recordAPI($vernacularDB); $vernacularJSON = json_decode(ob_get_clean(), TRUE);
+check($vernacularJSON['data'][0] === $vernacular && count($vernacularDB->queries) === 1, 'Vernacular name JSON unchanged, no link query');
+$_GET = array(); $_SERVER['HTTP_ACCEPT'] = 'text/turtle';
+ob_start(); recordAPI($vernacularDB); $vernacularTTL = ob_get_clean();
+check($vernacularTTL === rdfTurtle($vernacularNodes), 'Vernacular name URI serves embedded Turtle');
+$nodes = array_merge($nodes, $vernacularNodes);
+
+// The names of a taxon are on the taxon's own response: links are looked up by
+// the record at either end, not by predicate, so denotes is found there exactly
+// as is about is, next to the recordings and trait values of the same taxon.
+$namedTaxon = array('source' => 'other-source', 'id' => '42', 'taxon' => 'Example species',
+  'rank' => 'species', 'genus' => 'Example');
+$namedTaxonURI = 'https://api.audioblast.org/taxon/other-source/42';
+$secondName = $namesTaxon;
+$secondName['id'] = 'names-taxon-2'; $secondName['subject_id'] = 'vn2';
+$aboutIt = $namesTaxon;
+$aboutIt['id'] = 'recording-about'; $aboutIt['subject_type'] = 'recordings';
+$aboutIt['subject_id'] = 'rec1';
+$aboutIt['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000136';
+$namedDB = new FixtureDB($namedTaxon);
+$namedDB->links = array($namesTaxon, $secondName, $aboutIt);
+$namedTaxonNodes = rdfResponseNodes($namedDB, $taxonModule, array($namedTaxon));
+$namedTaxonByID = array_column($namedTaxonNodes, NULL, '@id');
+$reverse = $namedTaxonByID[$namedTaxonURI]['@reverse'];
+check(count($reverse['http://purl.obolibrary.org/obo/IAO_0000219']) === 2, 'Both names of the taxon are on the taxon');
+check($reverse['http://purl.obolibrary.org/obo/IAO_0000219'][0]['@id'] === $vernacularURI, 'Name reached from its taxon');
+check(count($reverse['http://purl.obolibrary.org/obo/IAO_0000136']) === 1, 'What is about the taxon is kept apart from what denotes it');
+// The taxon carries the names' URIs, not their text: a client follows them, as
+// it does for the recordings and trait values of a taxon.
+$nodes = array_merge($nodes, $namedTaxonNodes);
+
+// The names themselves are read onto the taxon as dwc:vernacularName, which is
+// what Darwin Core defines on dwc:Taxon, each in the language it is in. The
+// name records stay linked, as they hold what a name alone does not.
+$namedDB->embedded = array(
+  $vernacular,
+  array('source' => 'fixture', 'id' => 'vn2', 'vernacularName' => 'Pine Grasshopper',
+    'language' => 'en', 'locality' => '', 'remarks' => ''));
+$namedDB->queries = array(); $namedDB->bound = array();
+$embeddedNodes = rdfResponseNodes($namedDB, $taxonModule, array($namedTaxon));
+$embeddedByID = array_column($embeddedNodes, NULL, '@id');
+$taxonNames = $embeddedByID[$namedTaxonURI]['dwc:vernacularName'];
+check(count($namedDB->queries) === 3, 'Names are read in one query, not one per name');
+check(count($taxonNames) === 2, 'Both names of the taxon are on the taxon');
+check(in_array(array('@value' => 'le Criquet des pins', '@language' => 'fr'), $taxonNames, TRUE), 'Name on the taxon keeps its language');
+check(in_array(array('@value' => 'Pine Grasshopper', '@language' => 'en'), $taxonNames, TRUE), 'Every language is kept, not just one');
+check(count($embeddedByID[$namedTaxonURI]['@reverse']['http://purl.obolibrary.org/obo/IAO_0000219']) === 2, 'Names stay linked as well as read');
+check(strpos(rdfTurtle(array($embeddedByID[$namedTaxonURI])), 'dwc:vernacularName "le Criquet des pins"@fr, "Pine Grasshopper"@en') !== FALSE, 'Turtle gives the taxon both tagged names');
+// Only a name that denotes the taxon is a name of it.
+$aboutOnly = new FixtureDB($namedTaxon);
+$aboutOnly->links = array($aboutIt);
+$aboutOnly->embedded = array($vernacular);
+$aboutNodes = rdfResponseNodes($aboutOnly, $taxonModule, array($namedTaxon));
+$aboutByID = array_column($aboutNodes, NULL, '@id');
+check(count($aboutOnly->queries) === 2, 'No name lookup where nothing denotes the taxon');
+check(!isset($aboutByID[$namedTaxonURI]['dwc:vernacularName']), 'A link that is only about a taxon does not name it');
+// A failed lookup is not a taxon with no names.
+$namedDB->fail = TRUE;
+check(rdfResponseNodes($namedDB, $taxonModule, array($namedTaxon)) === FALSE, 'Failed name lookup propagates');
+$namedDB->fail = FALSE;
+$nodes = array_merge($nodes, $embeddedNodes);
+
 
 // A recording's sound, rights and place use the terms Audiovisual Core borrows.
 $described = $recording;

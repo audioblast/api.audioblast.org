@@ -6,13 +6,15 @@ rdfNegotiate()) for modules that describe their records in RDF. Such a module
 has an "rdf" entry in its info giving "path", the start of its records' URIs
 (see rdfRecordURI()), and "node", the function that turns a record and its URI
 into a node. An optional "related" callback returns additional nodes describing
-contributors, containers or assertions. Records are identified by their source
+contributors, containers or assertions, and an optional "embed" callback reads
+what linked records hold onto the records themselves (see rdfResponseNodes()). Records are identified by their source
 and id parameters. JSON-LD and Turtle are written from the same nodes, so both formats always say the same
 thing.
 
 A node is an array of properties (prefixed names, see rdfContext()) and their
 values, with "@id" and "@type" (full IRIs) as in JSON-LD. A value is a string,
-an IRI (rdfIRI()) or a typed literal (rdfTyped()).
+an IRI (rdfIRI()), a typed literal (rdfTyped()) or a literal in a language
+(rdfLang()).
 */
 
 //The outputs that give records as RDF
@@ -90,6 +92,18 @@ function rdfIRI($iri) {
 //A literal of a datatype, such as xsd:decimal
 function rdfTyped($value, $datatype) {
   return(array("@value" => (string)$value, "@type" => $datatype));
+}
+
+//A literal in the language it is written in, such as a vernacular name, or a
+//plain literal where the language is not known or is not an IETF BCP 47
+//language tag, so that a name is never said to be in a language it isn't in.
+//NULL for a literal there is nothing of.
+function rdfLang($value, $language) {
+  if ($value === NULL || $value === "") {return(NULL);}
+  if (!preg_match('/^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?$/', (string)$language)) {
+    return((string)$value);
+  }
+  return(array("@value" => (string)$value, "@language" => (string)$language));
 }
 
 //Adds a value to a node, unless it is missing or empty
@@ -183,10 +197,13 @@ function rdfTurtle($nodes) {
   return($out);
 }
 
-//A value in Turtle: an IRI, a typed literal or a string
+//A value in Turtle: an IRI, a literal in a language, a typed literal or a string
 function turtleValue($value) {
   if (is_array($value) && isset($value["@id"])) {
     return(turtleIRI($value["@id"]));
+  }
+  if (is_array($value) && isset($value["@language"])) {
+    return(turtleString($value["@value"])."@".$value["@language"]);
   }
   if (is_array($value)) {
     return(turtleString($value["@value"])."^^".$value["@type"]);
@@ -237,6 +254,7 @@ function rdfResponseNodes($db, $module, $records) {
   if (empty($module["rdf"]["links"]) || !$records) {return($nodes);}
   $links = loadModule("links");
   $seen = array();
+  $found = array();
   foreach (array_chunk($records, 100) as $batch) {
     foreach (array("subject", "object") as $side) {
       $values = array($module["mname"]);
@@ -260,17 +278,62 @@ function rdfResponseNodes($db, $module, $records) {
         $key = json_encode(array($link["source"], $link["id"]));
         if (isset($seen[$key])) {continue;}
         $seen[$key] = TRUE;
+        $found[] = $link;
         foreach (rdfNodes($links, array($link)) as $node) {$nodes[] = $node;}
       }
       $result->close();
       $stmt->close();
     }
   }
+  // A module may read what a linked record holds onto its own records, where a
+  // standard says the value belongs on them (a taxon's vernacular names are
+  // dwc:vernacularName of the taxon). The callback is given the links found
+  // above, so it needs no lookup of its own to know what to read, and it is
+  // skipped where nothing is linked.
+  if (isset($module["rdf"]["embed"]) && $found) {
+    $embedded = call_user_func($module["rdf"]["embed"], $db, $module, $records, $found);
+    if ($embedded === FALSE) {return(FALSE);}
+    foreach ($embedded as $node) {$nodes[] = $node;}
+  }
   $focus = array();
   foreach ($records as $record) {
     $focus[] = rdfRecordURI($module, $record["source"], $record[$module["rdf"]["id"] ?? "id"]);
   }
   return(rdfFrameIncoming(rdfMergeNodes($nodes), $focus));
+}
+
+// The records of a module with these (source, id) pairs, looked up in batches
+// so that a page of them costs a bounded number of queries however many pairs
+// it has. Pairs are bound, never interpolated. FALSE means a failed lookup,
+// not that no record matched.
+function rdfRecordsByID($db, $module, $pairs) {
+  $records = array();
+  if (!$pairs) {return($records);}
+  $source = $module["params"]["source"]["column"];
+  $id = $module["params"][$module["rdf"]["id"] ?? "id"]["column"];
+  foreach (array_chunk(array_values($pairs), 100) as $batch) {
+    $values = array();
+    $places = array();
+    foreach ($batch as $pair) {
+      $places[] = "(?, ?)";
+      $values[] = $pair[0];
+      $values[] = $pair[1];
+    }
+    $sql = SELECTclause($module, NULL, "table", "internal");
+    $sql .= " WHERE (`".$source."`, `".$id."`) IN (".implode(", ", $places).");";
+    $stmt = $db->prepare($sql);
+    if (!$stmt) {return(FALSE);}
+    if (!$stmt->bind_param(str_repeat("s", count($values)), ...$values) || !$stmt->execute()) {
+      $stmt->close();
+      return(FALSE);
+    }
+    $result = $stmt->get_result();
+    if (!$result) {$stmt->close(); return(FALSE);}
+    while ($record = $result->fetch_assoc()) {$records[] = $record;}
+    $result->close();
+    $stmt->close();
+  }
+  return($records);
 }
 
 // Combine descriptions of the same subject, retaining all distinct values.

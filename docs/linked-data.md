@@ -1,12 +1,15 @@
 # References and relationship RDF
 
-The references, links, taxa, specimens, locations and descriptions modules support `output=JSON-LD` and
+The references, links, taxa, specimens, locations, descriptions and
+vernacularnames modules support `output=JSON-LD` and
 `output=Turtle`. When `output` is absent, `Accept: application/ld+json` or
 `Accept: text/turtle` selects RDF. JSON remains the default. Existing filters
 and pagination apply; RDF pages advertise the next page in a Link header.
 
 Records resolve at `/reference/{source}/{id}`, `/link/{source}/{id}`,
-`/taxon/{source}/{id}`, `/specimen/{source}/{id}`, `/location/{source}/{id}` and `/description/{source}/{id}`. These reuse the existing prepared record lookup,
+`/taxon/{source}/{id}`, `/specimen/{source}/{id}`, `/location/{source}/{id}`,
+`/description/{source}/{id}` and `/vernacular-name/{source}/{id}`. These reuse
+the existing prepared record lookup,
 canonical-case redirect and 404 handling. Taxa now expose the existing source
 and id columns, so they can be filtered and identified across sources.
 No schema migration is needed.
@@ -198,6 +201,73 @@ longitude mean; a source that gives its own datum keeps it.
 A recording still carries its own `dwc:countryCode` and `dwc:locality`, because
 most sources have no place records at all. Where a recording has both, they
 agree: the export fills them from the same place.
+## Vernacular names
+
+`/data/vernacularnames/?output=JSON-LD` (or `output=Turtle`) describes the
+names a taxon is known by in a language as
+`http://rs.gbif.org/terms/1.0/VernacularName` resources, and the individual
+route is `/vernacular-name/{source}/{id}`. The name is `dwc:vernacularName`,
+its locality `dwc:locality` and its remarks `dwc:taxonRemarks`.
+
+The name is a literal in the language it is in, e.g. `"le Criquet des pins"@fr`,
+so that a client can take the names it reads as it takes any other labelled
+text, and the tag is given as `dcterms:language` as well for a client that
+wants it on its own. The ingest normalises a source's language to an IETF BCP
+47 tag; the API leaves the tag off a literal whose language it cannot read,
+rather than writing RDF that isn't well formed. A name whose source never
+recorded a language is a plain literal with no `dcterms:language`: none is
+inferred from the name, so the English-looking names that bio.acousti.ca holds
+without one stay untagged until the source says.
+
+A name is as its source gives it, with the article a reference wrote it with
+(`le Criquet des pins`, `The Long-winged Conehead`). No name at bio.acousti.ca
+is held both with an article and without, so stripping one would change the
+data rather than make it consistent.
+
+The taxon a name names, and the reference it was taken from, are relationships
+in the links table, not columns. Darwin Core has no property that takes a taxon
+for a vernacular name — `dwc:vernacularName` takes the name itself — and
+`dwc:relationshipOfResourceID` asks for an OBO relation, so the taxon predicate
+is `IAO:0000219` (denotes): a name is made to pick out the thing it names,
+which is what denotation is. It is a subproperty of `IAO:0000136` (is about),
+so a name is still about its taxon under entailment, though a `/data/links/`
+query by predicate is a literal match and will not find it under is-about. The
+reference predicate is `dcterms:source`, as for trait values taken from
+references.
+
+Both appear in vernacular name responses in the usual way. Links are looked up
+by the record at either end rather than by predicate, so the names of a taxon
+are on the taxon's own response as incoming `IAO:0000219` assertions under
+@reverse, next to the recordings and trait values that are about it.
+
+### Names on the taxon
+
+A taxon also carries the names themselves, as `dwc:vernacularName`, which is
+what Darwin Core defines on `dwc:Taxon`, each a literal in the language it is
+in:
+
+```turtle
+<https://api.audioblast.org/taxon/bio.acousti.ca/72>
+    a dwc:Taxon ;
+    dwc:scientificName "Decticus verrucivorus" ;
+    dwc:vernacularName "Warzenbeißer"@de, "Wrattenbijter"@nl, "The Wartbiter"@en .
+```
+
+so a client reading a taxon has the names without following a link for each.
+The name records stay linked as well, since they hold what a name alone does
+not: where it is used, its remarks and the reference it was taken from.
+
+Only a name that **denotes** the taxon is read onto it. A link that merely says
+a name is about a taxon stays a link, as it does not say the taxon is called
+that.
+
+This is the `rdf.embed` callback, which any module may declare: it is given the
+links already found for a page of records and returns nodes to merge onto them,
+so it needs no lookup to know what to read. `rdfRecordsByID()` then fetches
+those records in batches of 100, binding every value, so a page costs a bounded
+number of queries rather than one per name. A failed lookup propagates as a
+failure rather than as a taxon with no names, and a page with nothing linked
+makes no extra query at all.
 
 ## Annotation regions of interest
 
