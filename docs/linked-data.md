@@ -262,7 +262,9 @@ its locality `dwc:locality` and its remarks `dwc:taxonRemarks`.
 The name is a literal in the language it is in, e.g. `"le Criquet des pins"@fr`,
 so that a client can take the names it reads as it takes any other labelled
 text, and the tag is given as `dcterms:language` as well for a client that
-wants it on its own. The ingest normalises a source's language to an IETF BCP
+wants it on its own, typed `xsd:language`, whose lexical space is BCP 47
+syntax, as onomatopoeia give theirs. The ingest normalises a source's language
+to an IETF BCP
 47 tag; the API leaves the tag off a literal whose language it cannot read,
 rather than writing RDF that isn't well formed. A name whose source never
 recorded a language is a plain literal with no `dcterms:language`: none is

@@ -85,13 +85,17 @@ function vernacularnames_info() {
 //A vernacular name as an RDF node (see core/rdf.php) at its URI. The name
 //itself is a literal in the language it is in, so that a client can take the
 //names in a language it reads as it takes any other labelled text; the tag is
-//given as dcterms:language as well, for a client that wants it on its own.
+//given as dcterms:language as well, for a client that wants it on its own,
+//typed as the IETF BCP 47 syntax it is, as onomatopoeia give theirs.
 function vernacularnames_rdf_node($name, $uri) {
   $node = array("@id" => $uri,
     "@type" => "http://rs.gbif.org/terms/1.0/VernacularName");
   rdfAdd($node, "dwc:vernacularName",
     rdfLang($name["vernacularName"] ?? NULL, $name["language"] ?? NULL));
-  rdfAdd($node, "dcterms:language", $name["language"] ?? NULL);
+  $language = $name["language"] ?? "";
+  if ($language !== "" && $language !== NULL) {
+    rdfAdd($node, "dcterms:language", rdfTyped($language, "xsd:language"));
+  }
   rdfAdd($node, "dwc:locality", $name["locality"] ?? NULL);
   rdfAdd($node, "dwc:taxonRemarks", $name["remarks"] ?? NULL);
   //Discover the taxon the name is for, and the reference it was taken from
