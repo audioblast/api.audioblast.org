@@ -1,12 +1,12 @@
 # References and relationship RDF
 
-The references, links, taxa and specimens modules support `output=JSON-LD` and
+The references, links, taxa, specimens and locations modules support `output=JSON-LD` and
 `output=Turtle`. When `output` is absent, `Accept: application/ld+json` or
 `Accept: text/turtle` selects RDF. JSON remains the default. Existing filters
 and pagination apply; RDF pages advertise the next page in a Link header.
 
 Records resolve at `/reference/{source}/{id}`, `/link/{source}/{id}`,
-`/taxon/{source}/{id}` and `/specimen/{source}/{id}`. These reuse the existing prepared record lookup,
+`/taxon/{source}/{id}`, `/specimen/{source}/{id}` and `/location/{source}/{id}`. These reuse the existing prepared record lookup,
 canonical-case redirect and 404 handling. Taxa now expose the existing source
 and id columns, so they can be filtered and identified across sources.
 No schema migration is needed.
@@ -152,6 +152,33 @@ are relationships in the links table, not columns:
 the specimen. They appear in specimen responses in the usual way, incoming ones
 under @reverse, along with the two filtered `/data/links/` discovery URLs and
 the specimen's page at its source under `rdfs:seeAlso`.
+
+## Locations
+
+`/data/locations/?output=JSON-LD` (or `output=Turtle`) describes the places
+records were made or collected at as Darwin Core `dwc:Location` resources, and
+the individual route is `/location/{source}/{id}`, which is also the place's
+`dwc:locationID`. A place is described once however many records share it, and
+**which records are of it is a link**, `dwciri:inDescribedPlace`, not a column:
+the recordings and specimens made there appear under `@reverse` as usual, and
+the two filtered `/data/links/` discovery URLs are in `rdfs:seeAlso` beside the
+place's page at its source.
+
+The administrative units a place sits in are its own `dwc:` properties
+(`continent`, `countryCode`, `stateProvince`, `county`, `island`,
+`islandGroup`, `locality`), and its name is `rdfs:label`, since Darwin Core has
+no term for what a source calls a place. Those names are kept as the source
+gives them and are not matched to a gazetteer: `Asia-Temperate` and
+`Australasia` are the TDWG geographical scheme's own names, not ours.
+
+Coordinates, uncertainty and the two elevations are typed decimals, and an
+elevation below sea level is negative. A place with coordinates and no datum
+gets `dwc:geodeticDatum` EPSG:4326, which is what decimal latitude and
+longitude mean; a source that gives its own datum keeps it.
+
+A recording still carries its own `dwc:countryCode` and `dwc:locality`, because
+most sources have no place records at all. Where a recording has both, they
+agree: the export fills them from the same place.
 
 ## Annotation regions of interest
 
