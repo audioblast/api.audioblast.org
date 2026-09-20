@@ -12,7 +12,8 @@ thing.
 
 A node is an array of properties (prefixed names, see rdfContext()) and their
 values, with "@id" and "@type" (full IRIs) as in JSON-LD. A value is a string,
-an IRI (rdfIRI()) or a typed literal (rdfTyped()).
+an IRI (rdfIRI()), a typed literal (rdfTyped()) or a literal in a language
+(rdfLang()).
 */
 
 //The outputs that give records as RDF
@@ -90,6 +91,18 @@ function rdfIRI($iri) {
 //A literal of a datatype, such as xsd:decimal
 function rdfTyped($value, $datatype) {
   return(array("@value" => (string)$value, "@type" => $datatype));
+}
+
+//A literal in the language it is written in, such as a vernacular name, or a
+//plain literal where the language is not known or is not an IETF BCP 47
+//language tag, so that a name is never said to be in a language it isn't in.
+//NULL for a literal there is nothing of.
+function rdfLang($value, $language) {
+  if ($value === NULL || $value === "") {return(NULL);}
+  if (!preg_match('/^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?$/', (string)$language)) {
+    return((string)$value);
+  }
+  return(array("@value" => (string)$value, "@language" => (string)$language));
 }
 
 //Adds a value to a node, unless it is missing or empty
@@ -183,10 +196,13 @@ function rdfTurtle($nodes) {
   return($out);
 }
 
-//A value in Turtle: an IRI, a typed literal or a string
+//A value in Turtle: an IRI, a literal in a language, a typed literal or a string
 function turtleValue($value) {
   if (is_array($value) && isset($value["@id"])) {
     return(turtleIRI($value["@id"]));
+  }
+  if (is_array($value) && isset($value["@language"])) {
+    return(turtleString($value["@value"])."@".$value["@language"]);
   }
   if (is_array($value)) {
     return(turtleString($value["@value"])."^^".$value["@type"]);
