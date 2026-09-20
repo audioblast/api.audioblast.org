@@ -29,6 +29,7 @@ This is an export inventory, not a check of the current production database.
 | https://vocab.audioblast.org/cv/referenceContent#StridulatoryFileSEMImage | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#StridulatoryPositionPhotograph | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#TaxonomicTreatment | relationship qualifier |
+| https://vocab.audioblast.org/cv/recordingContent#NonFocalTaxa | relationship qualifier |
 | https://vocab.audioblast.org/cv/topic#AnthropogenicNoise | relationship target |
 | https://vocab.audioblast.org/cv/topic#AudioCollections | relationship target |
 | https://vocab.audioblast.org/cv/topic#AutomatedIdentification | relationship target |
@@ -63,6 +64,19 @@ This is an export inventory, not a check of the current production database.
 - referenceContent terms describe what a reference contains about its target
   taxon; AcousticBehaviour is used for the general acoustic-behaviour tags.
 - topic terms are the non-biological topics attached to publications.
+- recordingContent terms say what a recording holds about its target, as
+  referenceContent terms do for a reference. NonFocalTaxa qualifies the
+  IAO is about link from a recording to a species audible in it that is not
+  the one it is of, which is what xeno-canto lists in `also`. The predicate
+  is the same one a recording has to its own taxon, because a recording is
+  about a background species in the same way; the qualifier is what keeps the
+  two apart, so that a `/data/links/` query by is-about does not return every
+  recording a species was merely overheard in. Audiovisual Core has no term
+  for this: `ac:taxonCount` says other taxa in the background are not counted,
+  `ac:otherScientificName` means synonyms of the main name, and
+  `ac:taxonCoverage` means a higher taxon covering the primary subjects.
+  The name follows the term the ingest already emits; confirm whether the
+  singular NonFocalTaxon reads better before publishing it.
 - These are planned concepts. Confirm labels, definitions, hierarchy and
   supporting references when publishing them. The table records identifiers
   already used in the export, rather than new definitions.
@@ -83,6 +97,29 @@ referenceContent#TaxonomicTreatment, with the page in remarks. The API still
 emits whatever predicate a source supplies, and namePublishedInID remains
 available to a source that can assert it, such as the Orthoptera Species File.
 No NamePublishedIn property is requested for the audioBLAST vocabulary.
+
+## Image variants, which need no term
+
+A sonogram is covered by an existing TDWG term. `acvariant:v008`
+(`http://rs.tdwg.org/acvariant/values/v008`, "Visual") is defined as a service
+access point providing "a visual or graphic representation of a media resource
+that is not an image", and gives a sonogram and an oscillogram as its examples.
+No audioBLAST term is needed for what a sonogram is.
+
+What is missing is a way to say that one image is a smaller rendering of
+another. xeno-canto publishes four addresses per recording: two greyscale
+thumbnails, the colour high-resolution sonogram its own pages scroll, and a
+fourth that repeats the colour one for a recording under 120 seconds. The
+ingest takes only the colour one, because an images record holds a single file
+and so cannot say that another image is its thumbnail; Audiovisual Core says
+that with `ac:variant` on a service access point, which the images table does
+not model. Reconsider if images ever grow variants, and note that
+`rdfContext()` in `core/rdf.php` has no `acvariant` prefix yet.
+
+The `referenceContent#Sonagram` and `#Oscillogram` terms above are a different
+concept and should not be conflated with this: they say what a *reference*
+contains about a taxon, not what an image *is*. Their spelling also differs
+from the one xeno-canto and the TDWG vocabulary use.
 
 ## Deprecated vocabulary in use
 
