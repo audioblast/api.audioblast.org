@@ -4,10 +4,10 @@ Keep existing IRIs stable. Publish definitions in vocab.audioblast.org when read
 missing terms do not block reference or relationship RDF. Do not substitute
 glossary terms. No vocabulary changes have been made by this implementation.
 
-The vocabulary MCP was checked on 2026-09-19. Its list_vocabularies response
-did not include referenceContent or topic; searches for Oscillogram and
-Acoustic Behaviour found no matching definitions. The exact IRIs below were
-collected from the local links-export/links.csv snapshot (19595 rows).
+The vocabulary MCP was checked on 2026-09-20. Its list_vocabularies response
+did not include referenceContent or topic; searches for Oscillogram, Acoustic
+Behaviour and taxonomic found no matching definitions. The exact IRIs below were
+collected from links.csv on audioblast_ingest main (242af5e, 21172 rows).
 This is an export inventory, not a check of the current production database.
 
 | Pending IRI | Used as |
@@ -28,6 +28,7 @@ This is an export inventory, not a check of the current production database.
 | https://vocab.audioblast.org/cv/referenceContent#StridulatoryFilePhotograph | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#StridulatoryFileSEMImage | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#StridulatoryPositionPhotograph | relationship qualifier |
+| https://vocab.audioblast.org/cv/referenceContent#TaxonomicTreatment | relationship qualifier |
 | https://vocab.audioblast.org/cv/topic#AnthropogenicNoise | relationship target |
 | https://vocab.audioblast.org/cv/topic#AudioCollections | relationship target |
 | https://vocab.audioblast.org/cv/topic#AutomatedIdentification | relationship target |
@@ -62,6 +63,11 @@ This is an export inventory, not a check of the current production database.
 - referenceContent terms describe what a reference contains about its target
   taxon; AcousticBehaviour is used for the general acoustic-behaviour tags.
 - topic terms are the non-biological topics attached to publications.
+- TaxonomicTreatment is what a reference holds about a taxon when BioAcoustica's
+  classification cites it: a revision, a checklist, a description or any other
+  treatment of that taxon. It does not say the name was published there, and it
+  is not a nomenclatural act. The page the site gives stays in the relationship
+  remarks.
 - These are planned concepts. Confirm labels, definitions, hierarchy and
   supporting references when publishing them. The table records identifiers
   already used in the export, rather than new definitions.
@@ -71,11 +77,14 @@ This is an export inventory, not a check of the current production database.
   implementation. Link predicates are preserved as supplied.
 - Extend this list whenever another missing vocabulary term is encountered.
 
-## Source correction deferred
+## Source correction made
 
-The links export currently uses
-http://rs.tdwg.org/dwc/terms/namePublishedInID for taxon name-publication links.
-The user chose to correct this at source later. Preserve that predicate in the
-API; do not map it to a different vocabulary property during serialization.
-Confirm the intended relationship before selecting or defining a replacement.
-No NamePublishedIn property is currently requested for the audioBLAST vocabulary.
+The links export used http://rs.tdwg.org/dwc/terms/namePublishedInID for the
+reference a taxon's BioAcoustica classification cites. That field holds whatever
+work treats the taxon, so the name was often not published there, and the export
+(audioblast_ingest 242af5e) now gives those 266 links as the reference being
+http://purl.obolibrary.org/obo/IAO_0000136 (is about) the taxon, qualified as a
+TaxonomicTreatment, with the page in the relationship remarks. The API was not
+changed: predicates are still emitted as supplied. No NamePublishedIn property
+is requested for the audioBLAST vocabulary; namePublishedInID remains available
+to any source that can assert it correctly.

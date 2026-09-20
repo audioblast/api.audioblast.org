@@ -65,9 +65,12 @@ remain on the trait node. Relationships come exclusively from the links table;
 no reference or taxon links are inferred from free-text trait fields.
 Taxa include incoming recordings, traits and references under @reverse, plus
 outgoing links from the same table. Taxonomic names and ranks remain intact.
-Relationship predicates are emitted exactly as stored, including
-dwc:namePublishedInID in the existing name-publication links. Any correction to
-that predicate or its meaning will be made at source later, not in API output.
+Relationship predicates are emitted exactly as stored. The name-publication
+links BioAcoustica gave as dwc:namePublishedInID have since been corrected at
+source: its classification cites a reference that treats the taxon, which is
+often not the work that published the name, so those links now say the
+reference is about the taxon (IAO is about), qualified as a taxonomic
+treatment. The API serialises them as it does any other link.
 Prefix compaction changes only the spelling of an IRI, not its identity.
 
 Lookups use prepared parameters for the returned records' exact type/source/id,
