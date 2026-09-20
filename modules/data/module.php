@@ -89,7 +89,7 @@ function data_counts($params) {
   // so avoid loading every module until we know we have a cache miss.
   $data_module = loadModule("data");
   $wc = WHEREclause(generateParams($data_module["endpoints"]["fetch_data_counts"], $params));
-  $speedbird_hash = hash("sha256", "dc".$wc);
+  $speedbird_hash = hash("sha256", "dc-v2".$wc);
   if($params["cache"]==true) {
     $ret = speedbird_get($speedbird_hash);
     if ($ret != FALSE) {
@@ -105,12 +105,18 @@ function data_counts($params) {
     $sql .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
     $i++;
   }
+  $links_wc = $wc.(trim($wc) === "" ? " WHERE " : " AND ");
+  $links_wc .= "`subject_source` <> '' AND `object_source` <> '' AND `subject_source` <> `object_source`";
+  $sql .= ($i > 0 ? ", " : "")."(SELECT COUNT(*) FROM `audioblast`.`links` ".$links_wc.") AS `cross_source_links`";
   $sql .= " FROM DUAL;";
 
   global $db;
   $res = $db->query($sql);
   $ret = array();
   while ($row = $res->fetch_assoc()) {
+    // This is a subset of links, not another data type to add to the total.
+    $ret["data"]["cross_source_links"] = $row["cross_source_links"];
+    unset($row["cross_source_links"]);
     $ret["data"]["counts"] = $row;
   }
   $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
