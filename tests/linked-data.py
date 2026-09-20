@@ -113,6 +113,7 @@ DC = Namespace("http://purl.org/dc/elements/1.1/")
 description = URIRef("https://api.audioblast.org/description/fixture/12289")
 assert (description, RDF.type, URIRef("http://purl.org/dc/dcmitype/Text")) in a
 assert (description, DC.type, Literal("behaviour")) in a
+assert (description, URIRef("http://purl.org/dc/terms/type"), URIRef("http://rs.tdwg.org/ontology/voc/SPMInfoItems#Behaviour")) in a
 assert (description, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), URIRef("https://api.audioblast.org/taxon/other-source/42")) in a
 assert (description, URIRef("http://purl.org/dc/terms/source"), URIRef(reference)) in a
 print("Description, its topic, its taxon and the reference it rests on verified")

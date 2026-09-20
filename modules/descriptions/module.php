@@ -7,8 +7,8 @@ function descriptions_info() {
     "category" => "data",
     "table" => "descriptions",
     "hname" => "Descriptions",
-    "desc" => "This endpoint allows for the querying of what the sources held within audioBLAST! say about something in prose, such as how a taxon behaves, where and when it calls and how far apart calling males are. Each description has a topic saying what it is of. What a description is about, and the references it rests on, are links (see the links endpoint), not columns here, so a description that cites a paper says which paper. With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), descriptions are given as RDF texts. Each is identified by https://api.audioblast.org/description/{source}/{id}, which gives it in the same way.",
-    "source_notes" => "Descriptions are ingested from each source's descriptions and replace the descriptions that the source gave before. Topics are each source's own words until they are matched to vocabulary terms.",
+    "desc" => "This endpoint allows for the querying of what the sources held within audioBLAST! say about something in prose, such as how a taxon behaves, where and when it calls and how far apart calling males are. Each description has a topic saying what it is of, and the Species Profile Model info item that topic names where it names one. What a description is about, and the references it rests on, are links (see the links endpoint), not columns here, so a description that cites a paper says which paper. With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), descriptions are given as RDF texts. Each is identified by https://api.audioblast.org/description/{source}/{id}, which gives it in the same way.",
+    "source_notes" => "Descriptions are ingested from each source's descriptions and replace the descriptions that the source gave before. Topics are each source's own words, and the ingest reads the Species Profile Model info item each one names.",
     //Descriptions as RDF (see core/rdf.php), identified by
     //https://api.audioblast.org/description/{source}/{id}
     "rdf" => array(
@@ -47,6 +47,14 @@ function descriptions_info() {
         "column" => "value",
         "op" => "contains"
       ),
+      "topic_link" => array(
+        "desc" => "IRI of the Species Profile Model info item the topic names, e.g. http://rs.tdwg.org/ontology/voc/SPMInfoItems#Behaviour; empty where the topic names none",
+        "type" => "string",
+        "default" => "",
+        "column" => "topic_link",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
       "info_url" => array(
         "desc" => "URL of the description's page at its source",
         "type" => "string",
@@ -79,9 +87,10 @@ function descriptions_rdf_node($description, $uri) {
   $node = array("@id" => $uri,
     "@type" => "http://purl.org/dc/dcmitype/Text");
   rdfAdd($node, "dc:description", $description["value"] ?? NULL);
-  //Topics are each source's own words, so they are literals until the
-  //vocabulary has terms for them
+  //A topic is its source's own word, and the info item it names is what that
+  //word means to anyone else
   rdfAdd($node, "dc:type", $description["topic"] ?? NULL);
+  rdfAdd($node, "dcterms:type", rdfURL($description["topic_link"] ?? NULL));
   $node["rdfs:seeAlso"] = array();
   $url = rdfURL($description["info_url"] ?? NULL);
   if ($url !== NULL) {$node["rdfs:seeAlso"][] = $url;}

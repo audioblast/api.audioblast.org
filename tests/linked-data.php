@@ -356,6 +356,7 @@ $nodes = array_merge($nodes, $specimenNodes);
 $descriptionModule = loadModule('descriptions');
 $description = array('source' => 'fixture', 'id' => '12289', 'topic' => 'behaviour',
   'value' => 'Males were reported to call 0.3-4.0m up, in shrubs along small hill-streams.',
+  'topic_link' => 'http://rs.tdwg.org/ontology/voc/SPMInfoItems#Behaviour',
   'info_url' => 'https://example.org/profile/12289');
 $descriptionURI = rdfRecordURI($descriptionModule, $description['source'], $description['id']);
 check(recordModule('/description/fixture/12289')['mname'] === 'descriptions', 'Description route');
@@ -377,6 +378,9 @@ $descriptionByID = array_column($descriptionNodes, NULL, '@id');
 check($descriptionByID[$descriptionURI]['@type'] === 'http://purl.org/dc/dcmitype/Text', 'Description is a text');
 check(strpos($descriptionByID[$descriptionURI]['dc:description'], 'hill-streams') !== FALSE, 'Prose retained');
 check($descriptionByID[$descriptionURI]['dc:type'] === 'behaviour', "Topic is the source's own word");
+check($descriptionByID[$descriptionURI]['dcterms:type']['@id'] === $description['topic_link'], 'Topic names its Species Profile Model info item');
+$untyped = $description; $untyped['id'] = '12292'; $untyped['topic'] = 'song'; $untyped['topic_link'] = '';
+check(!isset(rdfNodes($descriptionModule, array($untyped))[0]['dcterms:type']), 'A topic the model has no item for names none');
 check($descriptionByID[$descriptionURI]['http://purl.obolibrary.org/obo/IAO_0000136']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Description is about a taxon');
 check($descriptionByID[$descriptionURI]['dcterms:source']['@id'] === $uri, 'Description rests on a reference');
 check(count($descriptionByID[$descriptionURI]['rdfs:seeAlso']) === 3, 'Source page and incoming and outgoing links');
