@@ -41,10 +41,10 @@ print("Trait-reference, trait-taxon and incoming relationships verified")
 taxon = URIRef("https://api.audioblast.org/taxon/fixture/book/a%20%231")
 for kind in ("recording", "trait", "reference"):
     assert (URIRef(f"https://api.audioblast.org/{kind}/fixture/incoming"), URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), taxon) in a
-assert (taxon, URIRef("http://rs.tdwg.org/dwc/terms/namePublishedInID"), URIRef(reference)) in a
-assert (URIRef("https://api.audioblast.org/link/curator/name-publication"), RDF.predicate, URIRef("http://rs.tdwg.org/dwc/terms/namePublishedInID")) in a
-assert not list(a.triples((None, URIRef("https://vocab.audioblast.org/NamePublishedIn"), None)))
-print("Taxon incoming links and unchanged source publication predicate verified")
+assert (taxon, URIRef("http://rs.tdwg.org/dwc/terms/nameAccordingToID"), URIRef(reference)) in a
+assert (URIRef("https://api.audioblast.org/link/curator/taxon-concept"), RDF.predicate, URIRef("http://rs.tdwg.org/dwc/terms/nameAccordingToID")) in a
+assert not list(a.triples((None, URIRef("https://vocab.audioblast.org/NameAccordingTo"), None)))
+print("Taxon incoming links and unchanged source predicate verified")
 
 AC = Namespace("http://rs.tdwg.org/ac/terms/")
 roi = URIRef("https://api.audioblast.org/annotation/fixture/book/a%20%231")
