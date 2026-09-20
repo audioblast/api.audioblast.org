@@ -45,7 +45,20 @@ function small_ingests_info() {
         "process" => array(
           "hz2khz"
         )
-      ) 
+      ),
+      array(
+        //Links from the Natural History Museum specimens that BioAcoustica
+        //holds to the objects that hold the same specimens in the NHM Data
+        //Portal, which the repository's build/nhm_links.R matches on the
+        //barcodes of the specimens themselves. The subjects are BioAcoustica's
+        //records, so the links name its source themselves rather than leaving
+        //it to be filled in with their own.
+        "type" => "links",
+        "url" => "https://raw.githubusercontent.com/audioblast/small_ingests/main/nhm_links.csv",
+        "override" => array(
+          "source" => "nhm"
+        )
+      )
     )
   );
   return($info);
