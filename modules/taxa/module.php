@@ -97,7 +97,37 @@ function taxa_info() {
         "type" => "string",
         "default" => "",
         "column" => "Kingdom",
-        "op" => "="  
+        "op" => "="
+      ),
+      "taxonomicStatus" => array(
+        "desc" => "Whether the name is the one in use (dwc:taxonomicStatus), e.g. accepted, homotypic synonym, heterotypic synonym, misapplied, doubtful or invalid. Empty where the source says nothing about the name.",
+        "type" => "string",
+        "default" => "",
+        "column" => "taxonomicStatus",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
+      "nomenclaturalStatus" => array(
+        "desc" => "Why a name is not the one in use, in its source's own words (dwc:nomenclaturalStatus), e.g. junior synonym or subsequent name/combination",
+        "type" => "string",
+        "default" => "",
+        "column" => "nomenclaturalStatus",
+        "op" => "=",
+        "autocomplete" => TRUE
+      ),
+      "acceptedNameUsageID" => array(
+        "desc" => "ID within the source of the name that replaced this one (dwc:acceptedNameUsageID); empty where the name is in use, or where the source does not say which replaced it",
+        "type" => "string",
+        "default" => "",
+        "column" => "acceptedNameUsageID",
+        "op" => "="
+      ),
+      "acceptedNameUsage" => array(
+        "desc" => "The name that replaced this one (dwc:acceptedNameUsage)",
+        "type" => "string",
+        "default" => "",
+        "column" => "acceptedNameUsage",
+        "op" => "contains"
       ),
       "output" => array(
         "desc" => "At present just an array",
@@ -173,6 +203,20 @@ function taxa_rdf_node($taxon, $uri) {
   rdfAdd($node, "dwc:taxonRank", $taxon["rank"] ?? NULL);
   foreach (array("genus", "subfamily", "family", "order", "class", "kingdom") as $rank) {
     rdfAdd($node, "dwc:".$rank, $taxon[$rank] ?? NULL);
+  }
+  //Whether the name is the one in use, why it is not in its source's own
+  //words, and the name that replaced it. A taxon a source says nothing about
+  //gets no status: not saying is not the same as saying a name is accepted.
+  rdfAdd($node, "dwc:taxonomicStatus", $taxon["taxonomicStatus"] ?? NULL);
+  rdfAdd($node, "dwc:nomenclaturalStatus", $taxon["nomenclaturalStatus"] ?? NULL);
+  rdfAdd($node, "dwc:acceptedNameUsage", $taxon["acceptedNameUsage"] ?? NULL);
+  //The name that replaced this one is identified by its URI rather than by the
+  //id it has within its source, as every other record is here: see the Darwin
+  //Core RDF guide, section 2.6 on ID terms.
+  $accepted = $taxon["acceptedNameUsageID"] ?? "";
+  if ($accepted !== "" && $accepted !== NULL && ($taxon["source"] ?? "") !== "") {
+    rdfAdd($node, "dwc:acceptedNameUsageID",
+      rdfIRI(rdfRecordURI(loadModule("taxa"), $taxon["source"], $accepted)));
   }
   return($node);
 }
