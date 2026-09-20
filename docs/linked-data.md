@@ -163,9 +163,13 @@ source says about something in prose as `dcmitype:Text` resources, and the
 individual route is `/description/{source}/{id}`. The prose is `dc:description`
 and the topic `dc:type`, as GBIF's Taxon Description extension gives them.
 
-Topics are each source's own words — `behaviour`, `morphology`, `diagnostic`,
-`general` for bio.acousti.ca's species profiles — and stay literals until the
-vocabulary has terms for them, as the names of details do.
+A topic is its source's own word, kept as `dc:type`, and `dcterms:type` is the
+Species Profile Model info item that word names: `behaviour` is
+`SPMInfoItems#Behaviour`, `diagnostic` and `general` its `DiagnosticDescription`
+and `GeneralDescription`. That is not a mapping invented here — a Scratchpads
+species profile implements the Species Profile Model, so its fields are that
+model's info items, and the ingest recovers the identity the data already had.
+A topic the model has no item for gets no IRI rather than an invented one.
 
 **What a description is about, and the references it rests on, are links**, so
 they reach the graph the way every other relationship does: IAO is about for
@@ -174,6 +178,14 @@ is a record rather than a detail. bio.acousti.ca writes its citations into the
 prose as `[bib]12290[/bib]`, and the export reads each one out as a link and
 takes it out of the sentence, so the text reads as written and the paper behind
 it is still there to follow.
+
+TDWG marks the Species Profile Model "no longer under development" and no
+longer recommends it. Nothing has replaced it, its concepts still carry their
+definitions, and GBIF's Taxon Description extension and the Encyclopedia of
+Life both name a description's topic with them, so the choice was between a
+resolvable IRI and an unmatchable English word. See
+[vocabulary-backlog.md](vocabulary-backlog.md) for what would have to happen to
+replace it.
 
 ## Locations
 
