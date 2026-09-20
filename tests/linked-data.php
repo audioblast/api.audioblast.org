@@ -382,6 +382,32 @@ ob_start(); recordAPI($vernacularDB); $vernacularTTL = ob_get_clean();
 check($vernacularTTL === rdfTurtle($vernacularNodes), 'Vernacular name URI serves embedded Turtle');
 $nodes = array_merge($nodes, $vernacularNodes);
 
+// The names of a taxon are on the taxon's own response: links are looked up by
+// the record at either end, not by predicate, so denotes is found there exactly
+// as is about is, next to the recordings and trait values of the same taxon.
+$namedTaxon = array('source' => 'other-source', 'id' => '42', 'taxon' => 'Example species',
+  'rank' => 'species', 'genus' => 'Example');
+$namedTaxonURI = 'https://api.audioblast.org/taxon/other-source/42';
+$secondName = $namesTaxon;
+$secondName['id'] = 'names-taxon-2'; $secondName['subject_id'] = 'vn2';
+$aboutIt = $namesTaxon;
+$aboutIt['id'] = 'recording-about'; $aboutIt['subject_type'] = 'recordings';
+$aboutIt['subject_id'] = 'rec1';
+$aboutIt['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000136';
+$namedDB = new FixtureDB($namedTaxon);
+$namedDB->links = array($namesTaxon, $secondName, $aboutIt);
+$namedTaxonNodes = rdfResponseNodes($namedDB, $taxonModule, array($namedTaxon));
+$namedTaxonByID = array_column($namedTaxonNodes, NULL, '@id');
+$reverse = $namedTaxonByID[$namedTaxonURI]['@reverse'];
+check(count($reverse['http://purl.obolibrary.org/obo/IAO_0000219']) === 2, 'Both names of the taxon are on the taxon');
+check($reverse['http://purl.obolibrary.org/obo/IAO_0000219'][0]['@id'] === $vernacularURI, 'Name reached from its taxon');
+check(count($reverse['http://purl.obolibrary.org/obo/IAO_0000136']) === 1, 'What is about the taxon is kept apart from what denotes it');
+// The taxon carries the names' URIs, not their text: a client follows them, as
+// it does for the recordings and trait values of a taxon.
+check(!isset($namedTaxonByID[$namedTaxonURI]['dwc:vernacularName']), 'Taxon is not given the name text');
+$nodes = array_merge($nodes, $namedTaxonNodes);
+
+
 // A recording's sound, rights and place use the terms Audiovisual Core borrows.
 $described = $recording;
 $described['sample_rate'] = '44100'; $described['channels'] = '2';
