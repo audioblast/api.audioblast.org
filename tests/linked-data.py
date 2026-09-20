@@ -92,6 +92,17 @@ assert len(list(a.objects(named_taxon, DWC.vernacularName))) == 2
 assert (name, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), named_taxon) in a
 print("Taxon carries the names it is known by, each in its language, and keeps them linked")
 
+synonym = URIRef("https://api.audioblast.org/taxon/fixture/syn1")
+assert (synonym, RDF.type, DWC.Taxon) in a
+assert (synonym, DWC.scientificName, Literal("Chorthippus parallelus")) in a
+assert (synonym, DWC.taxonomicStatus, Literal("homotypic synonym")) in a
+assert (synonym, DWC.nomenclaturalStatus, Literal("subsequent name/combination")) in a
+assert (synonym, DWC.acceptedNameUsage, Literal("Pseudochorthippus parallelus")) in a
+# What replaced it is a resolvable taxon, not a source-local id in a literal
+assert (synonym, DWC.acceptedNameUsageID, URIRef("https://api.audioblast.org/taxon/fixture/42")) in a
+assert not [o for o in a.objects(synonym, DWC.acceptedNameUsageID) if isinstance(o, Literal)]
+print("Synonym status, the reason for it and the name that replaced it verified")
+
 RDFS = Namespace("http://www.w3.org/2000/01/rdf-schema#")
 DC = Namespace("http://purl.org/dc/elements/1.1/")
 DCMITYPE = Namespace("http://purl.org/dc/dcmitype/")
