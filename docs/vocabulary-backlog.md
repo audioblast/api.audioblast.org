@@ -7,7 +7,7 @@ glossary terms. No vocabulary changes have been made by this implementation.
 The vocabulary MCP was checked on 2026-09-20. Its list_vocabularies response
 did not include referenceContent or topic; searches for Oscillogram, Acoustic
 Behaviour and taxonomic found no matching definitions. The exact IRIs below were
-collected from the local classification-links/links.csv snapshot (19595 rows).
+collected from links.csv on audioblast_ingest main (242af5e, 21172 rows).
 This is an export inventory, not a check of the current production database.
 
 | Pending IRI | Used as |
@@ -82,7 +82,7 @@ This is an export inventory, not a check of the current production database.
 The links export used http://rs.tdwg.org/dwc/terms/namePublishedInID for the
 reference a taxon's BioAcoustica classification cites. That field holds whatever
 work treats the taxon, so the name was often not published there, and the export
-now gives those 266 links as the reference being
+(audioblast_ingest 242af5e) now gives those 266 links as the reference being
 http://purl.obolibrary.org/obo/IAO_0000136 (is about) the taxon, qualified as a
 TaxonomicTreatment, with the page in the relationship remarks. The API was not
 changed: predicates are still emitted as supplied. No NamePublishedIn property
