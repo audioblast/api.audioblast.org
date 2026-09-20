@@ -192,9 +192,36 @@ references.
 Both appear in vernacular name responses in the usual way. Links are looked up
 by the record at either end rather than by predicate, so the names of a taxon
 are on the taxon's own response as incoming `IAO:0000219` assertions under
-@reverse, next to the recordings and trait values that are about it. A taxon
-carries the names' URIs, not their text: a client follows them, as it does for
-everything else linked to a taxon.
+@reverse, next to the recordings and trait values that are about it.
+
+### Names on the taxon
+
+A taxon also carries the names themselves, as `dwc:vernacularName`, which is
+what Darwin Core defines on `dwc:Taxon`, each a literal in the language it is
+in:
+
+```turtle
+<https://api.audioblast.org/taxon/bio.acousti.ca/72>
+    a dwc:Taxon ;
+    dwc:scientificName "Decticus verrucivorus" ;
+    dwc:vernacularName "Warzenbeißer"@de, "Wrattenbijter"@nl, "The Wartbiter"@en .
+```
+
+so a client reading a taxon has the names without following a link for each.
+The name records stay linked as well, since they hold what a name alone does
+not: where it is used, its remarks and the reference it was taken from.
+
+Only a name that **denotes** the taxon is read onto it. A link that merely says
+a name is about a taxon stays a link, as it does not say the taxon is called
+that.
+
+This is the `rdf.embed` callback, which any module may declare: it is given the
+links already found for a page of records and returns nodes to merge onto them,
+so it needs no lookup to know what to read. `rdfRecordsByID()` then fetches
+those records in batches of 100, binding every value, so a page costs a bounded
+number of queries rather than one per name. A failed lookup propagates as a
+failure rather than as a taxon with no names, and a page with nothing linked
+makes no extra query at all.
 
 ## Annotation regions of interest
 
