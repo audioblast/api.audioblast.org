@@ -44,6 +44,13 @@ function bioacoustica_info() {
         )
       ),
       array(
+        "type" => "descriptions",
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/descriptions.csv",
+        "process" => array(
+          "sourceR"
+        )
+      ),
+      array(
         "type" => "locations",
         "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/locations.csv",
         "process" => array(
