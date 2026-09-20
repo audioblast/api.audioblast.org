@@ -82,6 +82,15 @@ assert (recording, DWC.countryCode, Literal("GB")) in a
 assert (recording, DWC.locality, Literal("A place")) in a
 print("Recording sample rate, rights holder and place verified")
 
+place = URIRef("https://api.audioblast.org/location/fixture/p1")
+assert (place, RDF.type, DWC.Location) in a
+assert (place, DWC.locationID, Literal(str(place))) in a
+assert (place, DWC.countryCode, Literal("GB")) in a
+assert (place, DWC.minimumElevationInMeters, Literal("-5", datatype=XSD.decimal)) in a
+assert (place, DWC.geodeticDatum, Literal("EPSG:4326")) in a
+assert (recording, URIRef("http://rs.tdwg.org/dwc/iri/inDescribedPlace"), place) in a
+print("Place, its units and the recording made there verified")
+
 services_json = Graph().parse(base / "service-access.jsonld", format="json-ld")
 services_turtle = Graph().parse(base / "service-access.ttl", format="turtle")
 assert isomorphic(services_json, services_turtle)
