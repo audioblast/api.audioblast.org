@@ -92,6 +92,26 @@ assert len(list(a.objects(named_taxon, DWC.vernacularName))) == 2
 assert (name, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), named_taxon) in a
 print("Taxon carries the names it is known by, each in its language, and keeps them linked")
 
+RDFS = Namespace("http://www.w3.org/2000/01/rdf-schema#")
+DC = Namespace("http://purl.org/dc/elements/1.1/")
+DCMITYPE = Namespace("http://purl.org/dc/dcmitype/")
+ONTOLEX = Namespace("http://www.w3.org/ns/lemon/ontolex#")
+OLIA = Namespace("http://purl.org/olia/olia.owl#")
+rendering = URIRef("https://api.audioblast.org/onomatopoeia/fixture/book/a%20%231")
+assert (rendering, RDF.type, DCMITYPE.Text) in a
+assert (rendering, RDF.type, ONTOLEX.LexicalEntry) in a
+assert (rendering, RDFS.label, Literal("bow-wow", lang="en-GB")) in a
+assert (rendering, DC.type, Literal("imitation")) in a
+assert (rendering, DCTERMS.type, OLIA.OnomatopoeticWord) in a
+assert (rendering, DCTERMS.language, Literal("en-GB", datatype=XSD.language)) in a
+assert (rendering, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), named_taxon) in a
+assert (rendering, DCTERMS.source, URIRef(reference)) in a
+# A rendering names the sound, not the taxon, so it neither denotes the taxon
+# nor is read onto it as one of the names the taxon is known by.
+assert not list(a.triples((rendering, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), None))), "a rendering does not denote its taxon"
+assert not list(a.triples((named_taxon, DWC.vernacularName, Literal("bow-wow", lang="en-GB")))), "a rendering is not a name of its taxon"
+print("Onomatopoeia, its kind, its language and the taxon it is about verified")
+
 MO = Namespace("http://purl.org/ontology/mo/")
 XMP_RIGHTS = Namespace("http://ns.adobe.com/xap/1.0/rights/")
 assert (recording, MO.sample_rate, Literal("44100", datatype=XSD.decimal)) in a
@@ -109,7 +129,6 @@ assert (place, DWC.geodeticDatum, Literal("EPSG:4326")) in a
 assert (recording, URIRef("http://rs.tdwg.org/dwc/iri/inDescribedPlace"), place) in a
 print("Place, its units and the recording made there verified")
 
-DC = Namespace("http://purl.org/dc/elements/1.1/")
 description = URIRef("https://api.audioblast.org/description/fixture/12289")
 assert (description, RDF.type, URIRef("http://purl.org/dc/dcmitype/Text")) in a
 assert (description, DC.type, Literal("behaviour")) in a
