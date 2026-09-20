@@ -85,6 +85,13 @@ assert (name, DCTERMS.source, URIRef(reference)) in a
 assert not list(a.triples((name, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), None))), "denotes is not expanded to its superproperty"
 print("Vernacular name, its language tag, the taxon it names and where it came from verified")
 
+named_taxon = URIRef("https://api.audioblast.org/taxon/other-source/42")
+assert (named_taxon, DWC.vernacularName, Literal("le Criquet des pins", lang="fr")) in a
+assert (named_taxon, DWC.vernacularName, Literal("Pine Grasshopper", lang="en")) in a
+assert len(list(a.objects(named_taxon, DWC.vernacularName))) == 2
+assert (name, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), named_taxon) in a
+print("Taxon carries the names it is known by, each in its language, and keeps them linked")
+
 MO = Namespace("http://purl.org/ontology/mo/")
 XMP_RIGHTS = Namespace("http://ns.adobe.com/xap/1.0/rights/")
 assert (recording, MO.sample_rate, Literal("44100", datatype=XSD.decimal)) in a

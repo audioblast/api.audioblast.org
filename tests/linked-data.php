@@ -109,9 +109,24 @@ class LinkFixtureStatement {
   function get_result() {return(new LinkFixtureResult($this->db->links));}
   function close() {}
 }
+// Records read onto a response by an embed callback, looked up by (source, id)
+// rather than one at a time.
+class EmbedFixtureStatement {
+  private $db;
+  function __construct($db) {$this->db = $db;}
+  function bind_param($types, &...$values) {
+    check(strlen($types) === count($values), 'All embedded values are bound');
+    $this->db->bound[] = $values;
+    return(TRUE);
+  }
+  function execute() {return(!$this->db->fail);}
+  function get_result() {return(new LinkFixtureResult($this->db->embedded));}
+  function close() {}
+}
 class FixtureDB {
   private $row;
   public $links = array();
+  public $embedded = array();
   public $bound = array();
   public $queries = array();
   public $fail = FALSE;
@@ -119,6 +134,8 @@ class FixtureDB {
   function prepare($sql) {
     $this->queries[] = $sql;
     if (strpos($sql, 'FROM links WHERE') !== FALSE) {return(new LinkFixtureStatement($this));}
+    //An embed reads many records by (source, id); a record route reads one
+    if (strpos($sql, '(`source`, `id`) IN (') !== FALSE) {return(new EmbedFixtureStatement($this));}
     check(preg_match('/WHERE `source` = \? AND `(id|traitID|annotation_id)` = \? LIMIT 1/', $sql) === 1, 'Exact prepared lookup using module ID column');
     return(new FixtureStatement($this->row));
   }
@@ -465,8 +482,38 @@ check($reverse['http://purl.obolibrary.org/obo/IAO_0000219'][0]['@id'] === $vern
 check(count($reverse['http://purl.obolibrary.org/obo/IAO_0000136']) === 1, 'What is about the taxon is kept apart from what denotes it');
 // The taxon carries the names' URIs, not their text: a client follows them, as
 // it does for the recordings and trait values of a taxon.
-check(!isset($namedTaxonByID[$namedTaxonURI]['dwc:vernacularName']), 'Taxon is not given the name text');
 $nodes = array_merge($nodes, $namedTaxonNodes);
+
+// The names themselves are read onto the taxon as dwc:vernacularName, which is
+// what Darwin Core defines on dwc:Taxon, each in the language it is in. The
+// name records stay linked, as they hold what a name alone does not.
+$namedDB->embedded = array(
+  $vernacular,
+  array('source' => 'fixture', 'id' => 'vn2', 'vernacularName' => 'Pine Grasshopper',
+    'language' => 'en', 'locality' => '', 'remarks' => ''));
+$namedDB->queries = array(); $namedDB->bound = array();
+$embeddedNodes = rdfResponseNodes($namedDB, $taxonModule, array($namedTaxon));
+$embeddedByID = array_column($embeddedNodes, NULL, '@id');
+$taxonNames = $embeddedByID[$namedTaxonURI]['dwc:vernacularName'];
+check(count($namedDB->queries) === 3, 'Names are read in one query, not one per name');
+check(count($taxonNames) === 2, 'Both names of the taxon are on the taxon');
+check(in_array(array('@value' => 'le Criquet des pins', '@language' => 'fr'), $taxonNames, TRUE), 'Name on the taxon keeps its language');
+check(in_array(array('@value' => 'Pine Grasshopper', '@language' => 'en'), $taxonNames, TRUE), 'Every language is kept, not just one');
+check(count($embeddedByID[$namedTaxonURI]['@reverse']['http://purl.obolibrary.org/obo/IAO_0000219']) === 2, 'Names stay linked as well as read');
+check(strpos(rdfTurtle(array($embeddedByID[$namedTaxonURI])), 'dwc:vernacularName "le Criquet des pins"@fr, "Pine Grasshopper"@en') !== FALSE, 'Turtle gives the taxon both tagged names');
+// Only a name that denotes the taxon is a name of it.
+$aboutOnly = new FixtureDB($namedTaxon);
+$aboutOnly->links = array($aboutIt);
+$aboutOnly->embedded = array($vernacular);
+$aboutNodes = rdfResponseNodes($aboutOnly, $taxonModule, array($namedTaxon));
+$aboutByID = array_column($aboutNodes, NULL, '@id');
+check(count($aboutOnly->queries) === 2, 'No name lookup where nothing denotes the taxon');
+check(!isset($aboutByID[$namedTaxonURI]['dwc:vernacularName']), 'A link that is only about a taxon does not name it');
+// A failed lookup is not a taxon with no names.
+$namedDB->fail = TRUE;
+check(rdfResponseNodes($namedDB, $taxonModule, array($namedTaxon)) === FALSE, 'Failed name lookup propagates');
+$namedDB->fail = FALSE;
+$nodes = array_merge($nodes, $embeddedNodes);
 
 
 // A recording's sound, rights and place use the terms Audiovisual Core borrows.
