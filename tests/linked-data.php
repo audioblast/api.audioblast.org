@@ -335,6 +335,38 @@ ob_start(); recordAPI($specimenDB); $specimenTTL = ob_get_clean();
 check($specimenTTL === rdfTurtle($specimenNodes), 'Specimen URI serves embedded Turtle');
 $nodes = array_merge($nodes, $specimenNodes);
 
+// Places are described once, and the records made there point at them.
+$locationModule = loadModule('locations');
+$place = array('source' => 'fixture', 'id' => 'p1', 'name' => "Chapman's Pool, Dorset",
+  'continent' => 'Europe', 'countryCode' => 'GB', 'stateProvince' => 'England',
+  'county' => 'Dorset', 'island' => '', 'islandGroup' => '', 'locality' => 'On reeds by the pool',
+  'decimalLatitude' => '50.6016', 'decimalLongitude' => '-1.9529',
+  'coordinateUncertaintyInMeters' => '1000', 'geodeticDatum' => '', 'georeferenceRemarks' => '',
+  'minimumElevationInMeters' => '-5', 'maximumElevationInMeters' => '120',
+  'info_url' => 'https://example.org/place/1');
+$placeURI = rdfRecordURI($locationModule, $place['source'], $place['id']);
+check(recordModule('/location/fixture/p1')['mname'] === 'locations', 'Location route');
+$madeAt = $citation;
+$madeAt['id'] = 'made-at'; $madeAt['qualifier'] = NULL; $madeAt['remarks'] = NULL;
+$madeAt['subject_type'] = 'recordings'; $madeAt['subject_id'] = 'rec1';
+$madeAt['predicate'] = 'http://rs.tdwg.org/dwc/iri/inDescribedPlace';
+$madeAt['object_type'] = 'locations'; $madeAt['object_id'] = $place['id'];
+$placeDB = new FixtureDB($place);
+$placeDB->links = array($madeAt);
+$placeNodes = rdfResponseNodes($placeDB, $locationModule, array($place));
+$placeByID = array_column($placeNodes, NULL, '@id');
+check($placeByID[$placeURI]['@type'] === 'http://rs.tdwg.org/dwc/terms/Location', 'Place is a location');
+check($placeByID[$placeURI]['dwc:locationID'] === $placeURI, 'Location identified by its own URI');
+check($placeByID[$placeURI]['rdfs:label'] === "Chapman's Pool, Dorset", 'Place named as its source names it');
+check($placeByID[$placeURI]['dwc:decimalLatitude'] === rdfTyped('50.6016', 'xsd:decimal'), 'Coordinates typed');
+check($placeByID[$placeURI]['dwc:minimumElevationInMeters'] === rdfTyped('-5', 'xsd:decimal'), 'Elevation below sea level');
+check($placeByID[$placeURI]['dwc:geodeticDatum'] === 'EPSG:4326', 'Decimal coordinates mean WGS84');
+check(!isset($placeByID[$placeURI]['dwc:island']), 'Empty units omitted');
+check($placeByID[$placeURI]['@reverse']['dwciri:inDescribedPlace'][0]['@id'] === 'https://api.audioblast.org/recording/fixture/rec1', 'Recording made at the place');
+$given = $place; $given['id'] = 'p2'; $given['geodeticDatum'] = 'OSGB36';
+check(rdfNodes($locationModule, array($given))[0]['dwc:geodeticDatum'] === 'OSGB36', "A source's own datum is kept");
+$nodes = array_merge($nodes, $placeNodes);
+
 // A recording's sound, rights and place use the terms Audiovisual Core borrows.
 $described = $recording;
 $described['sample_rate'] = '44100'; $described['channels'] = '2';
