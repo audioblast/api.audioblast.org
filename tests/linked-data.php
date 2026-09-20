@@ -335,6 +335,36 @@ ob_start(); recordAPI($specimenDB); $specimenTTL = ob_get_clean();
 check($specimenTTL === rdfTurtle($specimenNodes), 'Specimen URI serves embedded Turtle');
 $nodes = array_merge($nodes, $specimenNodes);
 
+// A description says what it is about and what it cites through links.
+$descriptionModule = loadModule('descriptions');
+$description = array('source' => 'fixture', 'id' => '12289', 'topic' => 'behaviour',
+  'value' => 'Males were reported to call 0.3-4.0m up, in shrubs along small hill-streams.',
+  'info_url' => 'https://example.org/profile/12289');
+$descriptionURI = rdfRecordURI($descriptionModule, $description['source'], $description['id']);
+check(recordModule('/description/fixture/12289')['mname'] === 'descriptions', 'Description route');
+$describes = $citation;
+$describes['id'] = 'describes'; $describes['qualifier'] = NULL; $describes['remarks'] = NULL;
+$describes['subject_type'] = 'descriptions'; $describes['subject_id'] = $description['id'];
+$describes['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000136';
+$describes['object_type'] = 'taxa'; $describes['object_source'] = 'other-source';
+$describes['object_id'] = '42';
+$rests = $describes;
+$rests['id'] = 'rests-on';
+$rests['predicate'] = 'http://purl.org/dc/terms/source';
+$rests['object_type'] = 'references'; $rests['object_source'] = 'fixture';
+$rests['object_id'] = $ref['id'];
+$descriptionDB = new FixtureDB($description);
+$descriptionDB->links = array($describes, $rests);
+$descriptionNodes = rdfResponseNodes($descriptionDB, $descriptionModule, array($description));
+$descriptionByID = array_column($descriptionNodes, NULL, '@id');
+check($descriptionByID[$descriptionURI]['@type'] === 'http://purl.org/dc/dcmitype/Text', 'Description is a text');
+check(strpos($descriptionByID[$descriptionURI]['dc:description'], 'hill-streams') !== FALSE, 'Prose retained');
+check($descriptionByID[$descriptionURI]['dc:type'] === 'behaviour', "Topic is the source's own word");
+check($descriptionByID[$descriptionURI]['http://purl.obolibrary.org/obo/IAO_0000136']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Description is about a taxon');
+check($descriptionByID[$descriptionURI]['dcterms:source']['@id'] === $uri, 'Description rests on a reference');
+check(count($descriptionByID[$descriptionURI]['rdfs:seeAlso']) === 3, 'Source page and incoming and outgoing links');
+$nodes = array_merge($nodes, $descriptionNodes);
+
 // Places are described once, and the records made there point at them.
 $locationModule = loadModule('locations');
 $place = array('source' => 'fixture', 'id' => 'p1', 'name' => "Chapman's Pool, Dorset",
