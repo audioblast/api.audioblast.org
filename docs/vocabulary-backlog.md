@@ -28,6 +28,7 @@ This is an export inventory, not a check of the current production database.
 | https://vocab.audioblast.org/cv/referenceContent#StridulatoryFilePhotograph | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#StridulatoryFileSEMImage | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#StridulatoryPositionPhotograph | relationship qualifier |
+| https://vocab.audioblast.org/cv/referenceContent#TaxonomicTreatment | relationship qualifier |
 | https://vocab.audioblast.org/cv/topic#AnthropogenicNoise | relationship target |
 | https://vocab.audioblast.org/cv/topic#AudioCollections | relationship target |
 | https://vocab.audioblast.org/cv/topic#AutomatedIdentification | relationship target |
@@ -71,11 +72,24 @@ This is an export inventory, not a check of the current production database.
   implementation. Link predicates are preserved as supplied.
 - Extend this list whenever another missing vocabulary term is encountered.
 
-## Source correction deferred
+## Source correction made
 
-The links export currently uses
-http://rs.tdwg.org/dwc/terms/namePublishedInID for taxon name-publication links.
-The user chose to correct this at source later. Preserve that predicate in the
-API; do not map it to a different vocabulary property during serialization.
-Confirm the intended relationship before selecting or defining a replacement.
-No NamePublishedIn property is currently requested for the audioBLAST vocabulary.
+The links export used http://rs.tdwg.org/dwc/terms/namePublishedInID for the
+Reference on a classification term. That field holds any work treating the
+taxon, from a revision to a checklist, so most of those 266 links did not record
+a name publication. It was corrected at source in September 2026: the links now
+say that the reference is about the taxon (IAO:0000136), qualified
+referenceContent#TaxonomicTreatment, with the page in remarks. The API still
+emits whatever predicate a source supplies, and namePublishedInID remains
+available to a source that can assert it, such as the Orthoptera Species File.
+No NamePublishedIn property is requested for the audioBLAST vocabulary.
+
+## Terms not needed
+
+Specimens and the recordings columns added with them are covered by existing
+standards: Darwin Core occurrence terms, ac:associatedSpecimenReference,
+dwciri:toTaxon, mo:sample_rate and xmpRights:Owner. The number of channels of a
+recording has no Audiovisual Core term and is left in JSON rather than given an
+audioBLAST property. The names of details (tape, cd_track, temperature_start and
+the rest) are each source's own and are to be matched to vocabulary terms later;
+until then details are not published as RDF, so they need no IRIs yet.
