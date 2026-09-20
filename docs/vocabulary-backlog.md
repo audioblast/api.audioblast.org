@@ -12,6 +12,7 @@ This is an export inventory, not a check of the current production database.
 
 | Pending IRI | Used as |
 | --- | --- |
+| https://vocab.audioblast.org/cv/identificationBasis#RecordingTitle | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#AcousticBehaviour | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#AcousticallyOrientatingPredatorDescription | relationship qualifier |
 | https://vocab.audioblast.org/cv/referenceContent#BurrowEntrancePhotograph | relationship qualifier |
@@ -62,6 +63,15 @@ This is an export inventory, not a check of the current production database.
 
 ## Curation notes
 
+- identificationBasis terms say what an identification rests on, for a
+  relationship that audioBLAST derived rather than one the source asserts.
+  RecordingTitle is used by the Orthoptera Species File ingest, which reads a
+  binomial from a recording's title where the source identifies the recording
+  through no specimen, observation or event. Such a name is never put in the
+  recordings taxon column, which holds the scientific name the source gives;
+  the qualifier is what lets a reader tell the two apart. The predicate stays
+  IAO:0000136 (is about), which a recording of an animal supports, rather than
+  dwciri:toTaxon, which would assert a determination nobody made.
 - referenceContent terms describe what a reference contains about its target
   taxon; AcousticBehaviour is used for the general acoustic-behaviour tags.
 - topic terms are the non-biological topics attached to publications.
