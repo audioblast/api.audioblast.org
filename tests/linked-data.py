@@ -74,6 +74,24 @@ assert (specimen, URIRef("http://rs.tdwg.org/dwc/iri/toTaxon"), URIRef("https://
 assert (recording, AC.associatedSpecimenReference, specimen) in a
 print("Specimen occurrence, the taxon it is identified as and the recording of it verified")
 
+GBIF = Namespace("http://rs.gbif.org/terms/1.0/")
+DCTERMS = Namespace("http://purl.org/dc/terms/")
+name = URIRef("https://api.audioblast.org/vernacular-name/fixture/book/a%20%231")
+assert (name, RDF.type, GBIF.VernacularName) in a
+assert (name, DWC.vernacularName, Literal("le Criquet des pins", lang="fr")) in a
+assert (name, DCTERMS.language, Literal("fr")) in a
+assert (name, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), URIRef("https://api.audioblast.org/taxon/other-source/42")) in a
+assert (name, DCTERMS.source, URIRef(reference)) in a
+assert not list(a.triples((name, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), None))), "denotes is not expanded to its superproperty"
+print("Vernacular name, its language tag, the taxon it names and where it came from verified")
+
+named_taxon = URIRef("https://api.audioblast.org/taxon/other-source/42")
+assert (named_taxon, DWC.vernacularName, Literal("le Criquet des pins", lang="fr")) in a
+assert (named_taxon, DWC.vernacularName, Literal("Pine Grasshopper", lang="en")) in a
+assert len(list(a.objects(named_taxon, DWC.vernacularName))) == 2
+assert (name, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), named_taxon) in a
+print("Taxon carries the names it is known by, each in its language, and keeps them linked")
+
 MO = Namespace("http://purl.org/ontology/mo/")
 XMP_RIGHTS = Namespace("http://ns.adobe.com/xap/1.0/rights/")
 assert (recording, MO.sample_rate, Literal("44100", datatype=XSD.decimal)) in a
