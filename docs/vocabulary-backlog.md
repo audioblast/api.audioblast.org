@@ -84,6 +84,23 @@ emits whatever predicate a source supplies, and namePublishedInID remains
 available to a source that can assert it, such as the Orthoptera Species File.
 No NamePublishedIn property is requested for the audioBLAST vocabulary.
 
+## Deprecated vocabulary in use
+
+A description's topic is served as the Species Profile Model info item it
+names, e.g. `http://rs.tdwg.org/ontology/voc/SPMInfoItems#Behaviour`. TDWG
+marks that ontology "no longer under development" and no longer recommends it.
+
+It is used anyway because nothing has replaced it: there is no successor to
+migrate to, the concepts still carry their definitions, and GBIF's Taxon
+Description extension and the Encyclopedia of Life both name a description's
+topic with them. A Scratchpads species profile implements the model, so its
+fields are these info items; the alternative was an English word that nothing
+could match.
+
+If audioBLAST ever mints description-topic terms of its own, each should be
+`skos:exactMatch` to the info item it replaces, and the ingest's
+`spmInfoItem()` is the one place that decides which IRI a topic names.
+
 ## Terms not needed
 
 Specimens and the recordings columns added with them are covered by existing
