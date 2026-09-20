@@ -86,6 +86,20 @@ function bioacoustica_info() {
         )
       ),
       array(
+        "type" => "onomatopoeia",
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/onomatopoeia.csv",
+        "process" => array(
+          "sourceR"
+        )
+      ),
+      array(
+        "type" => "images",
+        "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/images.csv",
+        "process" => array(
+          "sourceR"
+        )
+      ),
+      array(
         "type" => "ann-o-mate",
         "url" => "https://raw.githubusercontent.com/BioAcoustica/audioblast_ingest/main/annotations.csv"
       )

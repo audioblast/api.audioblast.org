@@ -79,7 +79,7 @@ DCTERMS = Namespace("http://purl.org/dc/terms/")
 name = URIRef("https://api.audioblast.org/vernacular-name/fixture/book/a%20%231")
 assert (name, RDF.type, GBIF.VernacularName) in a
 assert (name, DWC.vernacularName, Literal("le Criquet des pins", lang="fr")) in a
-assert (name, DCTERMS.language, Literal("fr")) in a
+assert (name, DCTERMS.language, Literal("fr", datatype=XSD.language)) in a
 assert (name, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), URIRef("https://api.audioblast.org/taxon/other-source/42")) in a
 assert (name, DCTERMS.source, URIRef(reference)) in a
 assert not list(a.triples((name, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), None))), "denotes is not expanded to its superproperty"
@@ -91,6 +91,26 @@ assert (named_taxon, DWC.vernacularName, Literal("Pine Grasshopper", lang="en"))
 assert len(list(a.objects(named_taxon, DWC.vernacularName))) == 2
 assert (name, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), named_taxon) in a
 print("Taxon carries the names it is known by, each in its language, and keeps them linked")
+
+RDFS = Namespace("http://www.w3.org/2000/01/rdf-schema#")
+DC = Namespace("http://purl.org/dc/elements/1.1/")
+DCMITYPE = Namespace("http://purl.org/dc/dcmitype/")
+ONTOLEX = Namespace("http://www.w3.org/ns/lemon/ontolex#")
+OLIA = Namespace("http://purl.org/olia/olia.owl#")
+rendering = URIRef("https://api.audioblast.org/onomatopoeia/fixture/book/a%20%231")
+assert (rendering, RDF.type, DCMITYPE.Text) in a
+assert (rendering, RDF.type, ONTOLEX.LexicalEntry) in a
+assert (rendering, RDFS.label, Literal("bow-wow", lang="en-GB")) in a
+assert (rendering, DC.type, Literal("imitation")) in a
+assert (rendering, DCTERMS.type, OLIA.OnomatopoeticWord) in a
+assert (rendering, DCTERMS.language, Literal("en-GB", datatype=XSD.language)) in a
+assert (rendering, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), named_taxon) in a
+assert (rendering, DCTERMS.source, URIRef(reference)) in a
+# A rendering names the sound, not the taxon, so it neither denotes the taxon
+# nor is read onto it as one of the names the taxon is known by.
+assert not list(a.triples((rendering, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), None))), "a rendering does not denote its taxon"
+assert not list(a.triples((named_taxon, DWC.vernacularName, Literal("bow-wow", lang="en-GB")))), "a rendering is not a name of its taxon"
+print("Onomatopoeia, its kind, its language and the taxon it is about verified")
 
 MO = Namespace("http://purl.org/ontology/mo/")
 XMP_RIGHTS = Namespace("http://ns.adobe.com/xap/1.0/rights/")
@@ -109,7 +129,6 @@ assert (place, DWC.geodeticDatum, Literal("EPSG:4326")) in a
 assert (recording, URIRef("http://rs.tdwg.org/dwc/iri/inDescribedPlace"), place) in a
 print("Place, its units and the recording made there verified")
 
-DC = Namespace("http://purl.org/dc/elements/1.1/")
 description = URIRef("https://api.audioblast.org/description/fixture/12289")
 assert (description, RDF.type, URIRef("http://purl.org/dc/dcmitype/Text")) in a
 assert (description, DC.type, Literal("behaviour")) in a
@@ -134,3 +153,19 @@ assert isomorphic(services_json, services_turtle)
 assert len(list(services_json.objects(recording, AC.hasServiceAccessPoint))) == 3
 assert len(list(services_json.subjects(RDF.type, AC.ServiceAccessPoint))) == 3
 print("Multiple audio/image service access points serialize equivalently")
+
+AC = Namespace("http://rs.tdwg.org/ac/terms/")
+EXIF = Namespace("http://ns.adobe.com/exif/1.0/")
+DCTERMS = Namespace("http://purl.org/dc/terms/")
+image = URIRef("https://api.audioblast.org/image/fixture/134")
+assert (image, RDF.type, URIRef("http://purl.org/dc/dcmitype/StillImage")) in a
+assert (image, RDF.type, AC.Media) in a
+assert (image, DCTERMS.rights, URIRef("https://creativecommons.org/licenses/by-nc-sa/4.0/")) in a
+assert (image, AC.subtypeLiteral, Literal("Original metadata scan")) in a
+assert (image, EXIF.PixelXDimension, Literal("1412", datatype=XSD.decimal)) in a
+assert (image, DC.creator, Literal("Ashleigh Whiffin")) in a
+assert (image, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), recording) in a
+service = next(a.objects(image, AC.hasServiceAccessPoint))
+assert (service, AC.accessURI, URIRef("https://example.org/files/meta.jpg")) in a
+assert not list(a.triples((image, AC.accessURI, None)))
+print("Image, its licence, its pixels, the file it is served from and what it documents verified")
