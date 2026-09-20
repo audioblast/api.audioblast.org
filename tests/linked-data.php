@@ -467,7 +467,7 @@ $vernacularByID = array_column($vernacularNodes, NULL, '@id');
 check($vernacularDB->bound[0] === array('vernacularnames', 'fixture', $vernacular['id']), 'Vernacular name identity used in link lookup');
 check($vernacularByID[$vernacularURI]['@type'] === 'http://rs.gbif.org/terms/1.0/VernacularName', 'Name is a Darwin Core vernacular name');
 check($vernacularByID[$vernacularURI]['dwc:vernacularName'] === array('@value' => 'le Criquet des pins', '@language' => 'fr'), 'Name is a literal in the language it is in, with the article a reference wrote it with');
-check($vernacularByID[$vernacularURI]['dcterms:language'] === 'fr', 'Language tag given on its own as well');
+check($vernacularByID[$vernacularURI]['dcterms:language'] === rdfTyped('fr', 'xsd:language'), 'Language tag given on its own as well, typed as BCP 47 syntax');
 check(!isset($vernacularByID[$vernacularURI]['dwc:locality']), 'Empty values omitted');
 check($vernacularByID[$vernacularURI]['http://purl.obolibrary.org/obo/IAO_0000219']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Name denotes the taxon it names');
 check($vernacularByID[$vernacularURI]['dcterms:source']['@id'] === $uri, 'Name was taken from a reference');
@@ -489,6 +489,49 @@ $_GET = array(); $_SERVER['HTTP_ACCEPT'] = 'text/turtle';
 ob_start(); recordAPI($vernacularDB); $vernacularTTL = ob_get_clean();
 check($vernacularTTL === rdfTurtle($vernacularNodes), 'Vernacular name URI serves embedded Turtle');
 $nodes = array_merge($nodes, $vernacularNodes);
+
+// Images are records of their own, so one scan covering several recordings is
+// described once, with the licence it is under, and linked to each of them.
+$imageModule = loadModule('images');
+$image = array('source' => 'fixture', 'id' => '134',
+  'title' => '399-3_Conocephalus_discolor_409_meta.jpg',
+  'url' => 'https://example.org/files/meta.jpg', 'kind' => 'Original metadata scan',
+  'creator' => 'Ashleigh Whiffin', 'license' => 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  'post_date' => '2019-09-11', 'mime' => 'image/jpeg', 'bytes' => '910718',
+  'width' => '1412', 'height' => '1183', 'caption' => 'The data sheet for tape 399-3');
+$imageURI = rdfRecordURI($imageModule, $image['source'], $image['id']);
+check(recordModule('/image/fixture/134')['mname'] === 'images', 'Image route');
+$documents = $citation;
+$documents['id'] = 'documents'; $documents['qualifier'] = NULL; $documents['remarks'] = NULL;
+$documents['subject_type'] = 'images'; $documents['subject_source'] = 'fixture';
+$documents['subject_id'] = $image['id'];
+$documents['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000136';
+$documents['object_type'] = 'recordings'; $documents['object_source'] = 'fixture';
+$documents['object_id'] = 'rec1';
+$imageDB = new FixtureDB($image);
+$imageDB->links = array($documents);
+$imageNodes = rdfResponseNodes($imageDB, $imageModule, array($image));
+$imageByID = array_column($imageNodes, NULL, '@id');
+check($imageByID[$imageURI]['@type'] === array('http://rs.tdwg.org/ac/terms/Media', 'http://purl.org/dc/dcmitype/StillImage'), 'Image is Audiovisual Core media and a still image');
+check($imageByID[$imageURI]['dcterms:rights']['@id'] === 'https://creativecommons.org/licenses/by-nc-sa/4.0/', 'Image carries the licence it is under');
+check($imageByID[$imageURI]['ac:subtypeLiteral'] === 'Original metadata scan', "The source's own kind of image is a literal");
+check($imageByID[$imageURI]['exif:PixelXDimension'] === rdfTyped('1412', 'xsd:decimal'), 'Pixel dimensions typed');
+check($imageByID[$imageURI]['ac:caption'] === 'The data sheet for tape 399-3', 'Caption kept');
+check($imageByID[$imageURI]['dc:creator'] === 'Ashleigh Whiffin', 'Creator credited');
+check($imageByID[$imageURI]['dcterms:available']['@type'] === 'xsd:date', 'Upload date typed');
+check($imageByID[$imageURI]['http://purl.obolibrary.org/obo/IAO_0000136']['@id'] === 'https://api.audioblast.org/recording/fixture/rec1', 'Image is about the recording it documents');
+$imageService = $imageByID[$imageURI]['ac:hasServiceAccessPoint']['@id'];
+check($imageByID[$imageService]['ac:accessURI']['@id'] === 'https://example.org/files/meta.jpg', 'The file itself is a service access point');
+check($imageByID[$imageService]['dc:format'] === 'image/jpeg', 'MIME belongs to the service');
+check(!isset($imageByID[$imageURI]['ac:accessURI']), 'Access URI belongs to the service, not the image');
+// An image whose source gives no licence is served without one rather than
+// with a licence it never had.
+$unlicensed = $image; $unlicensed['id'] = '20603'; $unlicensed['license'] = '';
+$unlicensed['creator'] = ''; $unlicensed['caption'] = '';
+$unlicensedNode = rdfNodes($imageModule, array($unlicensed))[0];
+check(!isset($unlicensedNode['dcterms:rights']), 'No licence invented');
+check(!isset($unlicensedNode['dc:creator']) && !isset($unlicensedNode['ac:caption']), 'Empty values omitted');
+$nodes = array_merge($nodes, $imageNodes);
 
 // The names of a taxon are on the taxon's own response: links are looked up by
 // the record at either end, not by predicate, so denotes is found there exactly
@@ -544,6 +587,79 @@ $namedDB->fail = TRUE;
 check(rdfResponseNodes($namedDB, $taxonModule, array($namedTaxon)) === FALSE, 'Failed name lookup propagates');
 $namedDB->fail = FALSE;
 $nodes = array_merge($nodes, $embeddedNodes);
+
+// Onomatopoeia are the words a source renders a taxon's sound with. They have
+// a name's shape and are not names, so a rendering is about its taxon and
+// never denotes it.
+$onomatopoeiaModule = loadModule('onomatopoeia');
+$rendering = array('source' => 'fixture', 'id' => $ref['id'], 'word' => 'bow-wow',
+  'kind' => 'imitation', 'kind_link' => 'http://purl.org/olia/olia.owl#OnomatopoeticWord',
+  'language' => 'en-GB', 'sex' => '', 'lifeStage' => '', 'locality' => '',
+  'remarks' => '', 'info_url' => 'https://bio.acousti.ca/node/58101');
+$renderingURI = rdfRecordURI($onomatopoeiaModule, $rendering['source'], $rendering['id']);
+check(recordModule('/onomatopoeia/fixture/on1')['mname'] === 'onomatopoeia', 'Onomatopoeia route');
+$rendersTaxon = $namesTaxon;
+$rendersTaxon['id'] = 'renders-taxon';
+$rendersTaxon['subject_type'] = 'onomatopoeia'; $rendersTaxon['subject_id'] = $rendering['id'];
+$rendersTaxon['predicate'] = 'http://purl.obolibrary.org/obo/IAO_0000136';
+$renderedIn = $rendersTaxon;
+$renderedIn['id'] = 'renders-from';
+$renderedIn['predicate'] = 'http://purl.org/dc/terms/source';
+$renderedIn['object_type'] = 'references'; $renderedIn['object_source'] = 'fixture';
+$renderedIn['object_id'] = $ref['id'];
+$renderingDB = new FixtureDB($rendering);
+$renderingDB->links = array($rendersTaxon, $renderedIn);
+$renderingNodes = rdfResponseNodes($renderingDB, $onomatopoeiaModule, array($rendering));
+$renderingByID = array_column($renderingNodes, NULL, '@id');
+check($renderingDB->bound[0] === array('onomatopoeia', 'fixture', $rendering['id']), 'Onomatopoeia identity used in link lookup');
+check($renderingByID[$renderingURI]['@type'] === array('http://purl.org/dc/dcmitype/Text', 'http://www.w3.org/ns/lemon/ontolex#LexicalEntry'), 'A worded rendering is a text and a lexical entry');
+check($renderingByID[$renderingURI]['rdfs:label'] === array('@value' => 'bow-wow', '@language' => 'en-GB'), 'Word is a literal in the language it is in');
+check($renderingByID[$renderingURI]['dc:type'] === 'imitation', "Kind kept as its source's own word");
+check($renderingByID[$renderingURI]['dcterms:type']['@id'] === 'http://purl.org/olia/olia.owl#OnomatopoeticWord', 'Kind names the OLiA class beside it');
+check($renderingByID[$renderingURI]['dcterms:language'] === rdfTyped('en-GB', 'xsd:language'), 'Language tag given on its own, typed as BCP 47 syntax');
+check(!isset($renderingByID[$renderingURI]['dwc:sex']), 'Empty values omitted');
+check($renderingByID[$renderingURI]['http://purl.obolibrary.org/obo/IAO_0000136']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Rendering is about the taxon whose sound it renders');
+check(!isset($renderingByID[$renderingURI]['http://purl.obolibrary.org/obo/IAO_0000219']), 'A rendering never denotes its taxon');
+check($renderingByID[$renderingURI]['dcterms:source']['@id'] === $uri, 'Rendering was taken from a reference');
+check(strpos(rdfTurtle(array($renderingByID[$renderingURI])), '"bow-wow"@en-GB') !== FALSE, 'Turtle carries the language tag');
+// What the source says about a rendering that its fields have no column for.
+$ofAMale = $rendering; $ofAMale['id'] = 'on2'; $ofAMale['word'] = 'cock-a-doodle-do';
+$ofAMale['language'] = 'en'; $ofAMale['sex'] = 'male'; $ofAMale['lifeStage'] = 'juvenile';
+$ofAMale['locality'] = 'Lokele tribe of the Congo'; $ofAMale['remarks'] = 'Sound of wings';
+$ofAMaleNode = rdfNodes($onomatopoeiaModule, array($ofAMale))[0];
+check($ofAMaleNode['dwc:sex'] === 'male' && $ofAMaleNode['dwc:lifeStage'] === 'juvenile', 'Sex and life stage a rendering is of');
+check($ofAMaleNode['dwc:locality'] === 'Lokele tribe of the Congo', 'Who uses a rendering is its locality');
+check($ofAMaleNode['dwc:taxonRemarks'] === 'Sound of wings', 'Remarks kept as the source writes them');
+// A kind no vocabulary names takes no IRI, and is not called a word: a line of
+// musical notation is a text and nothing more, in no language at all.
+$notation = $rendering; $notation['id'] = 'on3'; $notation['word'] = 'E-F-F#';
+$notation['kind'] = 'musical notation'; $notation['kind_link'] = ''; $notation['language'] = '';
+$notationNode = rdfNodes($onomatopoeiaModule, array($notation))[0];
+check($notationNode['@type'] === array('http://purl.org/dc/dcmitype/Text'), 'A rendering that is not a word is only a text');
+check($notationNode['dc:type'] === 'musical notation', "Kind still kept as the source's word");
+check(!isset($notationNode['dcterms:type']), 'No IRI invented for a kind nothing names');
+check($notationNode['rdfs:label'] === 'E-F-F#', 'Notation is a plain literal');
+check(!isset($notationNode['dcterms:language']), 'No language invented');
+$_SERVER['REQUEST_URI'] = '/onomatopoeia/fixture/book/a%20%231';
+$_GET = array('output' => 'JSON'); $renderingDB->queries = array();
+ob_start(); recordAPI($renderingDB); $renderingJSON = json_decode(ob_get_clean(), TRUE);
+check($renderingJSON['data'][0] === $rendering && count($renderingDB->queries) === 1, 'Onomatopoeia JSON unchanged, no link query');
+$_GET = array(); $_SERVER['HTTP_ACCEPT'] = 'text/turtle';
+ob_start(); recordAPI($renderingDB); $renderingTTL = ob_get_clean();
+check($renderingTTL === rdfTurtle($renderingNodes), 'Onomatopoeia URI serves embedded Turtle');
+$nodes = array_merge($nodes, $renderingNodes);
+
+// A rendering is not read onto its taxon as a name: the taxon embed asks for
+// what denotes the taxon, and being about it is not that. This is what keeps
+// bark out of the names of Canis lupus familiaris.
+$renderedTaxon = new FixtureDB($namedTaxon);
+$renderedTaxon->links = array($rendersTaxon);
+$renderedTaxon->embedded = array($rendering);
+$renderedNodes = rdfResponseNodes($renderedTaxon, $taxonModule, array($namedTaxon));
+$renderedByID = array_column($renderedNodes, NULL, '@id');
+check(count($renderedTaxon->queries) === 2, 'No name lookup for a rendering about the taxon');
+check(!isset($renderedByID[$namedTaxonURI]['dwc:vernacularName']), 'A rendering is not one of the names a taxon is known by');
+check(count($renderedByID[$namedTaxonURI]['@reverse']['http://purl.obolibrary.org/obo/IAO_0000136']) === 1, 'The rendering is still reached from its taxon');
 
 
 // A recording's sound, rights and place use the terms Audiovisual Core borrows.
