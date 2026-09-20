@@ -9,7 +9,8 @@ function taxa_info() {
     "hname" => "Taxa",
     "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST! RDF responses include incoming and outgoing links to recordings, traits and references, with relationship provenance.",
     "see_also" => array(
-      "<a href='#recordingstaxa'>Recordings-Taxa</a> provides autocompletes on taxon ranks with recordings.</a>"
+      "<a href='#recordingstaxa'>Recordings-Taxa</a> provides autocompletes on taxon ranks with recordings.</a>",
+      "<a href='#vernacularnames'>Vernacular names</a> gives the names these taxa are known by in a language."
     ),
     "rdf" => array("links" => TRUE, "path" => "taxon", "node" => "taxa_rdf_node"),
     "params" => array(
