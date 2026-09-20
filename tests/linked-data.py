@@ -79,7 +79,7 @@ DCTERMS = Namespace("http://purl.org/dc/terms/")
 name = URIRef("https://api.audioblast.org/vernacular-name/fixture/book/a%20%231")
 assert (name, RDF.type, GBIF.VernacularName) in a
 assert (name, DWC.vernacularName, Literal("le Criquet des pins", lang="fr")) in a
-assert (name, DCTERMS.language, Literal("fr")) in a
+assert (name, DCTERMS.language, Literal("fr", datatype=XSD.language)) in a
 assert (name, URIRef("http://purl.obolibrary.org/obo/IAO_0000219"), URIRef("https://api.audioblast.org/taxon/other-source/42")) in a
 assert (name, DCTERMS.source, URIRef(reference)) in a
 assert not list(a.triples((name, URIRef("http://purl.obolibrary.org/obo/IAO_0000136"), None))), "denotes is not expanded to its superproperty"

@@ -467,7 +467,7 @@ $vernacularByID = array_column($vernacularNodes, NULL, '@id');
 check($vernacularDB->bound[0] === array('vernacularnames', 'fixture', $vernacular['id']), 'Vernacular name identity used in link lookup');
 check($vernacularByID[$vernacularURI]['@type'] === 'http://rs.gbif.org/terms/1.0/VernacularName', 'Name is a Darwin Core vernacular name');
 check($vernacularByID[$vernacularURI]['dwc:vernacularName'] === array('@value' => 'le Criquet des pins', '@language' => 'fr'), 'Name is a literal in the language it is in, with the article a reference wrote it with');
-check($vernacularByID[$vernacularURI]['dcterms:language'] === 'fr', 'Language tag given on its own as well');
+check($vernacularByID[$vernacularURI]['dcterms:language'] === rdfTyped('fr', 'xsd:language'), 'Language tag given on its own as well, typed as BCP 47 syntax');
 check(!isset($vernacularByID[$vernacularURI]['dwc:locality']), 'Empty values omitted');
 check($vernacularByID[$vernacularURI]['http://purl.obolibrary.org/obo/IAO_0000219']['@id'] === 'https://api.audioblast.org/taxon/other-source/42', 'Name denotes the taxon it names');
 check($vernacularByID[$vernacularURI]['dcterms:source']['@id'] === $uri, 'Name was taken from a reference');
