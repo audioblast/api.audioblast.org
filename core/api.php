@@ -102,6 +102,13 @@ function moduleAPI($db) {
   $problem = checkParams($module ?? array(), $_GET, $parts[3] ?? NULL);
   if ($problem !== NULL) {badRequest(htmlspecialchars($problem, ENT_QUOTES));}
 
+  //What the parameters alone cannot show: a parameter given more than once, of
+  //which PHP keeps only the last. The query string is read from the request as
+  //it was made, so the parameter the rewrite adds is not among it.
+  $problem = checkQueryString($module ?? array(),
+    parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY) ?? "");
+  if ($problem !== NULL) {badRequest(htmlspecialchars($problem, ENT_QUOTES));}
+
   $params = array();
   $notes = array();
   $rdf = FALSE;                   //Flag. Set when records are returned as RDF (see core/rdf.php).
@@ -115,6 +122,15 @@ function moduleAPI($db) {
         $params[$pname] = array();
         foreach ($_GET[$pname] as $key => $value) {
           $params[$pname][mysqli_real_escape_string($db, $key)] = mysqli_real_escape_string($db, $value);
+        }
+      } else if (paramTakesMany($pinfo) && strpos($_GET[$pname], ",") !== FALSE) {
+        //A filter given several values at once (see filterValues()). The reply
+        //gives them back as the values they were read as rather than as the
+        //one string they were written as, so that a caller can see how its
+        //request was split.
+        $params[$pname] = array();
+        foreach (filterValues($_GET[$pname]) as $value) {
+          $params[$pname][] = mysqli_real_escape_string($db, $value);
         }
       } else {
         $params[$pname] = mysqli_real_escape_string($db, $_GET[$pname]);

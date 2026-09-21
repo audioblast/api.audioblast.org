@@ -16,9 +16,9 @@ function taxa_info() {
       "embed" => "taxa_rdf_embed"),
     "params" => array(
       "source" => array("desc" => "Source of the taxon", "type" => "string",
-        "default" => "", "column" => "source", "op" => "="),
+        "default" => "", "column" => "source", "op" => "=", "multiple" => TRUE),
       "id" => array("desc" => "Taxon ID within its source", "type" => "string",
-        "default" => "", "column" => "id", "op" => "="),
+        "default" => "", "column" => "id", "op" => "=", "multiple" => TRUE),
       //Each source gives its taxonomy as a tree, and audioBLAST! has held that
       //tree all along without serving it: the ranks above a taxon were only to
       //be had from the columns below, which have one for a family but none for
@@ -28,7 +28,8 @@ function taxa_info() {
       //source's taxonomy down and back up. It is the source's own tree, with
       //whatever the source has put where.
       "parent_id" => array("desc" => "ID of the taxon this one is directly inside, within the same source",
-        "type" => "string", "default" => "", "column" => "parent_id", "op" => "="),
+        "type" => "string", "default" => "", "column" => "parent_id", "op" => "=",
+        "multiple" => TRUE),
       "taxon" => array(
         "desc" => "Taxonomic name",
         "type" => "string",

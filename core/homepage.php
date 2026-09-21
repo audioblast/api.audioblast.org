@@ -77,6 +77,16 @@ function requestsHTML() {
   $ret .= " filtered by (see <em>Can filter?</em> in the tables below), is refused with a";
   $ret .= " <strong>400</strong> and a message naming it. A mistyped filter used to be dropped in silence,";
   $ret .= " which returned the whole table and read as an answer to the question asked.</p>";
+  $ret .= "<p>A filter marked <em>Y (several)</em> takes more than one value at once, written together:";
+  $ret .= " <strong>?id=12,15,19</strong> matches a row holding any one of them, and answers in one request";
+  $ret .= " what is otherwise one request for each. Spaces around a value are not part of it, and a hundred";
+  $ret .= " values is the most one filter may be given. A value with a comma in it is asked for as";
+  $ret .= " <strong>?id[]=a,b&amp;id[]=c</strong> instead, which is the same filter written as a list. Which";
+  $ret .= " filters take several values is in <strong>module_info</strong> as well, as <em>multiple</em>";
+  $ret .= " beside each filter's operator.</p>";
+  $ret .= "<p>A parameter given twice (<strong>?id=12&amp;id=15</strong>) is refused with a";
+  $ret .= " <strong>400</strong>. Only the last of them used to be applied and the rest were dropped, so a";
+  $ret .= " request naming two records was answered about one of them and read as an answer about both.</p>";
   $ret .= "</div>";
   return($ret);
 }
@@ -185,6 +195,8 @@ function printParams($params) {
       $out .= "<td>".$pname."</td>";
       if (!isset($pinfo["op"]) || $pinfo["op"] == "none") {
         $out.= "<td></td>";
+      } else if (!empty($pinfo["multiple"])) {
+        $out .= "<td class='tdcent'>Y (several)</td>";
       } else {
         $out .= "<td class='tdcent'>Y</td>";
       }

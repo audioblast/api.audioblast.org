@@ -15,12 +15,14 @@ function birdnet_selection_latlon_info() {
         "default" => "",
         "column" => "source",
         "op" => "=",
+        "multiple" => TRUE,
       ),
       "id" => array(
         "desc" => "filter by id within source",
         "type" => "string",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "analysis_id" => array(
         "desc" => "filter by annotation id within source",

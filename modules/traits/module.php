@@ -46,6 +46,7 @@ function traits_info() {
         "default" => "",
         "column" => "traitID",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "taxon" => array(

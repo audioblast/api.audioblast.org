@@ -31,6 +31,7 @@ function images_info() {
         "default" => "",
         "column" => "id",
         "op" => "=",
+        "multiple" => TRUE,
         "ac" => "ac:providerManagedID"
       ),
       "title" => array(

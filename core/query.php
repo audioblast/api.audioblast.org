@@ -53,8 +53,23 @@ function WHEREclause($filters) {
   $wc = "";
   foreach ($filters as $filter) {
     if ($filter["column"] == "") {continue;}
-    if ($filter["value"] == "") {continue;}
+    if (is_array($filter["value"])) {
+      if (!$filter["value"]) {continue;}
+    } else if ($filter["value"] == "") {continue;}
     if ($i > 0) { $wc .= "AND "; } else { $wc.= " WHERE ";}
+
+    // A filter the request gave several values (see filterValues()) is matched
+    // against all of them at once, which is one condition on one column and so
+    // still uses its index. The values are already escaped, and are quoted as
+    // the single value of a string column is; how many there may be is capped
+    // where the request is checked, not here.
+    if ($filter["op"] == "in") {
+      $values = array();
+      foreach ($filter["value"] as $value) {$values[] = "'".$value."'";}
+      $wc .= "`".$filter["column"]."` IN (".implode(", ", $values).") ";
+      $i++;
+      continue;
+    }
 
     // Opt-in index-backed full-text search for the `contains` op. Activated by
     // setting "fulltext" => TRUE on the param; requires a FULLTEXT index on the

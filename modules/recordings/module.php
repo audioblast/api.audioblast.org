@@ -30,6 +30,7 @@ function recordings_info() {
         "default" => "",
         "column" => "id",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE,
         "ac" => "ac:providerManagedID"
       ),

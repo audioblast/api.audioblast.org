@@ -29,7 +29,8 @@ function locations_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "name" => array(
         "desc" => "What its source calls the place, e.g. Chapman's Pool, Dorset",

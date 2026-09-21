@@ -16,13 +16,15 @@ function audiowaveform_info() {
         "default" => "",
         "column" => "source",
         "op" => "=",
+        "multiple" => TRUE,
       ),
       "id" => array(
         "desc" => "filter by id within source",
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "type" => array(
         "desc" => "What type of waveform?",

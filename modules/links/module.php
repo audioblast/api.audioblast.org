@@ -21,6 +21,7 @@ function links_info() {
         "default" => "",
         "column" => "source",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "id" => array(
@@ -28,7 +29,8 @@ function links_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "subject_type" => array(
         "desc" => "Type of the subject: a data module, e.g. references, term for a vocabulary term, or iri",
@@ -36,6 +38,7 @@ function links_info() {
         "default" => "",
         "column" => "subject_type",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "subject_source" => array(
@@ -44,6 +47,7 @@ function links_info() {
         "default" => "",
         "column" => "subject_source",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "subject_id" => array(
@@ -51,7 +55,8 @@ function links_info() {
         "type" => "string",
         "default" => "",
         "column" => "subject_id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "predicate" => array(
         "desc" => "IRI of the relationship (dwc:relationshipOfResourceID), e.g. http://purl.obolibrary.org/obo/IAO_0000136 (is about) or http://rs.tdwg.org/dwc/terms/namePublishedInID",
@@ -67,6 +72,7 @@ function links_info() {
         "default" => "",
         "column" => "object_type",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "object_source" => array(
@@ -75,6 +81,7 @@ function links_info() {
         "default" => "",
         "column" => "object_source",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "object_id" => array(
@@ -82,7 +89,8 @@ function links_info() {
         "type" => "string",
         "default" => "",
         "column" => "object_id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "qualifier" => array(
         "desc" => "IRI of the vocabulary term that says more about the link, e.g. what a reference holds about a taxon, such as an oscillogram",

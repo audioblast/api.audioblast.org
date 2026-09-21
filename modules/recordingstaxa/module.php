@@ -16,6 +16,7 @@ function recordingstaxa_info() {
         "default" => "",
         "column" => "source",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "id" => array(
@@ -24,6 +25,7 @@ function recordingstaxa_info() {
         "default" => "",
         "column" => "id",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "name" => array(

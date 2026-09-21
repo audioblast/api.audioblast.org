@@ -25,6 +25,7 @@ function references_info() {
         "default" => "",
         "column" => "id",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "type" => array(
