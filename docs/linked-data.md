@@ -321,6 +321,64 @@ number of queries rather than one per name. A failed lookup propagates as a
 failure rather than as a taxon with no names, and a page with nothing linked
 makes no extra query at all.
 
+## Taxa that are the same taxon
+
+audioBLAST! holds a taxon once for every source that knows it, each row with the
+classification its own source gives it. Two such rows share a name and nothing
+else, and a name is not an identity: bio.acousti.ca and iNaturalist both hold
+*Aepyceros*, one putting it in Aepycerotinae and the other in Antilopinae, and
+until now nothing said they were about the same animal. Querying by name was the
+only join there was, which has already broken a client — audioblast.org's search
+assumed `/data/taxa/?taxon=X` returned one row, and stopped working when
+iNaturalist's taxa were added.
+
+Each row is matched to the taxon of the Catalogue of Life it is, and the match is
+a link like any other: subject the taxa row, predicate
+`http://www.w3.org/2004/02/skos/core#exactMatch`, object the catalogue's taxon as
+an `iri`, with the name that was matched and any caveat in the remarks. The
+matching is `build/col_links.R` in the
+[small_ingests](https://github.com/audioblast/small_ingests) repository, which
+writes the links that the small ingests source then ingests under the source
+`col`. Rows matched to the same taxon are the same taxon.
+
+A taxon's RDF says which rows those are, rather than leaving a client to gather
+every match of a taxonomy it may not hold:
+
+```turtle
+<https://api.audioblast.org/taxon/bio.acousti.ca/7785>
+    a dwc:Taxon ;
+    dwc:scientificName "Aepyceros" ;
+    dwc:subfamily "Aepycerotinae" ;
+    skos:exactMatch <https://api.checklistbank.org/dataset/3LR/taxon/PQQ>,
+        <https://api.audioblast.org/taxon/iNaturalist/42277> .
+```
+
+The catalogue's taxon stays on the row as well as the equivalent row: it is what
+makes the two equivalent, and it is how a client reaches a taxonomy audioBLAST!
+does not hold. `skos:exactMatch` is transitive and symmetric, so saying the rows
+match each other adds nothing that the two matches did not already entail; it
+only saves the client the join.
+
+Nothing a source gives is changed or chosen between. Each row keeps its own
+classification, so a client reading both *Aepyceros* rows sees the disagreement
+rather than a table that has settled it. Whether to show one of them by default
+is a question for each client, and a reversible one.
+
+This shares the `rdf.embed` callback with the vernacular names above. The links
+already found for the page give the taxa that the requested rows are matched to,
+and one further query finds every row matched to those same taxa, in batches of
+100 with every value bound. A page whose rows are matched to nothing — an
+undescribed species no catalogue has a name for, say — makes no extra query, and
+a row matched to a taxon no other row reaches is not said to be equivalent to
+itself. A failed lookup propagates as a failure rather than as a taxon with no
+equivalents.
+
+Names that are not determinations are deliberately left unmatched: `Albanycada
+"sp. 01"`, `Ancylecha sp.`, `Ephippiger ?ephippiger`, `Anaxyrus americanus ×
+fowleri`. These are undescribed taxa, determinations their author doubted, and
+hybrids, and forcing them onto the nearest described species would state
+something false. They stay source-local, which is the right outcome for them.
+
 ## Onomatopoeia
 
 `/data/onomatopoeia/?output=JSON-LD` (or `output=Turtle`) describes the words a
