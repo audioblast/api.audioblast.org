@@ -29,7 +29,8 @@ function specimens_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "scientificName" => array(
         "desc" => "Name of the taxon the specimen is identified as (dwc:scientificName)",
