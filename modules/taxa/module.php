@@ -7,13 +7,13 @@ function taxa_info() {
     "category" => "data",
     "table" => "taxa",
     "hname" => "Taxa",
-    "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST! A taxon is held once for every source that knows it, each with the classification its own source gives it, so a name can be held by several rows and those rows can disagree. RDF responses include incoming and outgoing links to recordings, traits and references, with relationship provenance, the vernacular names a taxon is known by as dwc:vernacularName, each in the language it is in, and the rows that are the same taxon as skos:exactMatch, which is how rows of different sources are known to be one taxon without any source's classification being overruled. The taxa a taxon is inside, all the way to the root of its source's tree, are given by the classification endpoint below in one request.",
+    "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST! A taxon is held once for every source that knows it, each with the classification its own source gives it, so a name can be held by several rows and those rows can disagree. RDF responses include incoming and outgoing links to recordings, traits and references, with relationship provenance, the vernacular names a taxon is known by as dwc:vernacularName, each in the language it is in, and the rows that are the same taxon as skos:exactMatch, which is how rows of different sources are known to be one taxon without any source's classification being overruled. The taxa a taxon is inside, all the way to the root of its source's tree, are given by the classification endpoint below in one request, and a taxon asked for at its own address (https://api.audioblast.org/taxon/{source}/{id}) carries them in its RDF, each described as it is on its own page and each skos:broader of the taxon below it, with dwc:higherClassification where the walk reached the root. A page of taxa gives each taxon's parent_id and no more, as walking fifty trees is not a page.",
     "see_also" => array(
       "<a href='#recordingstaxa'>Recordings-Taxa</a> provides autocompletes on taxon ranks with recordings.</a>",
       "<a href='#vernacularnames'>Vernacular names</a> gives the names these taxa are known by in a language."
     ),
     "rdf" => array("links" => TRUE, "path" => "taxon", "node" => "taxa_rdf_node",
-      "embed" => "taxa_rdf_embed"),
+      "embed" => "taxa_rdf_embed", "record" => "taxa_rdf_record"),
     "endpoints" => array(
       "classification" => array(
         "callback" => "taxa_classification",
@@ -285,6 +285,71 @@ function taxa_classification_parent($db, $module, $source, $id) {
   $result->close();
   $stmt->close();
   return($row);
+}
+
+/*
+The taxa a taxon is inside, on the taxon's own page.
+
+A breadcrumb is the query every page of a taxon browser makes, and following
+parent_id in RDF costs a request for each step up, as it does in JSON. Here it
+costs none: a taxon asked for at its own URI carries the taxa above it, each
+described as it is on its own page, so what a client needs to draw
+Orthoptera > Ensifera > ... > Gryllotalpa vineae arrives with the taxon.
+
+This is the one place it is affordable. A page of fifty taxa would walk fifty
+trees, so the module endpoint gives a taxon's parent and no more; whoever wants
+the chain as JSON has /data/taxa/classification/ (see taxa_classification()).
+*/
+function taxa_rdf_record($db, $module, $taxa) {
+  $nodes = array();
+  foreach ($taxa as $taxon) {
+    $chain = taxa_classification_chain($taxon, function($source, $id) use ($db, $module) {
+      return(taxa_classification_parent($db, $module, $source, $id));
+    });
+    if ($chain === FALSE) {return(FALSE);}
+    foreach (taxa_rdf_ancestors($module, $chain) as $node) {$nodes[] = $node;}
+  }
+  return($nodes);
+}
+
+/*
+The nodes of a walk up a source's tree (see taxa_classification_chain()): the
+taxa above the one asked for, and what each of them is inside.
+
+A taxa row is a source's own taxon concept, which is how the module already
+speaks of it in saying that two rows are the same taxon, so the taxon a row is
+directly inside is skos:broader of it: more general in that source's tree, and
+said of that row rather than of the name. Nothing is claimed to be transitive,
+as a source is free to put whatever it likes between two ranks.
+
+dwc:higherClassification says the same thing again the way Darwin Core says it,
+as the names of the taxa above this one with the highest first. It is only
+given where the walk reached the root, since a chain that stopped short would
+read as the whole classification and there is nothing in RDF to note that it is
+not.
+*/
+function taxa_rdf_ancestors($module, $chain) {
+  $rows = $chain["taxa"];
+  //A taxon at the root of its source's tree is inside nothing
+  if (count($rows) < 2) {return(array());}
+  $uris = array();
+  foreach ($rows as $row) {$uris[] = rdfRecordURI($module, $row["source"], $row["id"]);}
+
+  $nodes = array();
+  $names = array();
+  $last = count($rows) - 1;
+  foreach ($rows as $i => $row) {
+    //The taxon asked for is described already, by the page it was asked for on
+    $node = ($i === $last) ? array("@id" => $uris[$i]) : taxa_rdf_node($row, $uris[$i]);
+    if ($i > 0) {$node["skos:broader"] = rdfIRI($uris[$i - 1]);}
+    if ($i < $last && ($row["taxon"] ?? "") !== "") {$names[] = $row["taxon"];}
+    //Every name above it is in hand by the time the taxon itself is reached
+    if ($i === $last && $chain["problem"] === NULL && $names) {
+      $node["dwc:higherClassification"] = implode("|", $names);
+    }
+    $nodes[] = $node;
+  }
+  return($nodes);
 }
 
 // The vernacular names of the taxa, read onto the taxa themselves as

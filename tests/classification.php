@@ -2,6 +2,7 @@
 // No settings or real database are loaded. Run from the repository root.
 require 'core/modules.php';
 require 'core/input.php';
+require 'core/rdf.php';
 set_error_handler(function($severity, $message, $file, $line) {
   throw new ErrorException($message, 0, $severity, $file, $line);
 });
@@ -114,5 +115,62 @@ check(checkParams($classification, $asked, "classification") === NULL,
   "which takes the taxon to walk from, and how to give the taxa back");
 check(checkParams($classification, array("taxon" => "Gryllotalpa vineae"), "classification") !== NULL,
   "and refuses what it does not take");
+
+/*
+The same chain on the taxon's own page, where a breadcrumb reading RDF finds it
+without a request for each step up.
+*/
+$uri = function($id) use ($taxa) {return(rdfRecordURI($taxa, "fixture", $id));};
+$whole = taxa_classification_chain($vineae, tree($rows));
+$nodes = array_column(taxa_rdf_ancestors($taxa, $whole), NULL, "@id");
+check(count($nodes) === 14, "Every taxon of the chain is on the page");
+check($nodes[$uri("6")]["dwc:scientificName"] === "Orthoptera",
+  "The taxa above are described as they are on their own pages");
+check($nodes[$uri("6")]["dwc:taxonRank"] === "order", "with the rank their source gives them");
+check($nodes[$uri("6")]["@type"] === "http://rs.tdwg.org/dwc/terms/Taxon", "as taxa");
+
+// A row is a source's own taxon concept, so the taxon it is directly inside is
+// broader in that source's tree. Nothing is said to be transitive: a source may
+// put whatever it likes between two ranks.
+check($nodes[$uri("14")]["skos:broader"] === rdfIRI($uri("13")),
+  "A taxon is inside the taxon above it");
+check($nodes[$uri("7")]["skos:broader"] === rdfIRI($uri("6")),
+  "and so is each taxon of the chain");
+check(!isset($nodes[$uri("1")]["skos:broader"]), "The root is inside nothing");
+check(count($nodes[$uri("14")]) === 3,
+  "The taxon asked for is described by its own page, not again here");
+
+// Darwin Core's own summary of the same walk
+check($nodes[$uri("14")]["dwc:higherClassification"] ===
+  "Eukaryota|Animalia|Arthropoda|Hexapoda|Insecta|Orthoptera|Ensifera|Gryllidea|"
+  ."Gryllotalpoidea|Gryllotalpidae|Gryllotalpinae|Gryllotalpini|Gryllotalpa",
+  "The names above the taxon, highest first, ending at the one it is inside");
+
+// A walk that stopped short says what it reached and no more: there is no note
+// in RDF to say that a classification is not the whole one.
+$short = taxa_classification_chain($vineae, tree($broken));
+$stopped = array_column(taxa_rdf_ancestors($taxa, $short), NULL, "@id");
+check($stopped[$uri("8")]["skos:broader"] === rdfIRI($uri("7")),
+  "What the walk did reach is still said");
+check(!isset($stopped[$uri("14")]["dwc:higherClassification"]),
+  "but a chain that stopped short is not given as the whole classification");
+
+// A taxon at the root of its tree has nothing to add
+check(taxa_rdf_ancestors($taxa, taxa_classification_chain($rows[0], tree($rows))) === array(),
+  "A root carries no ancestors");
+check(taxa_rdf_ancestors($taxa, taxa_classification_chain(NULL, tree($rows))) === array(),
+  "Nor does a taxon that is not there");
+
+// Both serialisations say it, as they say everything else
+$merged = rdfMergeNodes(array_merge(rdfNodes($taxa, array($vineae)),
+  taxa_rdf_ancestors($taxa, $whole)));
+$turtle = rdfTurtle($merged);
+check(strpos($turtle, "skos:broader <".$uri("13").">") !== FALSE, "Turtle gives the chain");
+check(strpos($turtle, "dwc:higherClassification") !== FALSE, "and Darwin Core's summary of it");
+$graph = json_decode(rdfJSONLD($merged), TRUE)["@graph"];
+check(count($graph) === 14, "JSON-LD describes each taxon once");
+$asked = array_column($graph, NULL, "@id")[$uri("14")];
+check($asked["dwc:scientificName"] === "Gryllotalpa vineae" && isset($asked["skos:broader"]),
+  "with what the page says of the taxon and what the walk adds on one node");
 
 print("classification: all checks passed\n");
