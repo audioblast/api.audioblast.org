@@ -22,6 +22,20 @@ function parseType($type) {
 }
 
 /*
+Refuse a request that asked for something the API does not have, saying what it
+was. The status says as much to anything reading the reply rather than the
+message, which a caller with a mistyped module or filter needs: the reply that
+followed a bare message used to be an HTTP 200, and read as an answer. Nothing
+usable can be built once the module or endpoint is unknown, so this does not
+return.
+*/
+function badRequest($message) {
+  http_response_code(400);
+  print($message);
+  exit;
+}
+
+/*
 This is the main function for returning API data
 */
 function moduleAPI($db) {
@@ -33,25 +47,23 @@ function moduleAPI($db) {
   //Check module type is set and exists
   if (isset($parts[1]) && $parts[1] != "embed") {
     if (!in_array($parts[1], listModuleTypes())) {
-      print("Module type `".htmlspecialchars($parts[1], ENT_QUOTES)."` is not recognised.");
-      exit;
+      badRequest("Module type `".htmlspecialchars($parts[1], ENT_QUOTES)."` is not recognised.");
     }
   }
 
-  //Check module is set and exists
-  if (isset($parts[2]) && $parts[1] != "embed") {
+  //Check module is set and exists. A trailing slash and nothing after it names
+  //no module rather than one called "", which read as an empty pair of quotes.
+  if (($parts[2] ?? "") !== "" && $parts[1] != "embed") {
     if (in_array($parts[2], listModules())) {
       $module = loadModule($parts[2]);
     } else if ($parts[2]=="embed"){
       $module = loadModule($parts[3]);
     } else {
-      print("Module `".htmlspecialchars($parts[2], ENT_QUOTES)."` is not recognised.");
-      exit;
+      badRequest("Module `".htmlspecialchars($parts[2], ENT_QUOTES)."` is not recognised.");
     }
   } else {
     if ($parts[1] != "embed") {
-      print("No module provided.");
-      exit;
+      badRequest("No module provided.");
     }
   }
 
@@ -60,13 +72,13 @@ function moduleAPI($db) {
     loadModule($parts[2]);
     if (function_exists($parts[2]."_embed_info")) {
       $module = call_user_func($parts[2]."_embed_info");
-      if (array_key_exists($parts[3], $module)) {
+      if (array_key_exists($parts[3] ?? "", $module)) {
         $module = $module[$parts[3]];
       } else {
-        print("Module does not have requested embed");
+        badRequest("Module does not have requested embed.");
       }
     } else {
-      print("No embed info for module.");
+      badRequest("No embed info for module.");
     }
   }
 
@@ -76,13 +88,19 @@ function moduleAPI($db) {
       if (array_key_exists($parts[3], $module["endpoints"])) {
         $module = $module["endpoints"][$parts[3]];
       } else {
-        print("Module does not have requested endpoint.");
+        badRequest("Module does not have requested endpoint.");
       }
     }
-  } else if (isset($module["endpoints"]) && array_key_exists($parts[3], $module["endpoints"])) {
+  } else if (isset($module["endpoints"]) && array_key_exists($parts[3] ?? "", $module["endpoints"])) {
     //Endpoints in a module that is not standalone
     $module = $module["endpoints"][$parts[3]];
   }
+
+  //Reject an input the module has no use for, rather than dropping it in
+  //silence: the unfiltered whole table that then came back under an HTTP 200
+  //reads as an answer to the question that was asked.
+  $problem = checkParams($module ?? array(), $_GET, $parts[3] ?? NULL);
+  if ($problem !== NULL) {badRequest(htmlspecialchars($problem, ENT_QUOTES));}
 
   $params = array();
   $notes = array();
