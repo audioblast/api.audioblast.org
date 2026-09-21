@@ -173,12 +173,18 @@ print("Image, its licence, its pixels, the file it is served from and what it do
 SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
 impala = URIRef("https://api.audioblast.org/taxon/bio.acousti.ca/7785")
 other = URIRef("https://api.audioblast.org/taxon/iNaturalist/42277")
-catalogue = URIRef("https://api.checklistbank.org/dataset/3LR/taxon/PQQ")
+catalogue = URIRef("https://api.audioblast.org/taxon/CoL/PQQ")
 # A row is the same taxon as the row of another source matched to the same
-# taxon of the Catalogue of Life, and the catalogue's taxon stays on it too.
+# taxon of the Catalogue of Life, and that catalogue row stays on it too, so a
+# client resolves the match inside audioBLAST rather than leaving for the
+# catalogue's own API.
 assert (impala, SKOS.exactMatch, other) in a
 assert (impala, SKOS.exactMatch, catalogue) in a
 assert (impala, SKOS.exactMatch, impala) not in a
+# The catalogue's row carries its address in the catalogue, so what audioBLAST
+# holds still joins to anything else citing the same taxon.
+assert (catalogue, SKOS.exactMatch,
+        URIRef("https://api.checklistbank.org/dataset/3LR/taxon/PQQ")) in a
 # Each row still carries the classification its own source gives it, so the
 # disagreement the two sources have about Aepyceros is visible, not resolved.
 assert (impala, DWC.subfamily, Literal("Aepycerotinae")) in a

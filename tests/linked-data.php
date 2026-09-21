@@ -594,14 +594,14 @@ $nodes = array_merge($nodes, $embeddedNodes);
 // taxon, and the taxon's own response says which those are: a client reading
 // one row is told the others rather than having to gather every match itself.
 $AEPYCEROS = 'https://api.checklistbank.org/dataset/3LR/taxon/PQQ';
-$matchedTo = function($source, $id, $iri, $remarks) use ($citation) {
+$matchedTo = function($source, $id, $type, $holder, $taxon, $remarks) use ($citation) {
   $link = $citation;
-  $link['source'] = 'col'; $link['id'] = 'match-'.$source.'-'.$id;
+  $link['source'] = 'CoL'; $link['id'] = 'match-'.$source.'-'.$id;
   $link['subject_type'] = 'taxa'; $link['subject_source'] = $source;
   $link['subject_id'] = $id;
   $link['predicate'] = 'http://www.w3.org/2004/02/skos/core#exactMatch';
-  $link['object_type'] = 'iri'; $link['object_source'] = 'col';
-  $link['object_id'] = $iri;
+  $link['object_type'] = $type; $link['object_source'] = $holder;
+  $link['object_id'] = $taxon;
   $link['qualifier'] = NULL; $link['remarks'] = $remarks;
   return($link);
 };
@@ -611,37 +611,49 @@ $impala = array('source' => 'bio.acousti.ca', 'id' => '7785', 'taxon' => 'Aepyce
   'rank' => 'Genus', 'subfamily' => 'Aepycerotinae', 'family' => 'Bovidae');
 $impalaURI = rdfRecordURI($taxonModule, $impala['source'], $impala['id']);
 $otherImpalaURI = rdfRecordURI($taxonModule, 'iNaturalist', '42277');
+//The Catalogue of Life is held as a source of its own, so a row is matched to
+//its row there and a client resolves the match without leaving audioBLAST!
+$colTaxonURI = rdfRecordURI($taxonModule, 'CoL', 'PQQ');
 $impalaDB = new FixtureDB($impala);
-$impalaDB->links = array($matchedTo('bio.acousti.ca', '7785', $AEPYCEROS, 'Aepyceros'),
-                         $matchedTo('iNaturalist', '42277', $AEPYCEROS, 'Aepyceros'));
+$impalaDB->links = array($matchedTo('bio.acousti.ca', '7785', 'taxa', 'CoL', 'PQQ', 'Aepyceros; COL26.9'),
+                         $matchedTo('iNaturalist', '42277', 'taxa', 'CoL', 'PQQ', 'Aepyceros; COL26.9'));
 $impalaNodes = rdfResponseNodes($impalaDB, $taxonModule, array($impala));
 $impalaByID = array_column($impalaNodes, NULL, '@id');
 $sameTaxon = $impalaByID[$impalaURI]['skos:exactMatch'];
 check(count($impalaDB->queries) === 3, 'Equivalents are found in one further query, not one per row');
-//Matched taxa are looked up by the source holding them and their id there, the
-//same shape as every other record lookup, so the same index serves both
-check($impalaDB->bound[2] === array('http://www.w3.org/2004/02/skos/core#exactMatch', 'iri', 'col', $AEPYCEROS), 'Matched taxa are looked up by source and id, all bound');
-check(strpos($impalaDB->queries[2], $AEPYCEROS) === FALSE, 'Matched taxon is not interpolated into SQL');
+//A matched taxon is looked up by its type, the source holding it and its id
+//there, the same shape as every other record lookup, so one index serves both
+check($impalaDB->bound[2] === array('http://www.w3.org/2004/02/skos/core#exactMatch', 'taxa', 'CoL', 'PQQ'), 'Matched taxa are looked up by type, source and id, all bound');
+check(strpos($impalaDB->queries[2], 'PQQ') === FALSE, 'Matched taxon is not interpolated into SQL');
 check(in_array(rdfIRI($otherImpalaURI), $sameTaxon, TRUE), 'The row of the other source is the same taxon');
-// The taxonomy's own taxon stays on the row as well: it is what makes the two
-// rows equivalent, and it is how a client reaches a taxonomy audioBLAST! does
-// not hold, such as to ask what else the Catalogue of Life says.
-check(in_array(rdfIRI($AEPYCEROS), $sameTaxon, TRUE), 'The taxon it was matched to is kept');
+// The catalogue's own row stays on it as well: it is what makes the two rows
+// equivalent, and it is the row a client follows to read the classification
+// that placed them there.
+check(in_array(rdfIRI($colTaxonURI), $sameTaxon, TRUE), 'The taxon it was matched to is kept');
 check(!in_array(rdfIRI($impalaURI), $sameTaxon, TRUE), 'A row is not listed as the same taxon as itself');
 check($impalaByID[$impalaURI]['dwc:subfamily'] === 'Aepycerotinae', "Each row keeps its own source's classification, disagreements and all");
 $impalaTurtle = rdfTurtle($impalaNodes);
 check(strpos($impalaTurtle, '@prefix skos: <http://www.w3.org/2004/02/skos/core#>') !== FALSE, 'Turtle declares the SKOS prefix it uses');
 check(strpos($impalaTurtle, 'skos:exactMatch') !== FALSE, 'Turtle gives the match as a prefixed name');
-check(isset($impalaByID['https://api.audioblast.org/link/col/match-bio.acousti.ca-7785']), 'The match is a link like any other, with the source that made it');
-check($impalaByID['https://api.audioblast.org/link/col/match-bio.acousti.ca-7785']['dwc:relationshipAccordingTo'] === 'col', 'The match says who made it');
+check(isset($impalaByID['https://api.audioblast.org/link/CoL/match-bio.acousti.ca-7785']), 'The match is a link like any other, with the source that made it');
+check($impalaByID['https://api.audioblast.org/link/CoL/match-bio.acousti.ca-7785']['dwc:relationshipAccordingTo'] === 'CoL', 'The match says who made it');
+check(strpos($impalaByID['https://api.audioblast.org/link/CoL/match-bio.acousti.ca-7785']['dwc:relationshipRemarks'], 'COL26.9') !== FALSE, 'The match says which release it was made against');
+// A taxonomy audioBLAST! does not hold is matched to as an IRI, and reads the
+// same way: the catalogue's own row carries its address there.
+$outward = new FixtureDB($impala);
+$outward->links = array($matchedTo('CoL', 'PQQ', 'iri', '', $AEPYCEROS, 'Aepyceros; COL26.9'));
+$colRow = array('source' => 'CoL', 'id' => 'PQQ', 'taxon' => 'Aepyceros', 'rank' => 'Genus');
+$outwardNodes = rdfResponseNodes($outward, $taxonModule, array($colRow));
+$outwardByID = array_column($outwardNodes, NULL, '@id');
+check($outwardByID[$colTaxonURI]['skos:exactMatch'] === rdfIRI($AEPYCEROS), 'The catalogue row carries its address in the catalogue');
 // A row matched to a taxon no other row is matched to has no equivalents, and
 // is never said to be equivalent to itself.
 $aloneDB = new FixtureDB($impala);
-$aloneDB->links = array($matchedTo('bio.acousti.ca', '7785', $AEPYCEROS, 'Aepyceros'));
+$aloneDB->links = array($matchedTo('bio.acousti.ca', '7785', 'taxa', 'CoL', 'PQQ', 'Aepyceros; COL26.9'));
 $aloneNodes = rdfResponseNodes($aloneDB, $taxonModule, array($impala));
 $aloneByID = array_column($aloneNodes, NULL, '@id');
-//The taxon it was matched to is still there; no row of audioBLAST!'s is
-check($aloneByID[$impalaURI]['skos:exactMatch'] === rdfIRI($AEPYCEROS), 'A row matched to a taxon no other row reaches has no equivalent row, and is not its own');
+//The taxon it was matched to is still there; no other row of audioBLAST!'s is
+check($aloneByID[$impalaURI]['skos:exactMatch'] === rdfIRI($colTaxonURI), 'A row matched to a taxon no other row reaches has no equivalent row, and is not its own');
 // An unmatched row, such as an undescribed species no taxonomy has a name for,
 // costs no lookup and is served exactly as before.
 $undescribed = array('source' => 'bio.acousti.ca', 'id' => '798',
@@ -656,7 +668,7 @@ check($undescribedByID[rdfRecordURI($taxonModule, 'bio.acousti.ca', '798')]['dwc
 $impalaDB->fail = TRUE;
 check(rdfResponseNodes($impalaDB, $taxonModule, array($impala)) === FALSE, 'Failed equivalence lookup propagates');
 $impalaDB->fail = FALSE;
-$nodes = array_merge($nodes, $impalaNodes);
+$nodes = array_merge($nodes, $impalaNodes, $outwardNodes);
 
 // Onomatopoeia are the words a source renders a taxon's sound with. They have
 // a name's shape and are not names, so a rendering is about its taxon and
