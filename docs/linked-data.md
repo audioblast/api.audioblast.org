@@ -321,6 +321,38 @@ number of queries rather than one per name. A failed lookup propagates as a
 failure rather than as a taxon with no names, and a page with nothing linked
 makes no extra query at all.
 
+## Whether a name is the one in use
+
+A taxon says whether its name is the one in use, and where it is not, which
+name replaced it: `dwc:taxonomicStatus`, `dwc:nomenclaturalStatus`,
+`dwc:acceptedNameUsage` and `dwc:acceptedNameUsageID`. A synonym is still a
+`dwc:Taxon` and is still classified into its genus, family and order as any
+other is; what changes is that it now says it is a synonym.
+
+This matters because a source's synonyms carry records. bio.acousti.ca calls
+270 of its names invalid and 213 of those carry recordings, traits or
+specimens, so a client asking for *Chorthippus parallelus* used to get a taxon
+that looked accepted and never learned it is a synonym of *Pseudochorthippus
+parallelus*.
+
+A source's own word for why a name is not in use is kept as
+`dwc:nomenclaturalStatus` beside the status it names, as a description's topic
+keeps `dc:type` beside `dcterms:type`. A recombination shares its type with the
+name that replaced it, so `original name/combination` and `subsequent
+name/combination` are both `homotypic synonym`; a junior synonym does not share
+a type, so it is `heterotypic synonym`.
+
+**A name a source says nothing about gets no status**, rather than being called
+accepted: not saying is not the same as saying. 659 of bio.acousti.ca's terms
+are in that position.
+
+The name that replaced one is identified by its URI —
+`dwc:acceptedNameUsageID` takes
+`https://api.audioblast.org/taxon/{source}/{id}`, not the id the name has
+within its source — following the Darwin Core RDF guide, section 2.6, as every
+other record here is identified. `dwc:acceptedNameUsage` carries the name
+itself for a client that wants it without following the link.
+
 ## Onomatopoeia
 
 `/data/onomatopoeia/?output=JSON-LD` (or `output=Turtle`) describes the words a

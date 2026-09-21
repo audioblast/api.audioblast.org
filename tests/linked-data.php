@@ -585,6 +585,31 @@ check(!isset($aboutByID[$namedTaxonURI]['dwc:vernacularName']), 'A link that is 
 // A failed lookup is not a taxon with no names.
 $namedDB->fail = TRUE;
 check(rdfResponseNodes($namedDB, $taxonModule, array($namedTaxon)) === FALSE, 'Failed name lookup propagates');
+
+// Whether a name is the one in use, and the name that replaced it where it is
+// not. A synonym is still a taxon and still classified; what changes is that
+// it says so.
+$synonym = array('source' => 'fixture', 'id' => 'syn1', 'taxon' => 'Chorthippus parallelus',
+  'rank' => 'species', 'genus' => 'Pseudochorthippus', 'taxonomicStatus' => 'homotypic synonym',
+  'nomenclaturalStatus' => 'subsequent name/combination', 'acceptedNameUsageID' => '42',
+  'acceptedNameUsage' => 'Pseudochorthippus parallelus');
+$synonymNode = rdfNodes($taxonModule, array($synonym))[0];
+check($synonymNode['@type'] === 'http://rs.tdwg.org/dwc/terms/Taxon', 'A synonym is still a taxon');
+check($synonymNode['dwc:taxonomicStatus'] === 'homotypic synonym', 'Says whether the name is the one in use');
+check($synonymNode['dwc:nomenclaturalStatus'] === 'subsequent name/combination', "Keeps the source's own reason beside it");
+check($synonymNode['dwc:acceptedNameUsage'] === 'Pseudochorthippus parallelus', 'Names what replaced it');
+check($synonymNode['dwc:acceptedNameUsageID']['@id'] === 'https://api.audioblast.org/taxon/fixture/42', 'What replaced it is identified by its URI, not its id within the source');
+check($synonymNode['dwc:genus'] === 'Pseudochorthippus', 'A synonym is classified like any other taxon');
+// A name a source says nothing about is not thereby accepted.
+$unsaid = $synonym; $unsaid['id'] = 'syn2';
+foreach (array('taxonomicStatus', 'nomenclaturalStatus', 'acceptedNameUsageID', 'acceptedNameUsage') as $said) {
+  $unsaid[$said] = '';
+}
+$unsaidNode = rdfNodes($taxonModule, array($unsaid))[0];
+foreach (array('dwc:taxonomicStatus', 'dwc:nomenclaturalStatus', 'dwc:acceptedNameUsage', 'dwc:acceptedNameUsageID') as $absent) {
+  check(!isset($unsaidNode[$absent]), 'No status invented where a source gives none: '.$absent);
+}
+$nodes = array_merge($nodes, array($synonymNode));
 $namedDB->fail = FALSE;
 $nodes = array_merge($nodes, $embeddedNodes);
 
