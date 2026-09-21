@@ -125,7 +125,7 @@ them may now be refused.
 */
 $site = array(
   array($recordings, "/data/recordings/", array("page" => "1", "page_size" => "50")),
-  array($recordings, "/data/recordings/columns/", array()),
+  array($recordings, "/data/recordings/columns/", array("output" => "nakedJSON")),
   array($recordings, "/data/recordings/autocomplete/taxon/", array("c" => "Gryllo", "output" => "nakedJSON")),
   array($recordingstaxa, "/data/recordingstaxa/", array("page" => "1", "page_size" => "50",
     "filter" => array(array("field" => "genus", "type" => "=", "value" => "Gryllotalpa")))),
@@ -152,7 +152,8 @@ $site = array(
     array("output" => "nakedJSON")),
   array(loadModule("analysis")["endpoints"]["fetch_analysis_counts"],
     "/standalone/analysis/fetch_analysis_counts/", array("output" => "nakedJSON")),
-  array($module_info, "/standalone/modules/module_info/", array("module" => "recordings")),
+  array($module_info, "/standalone/modules/module_info/", array("module" => "recordings",
+    "output" => "nakedJSON")),
   array(loadModule("phymoji")["endpoints"]["get_taxon"], "/standalone/phymoji/get_taxon/",
     array("emoji" => "cricket")),
   array(loadModule("pythia")["endpoints"]["process"], "/standalone/pythia/process/",
