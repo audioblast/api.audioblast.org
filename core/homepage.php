@@ -64,6 +64,24 @@ function printSources($modules, $type) {
 }
 
 /*
+What holds of every request, so that each module's table need not repeat it
+*/
+function requestsHTML() {
+  $ret  = "<div class='module'>";
+  $ret .= "<h2>Requests</h2>";
+  $ret .= "<p>A request is answered with the rows matching the filters its query string gives, fifty at a";
+  $ret .= " time. <strong>page</strong> asks for a later page and <strong>page_size</strong> for more or";
+  $ret .= " fewer rows on each of them. The <strong>params</strong> of the reply give the filters that were";
+  $ret .= " applied.</p>";
+  $ret .= "<p>A parameter that is not one of the module's own, or that names a column the module cannot be";
+  $ret .= " filtered by (see <em>Can filter?</em> in the tables below), is refused with a";
+  $ret .= " <strong>400</strong> and a message naming it. A mistyped filter used to be dropped in silence,";
+  $ret .= " which returned the whole table and read as an answer to the question asked.</p>";
+  $ret .= "</div>";
+  return($ret);
+}
+
+/*
 Print all module info
 */
 function modulesHTML($modules) {
@@ -155,7 +173,7 @@ function modulesHTML($modules) {
   $data = "<h2>Data</h2>".modulesHTML_printlinks($links, "data").$data;
   $analysis = "<h2>Analysis</h2>".modulesHTML_printlinks($links, "analysis").$analysis;
   $standalone = "<h2>Standalone</h2>".modulesHTML_printlinks($links, "standalone").$standalone;
-  return($data.$analysis.$standalone);
+  return(requestsHTML().$data.$analysis.$standalone);
 }
 
 function printParams($params) {
