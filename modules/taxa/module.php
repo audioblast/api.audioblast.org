@@ -19,6 +19,16 @@ function taxa_info() {
         "default" => "", "column" => "source", "op" => "="),
       "id" => array("desc" => "Taxon ID within its source", "type" => "string",
         "default" => "", "column" => "id", "op" => "="),
+      //Each source gives its taxonomy as a tree, and audioBLAST! has held that
+      //tree all along without serving it: the ranks above a taxon were only to
+      //be had from the columns below, which have one for a family but none for
+      //a superfamily, so a taxon of a rank with no column could not be placed
+      //at all. Asking for a taxon's parent_id gives the taxa directly below
+      //it, and a taxon's own parent_id is in its row, so a client can walk a
+      //source's taxonomy down and back up. It is the source's own tree, with
+      //whatever the source has put where.
+      "parent_id" => array("desc" => "ID of the taxon this one is directly inside, within the same source",
+        "type" => "string", "default" => "", "column" => "parent_id", "op" => "="),
       "taxon" => array(
         "desc" => "Taxonomic name",
         "type" => "string",
