@@ -58,6 +58,22 @@ function small_ingests_info() {
         "override" => array(
           "source" => "nhm"
         )
+      ),
+      array(
+        //Links from audioBLAST!'s taxa to the taxa of the Catalogue of Life
+        //that are the same taxon, which the repository's build/col_links.R
+        //finds by looking each of them up in it. A taxon is held once for
+        //every source that knows it, and a name is all that two such rows
+        //share; the rows that reach the same Catalogue of Life taxon are the
+        //same taxon, whatever their sources make of its classification. No
+        //source's own classification is changed or chosen between: the links
+        //say which rows are about the same animal, not which of them is right
+        //about where it belongs.
+        "type" => "links",
+        "url" => "https://raw.githubusercontent.com/audioblast/small_ingests/main/col_links.csv",
+        "override" => array(
+          "source" => "col"
+        )
       )
     )
   );
