@@ -84,6 +84,16 @@ function moduleAPI($db) {
     $module = $module["endpoints"][$parts[3]];
   }
 
+  //Reject an input the module has no use for, rather than dropping it in
+  //silence: the unfiltered whole table that then came back under an HTTP 200
+  //reads as an answer to the question that was asked.
+  $problem = checkParams($module ?? array(), $_GET, $parts[3] ?? NULL);
+  if ($problem !== NULL) {
+    http_response_code(400);
+    print(htmlspecialchars($problem, ENT_QUOTES));
+    exit;
+  }
+
   $params = array();
   $notes = array();
   $rdf = FALSE;                   //Flag. Set when records are returned as RDF (see core/rdf.php).
