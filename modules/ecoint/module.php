@@ -16,6 +16,7 @@ function ecoint_info() {
         "default" => "",
         "column" => "source",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "id" => array(
@@ -23,14 +24,16 @@ function ecoint_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "taxon" => array(
         "desc" => "ID of the taxon that acts: the predator, the parasite, or the one that answers the call",
         "type" => "string",
         "default" => "",
         "column" => "taxon",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "interaction" => array(
         "desc" => "IRI of how it interacts, e.g. https://vocab.audioblast.org/cv/interaction#AcousticallyOrientatingPredatorOf",
@@ -45,14 +48,16 @@ function ecoint_info() {
         "type" => "string",
         "default" => "",
         "column" => "interacts_with",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "reference" => array(
         "desc" => "ID of the reference that established the interaction, within the same source",
         "type" => "string",
         "default" => "",
         "column" => "reference",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "remarks" => array(
         "desc" => "Remarks on the interaction",

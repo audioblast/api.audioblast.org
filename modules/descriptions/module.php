@@ -30,7 +30,8 @@ function descriptions_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "topic" => array(
         "desc" => "What the description is of, in its source's own words, e.g. behaviour, morphology, diagnostic or general",

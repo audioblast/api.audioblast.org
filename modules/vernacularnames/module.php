@@ -33,7 +33,8 @@ function vernacularnames_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "vernacularName" => array(
         "desc" => "The name the taxon is known by (dwc:vernacularName)",

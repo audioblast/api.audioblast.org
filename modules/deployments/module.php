@@ -23,6 +23,7 @@ function deployments_info() {
         "default" => "",
         "column" => "id",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "name" => array(
