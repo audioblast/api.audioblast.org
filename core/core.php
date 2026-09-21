@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_URI'] == "/ping") {
 
 include("homepage.php");
 include("modules.php");
+include("query.php");
 include("database.php");
 $db->set_charset('utf8mb4');
 include("speedbird.php");

@@ -25,6 +25,7 @@ function annomate_info() {
         "default" => "",
         "column" => "source_id",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "annotator" => array(
@@ -41,6 +42,7 @@ function annomate_info() {
         "default" => "",
         "column" => "annotation_id",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "annotation_date" => array(

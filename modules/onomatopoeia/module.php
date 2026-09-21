@@ -34,7 +34,8 @@ function onomatopoeia_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "word" => array(
         "desc" => "The word the sound is rendered with, e.g. bow-wow",

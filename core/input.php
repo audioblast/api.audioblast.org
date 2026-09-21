@@ -48,6 +48,36 @@ function listFilterParams($module) {
 }
 
 /*
+The filters of a module that take several values at once (see paramTakesMany()).
+*/
+function listMultiParams($module) {
+  $ret = array();
+  foreach (($module["params"] ?? array()) as $name => $info) {
+    if (paramTakesMany($info)) {$ret[] = $name;}
+  }
+  return($ret);
+}
+
+/*
+The most values one filter may be given. Matching a hundred ids at once is one
+condition on one indexed column returning at most a page of rows, so it costs
+the database about what matching one id costs; a list long enough to be a scan
+of the table in disguise is refused rather than answered slowly.
+*/
+define("MAX_FILTER_VALUES", 100);
+
+/*
+The values a filter was given. They are written together, `id=a,b,c`, or as a
+repeated list, `id[]=a&id[]=b`, which is the way to ask for a value with a comma
+in it. Spaces around a value are not part of it, so a caller that joins its
+values with ", " asks for the values it named.
+*/
+function filterValues($value) {
+  if (is_array($value)) {return(array_values($value));}
+  return(array_map("trim", explode(",", $value)));
+}
+
+/*
 Say what is wrong with a parameter, and what the module would have taken, so the
 name that was meant can be found without a trip to the documentation.
 */
@@ -67,6 +97,76 @@ function paramProblem($module, $name, $problem, $endpoint=NULL) {
     array("page", "page_size")
   );
   return($msg." It also takes: ".implode(", ", $others).".");
+}
+
+/*
+Say what is wrong with the values a parameter was given.
+
+A parameter that takes one value and is given several kept the last of them, so
+a request naming three records was answered about one of them, with nothing in
+the reply to say the other two had been dropped.
+*/
+function checkValues($module, $name, $value) {
+  if (!paramTakesMany($module["params"][$name])) {
+    if (!is_array($value)) {return(NULL);}
+    $msg = "Parameter `".$name."` takes one value.";
+    $many = listMultiParams($module);
+    if (count($many) > 0) {
+      $msg .= " These take several: ".implode(", ", $many).".";
+    }
+    return($msg);
+  }
+  //An empty value asks for no filter on the column, as it always has
+  if ($value === "") {return(NULL);}
+  $values = filterValues($value);
+  if (count($values) > MAX_FILTER_VALUES) {
+    return("Parameter `".$name."` was given ".count($values)." values, and takes at most "
+      .MAX_FILTER_VALUES.".");
+  }
+  foreach ($values as $one) {
+    if ($one !== "") {continue;}
+    //`id=12,` and `id=,` name a value that is nothing, which would otherwise
+    //be dropped and leave the column matching whatever remained, or nothing
+    return("Parameter `".$name."` was given an empty value among its values."
+      ." Several values are written `".$name."=a,b`.");
+  }
+  return(NULL);
+}
+
+/*
+Say what is wrong with the query string itself, rather than with any one of the
+parameters in it.
+
+A parameter given twice (`?id=12&id=15`) keeps the last of them and drops the
+rest, so a request naming two records was answered about one of them and read
+as an answer about both. Several values are given to one parameter instead (see
+filterValues()), and a parameter given twice is refused.
+
+The bracketed form (`?id[]=12&id[]=15`) is a list, and repeats the name on
+purpose, so it is left to checkValues() along with every other list.
+*/
+function checkQueryString($module, $query) {
+  $given = array();
+  foreach (explode("&", (string)$query) as $pair) {
+    if ($pair === "") {continue;}
+    $name = urldecode(explode("=", $pair, 2)[0]);
+    $bracket = strpos($name, "[");
+    $base = ($bracket === FALSE) ? $name : substr($name, 0, $bracket);
+    if (!isset($given[$base])) {$given[$base] = array("all" => 0, "plain" => 0);}
+    $given[$base]["all"]++;
+    if ($bracket === FALSE) {$given[$base]["plain"]++;}
+  }
+  foreach ($given as $name => $counts) {
+    if ($counts["all"] < 2 || $counts["plain"] === 0) {continue;}
+    $msg = "Parameter `".$name."` was given more than once, and all but the last would be dropped.";
+    if (paramTakesMany($module["params"][$name] ?? array())) {
+      $msg .= " Give it all of its values at once, as `".$name."=a,b`.";
+    } else {
+      $msg .= " It takes one value.";
+    }
+    return($msg);
+  }
+  return(NULL);
 }
 
 /*
@@ -99,6 +199,8 @@ function checkParams($module, $inputs, $endpoint=NULL) {
         && in_array($module["params"][$name]["op"] ?? "none", array("", "none"))) {
       return(paramProblem($module, $name, "cannot be filtered on", $endpoint));
     }
+    $problem = checkValues($module, $name, $inputs[$name]);
+    if ($problem !== NULL) {return($problem);}
   }
 
   //Tabulator names the field each of its filters applies to. Those are written
@@ -127,9 +229,23 @@ function generateParams($params, $inputs) {
     foreach($params["params"] as $name => $data) {
       if (in_array($name, listOutputColumns())) {continue;}
       if (isset($inputs[$name])) {
-      if ($inputs[$name] == "") {continue;}
+      if (is_array($inputs[$name])) {
+        if (!$inputs[$name]) {continue;}
+      } else if ($inputs[$name] == "") {continue;}
       //Columns that can't be filtered on have no operator to build a condition with
       if (($data["op"] ?? "") == "none") {continue;}
+      //A filter given several values (see paramTakesMany(), and the splitting
+      //in moduleAPI()) matches a row holding any one of them
+      if (is_array($inputs[$name])) {
+        $ret[] = array(
+          "column" => $data["column"],
+          "op" => "in",
+          "value" => array_values($inputs[$name]),
+          "type" => $data["type"],
+          "fulltext" => FALSE
+        );
+        continue;
+      }
       switch ($params["params"][$name]["op"]) {
         case "range":
           $ret = filterMerge($ret, filterABrange($params["params"][$name]["column"], $inputs[$name], $params["params"][$name]["type"]));

@@ -397,6 +397,51 @@ fowleri`. These are undescribed taxa, determinations their author doubted, and
 hybrids, and forcing them onto the nearest described species would state
 something false. They stay source-local, which is the right outcome for them.
 
+## The taxa a taxon is inside
+
+A taxa row holds the taxon directly above it in `parent_id` and no more, so a
+breadcrumb — the query every page of a taxon browser makes — costs a request for
+each step up to the root, each one waiting on the one before it. The rank
+columns do not answer it: a source's tree can put a superfamily or an infraorder
+between the ranks they hold, and those are the ranks the Catalogue of Life spine
+was worth having for.
+
+A taxon asked for at its own address carries the whole walk:
+
+```turtle
+<https://api.audioblast.org/taxon/bio.acousti.ca/9959>
+    a dwc:Taxon ;
+    dwc:scientificName "Gryllotalpa vineae" ;
+    skos:broader <https://api.audioblast.org/taxon/bio.acousti.ca/9958> ;
+    dwc:higherClassification "Eukaryota|Animalia|Arthropoda|Hexapoda|Insecta|Orthoptera|Ensifera|Gryllidea|Gryllotalpoidea|Gryllotalpidae|Gryllotalpinae|Gryllotalpini|Gryllotalpa" .
+
+<https://api.audioblast.org/taxon/bio.acousti.ca/9958>
+    a dwc:Taxon ;
+    dwc:scientificName "Gryllotalpa" ;
+    dwc:taxonRank "Genus" ;
+    skos:broader <https://api.audioblast.org/taxon/bio.acousti.ca/9957> .
+```
+
+Each taxon above is described as it is on its own page, so nothing further has
+to be fetched to draw the chain, and each is `skos:broader` of the one below it.
+A taxa row is a source's own taxon concept, which is how these responses already
+speak of it in saying that two rows are the same taxon, so what a row is inside
+is broader in that source's tree, said of the row rather than of the name.
+Nothing is claimed to be transitive: a source is free to put whatever it likes
+between two ranks. `dwc:higherClassification` says the same walk the way Darwin
+Core says it, the names above the taxon with the highest first.
+
+It is only on the record page, `/taxon/{source}/{id}`. A page of fifty taxa
+would walk fifty trees, so `/data/taxa/?output=Turtle` gives each row's
+`parent_id` and no more; `/data/taxa/classification/?source=…&id=…` gives the
+same walk as JSON.
+
+A walk that cannot reach the root — a taxon inside itself, a parent the source
+has lost — still gives what it reached, since each `skos:broader` is true on its
+own, but `dwc:higherClassification` is then left out: it would read as the whole
+classification, and there is nothing in RDF to note that it is not. The JSON
+endpoint says so in its notes instead.
+
 ## Onomatopoeia
 
 `/data/onomatopoeia/?output=JSON-LD` (or `output=Turtle`) describes the words a

@@ -7,7 +7,10 @@ has an "rdf" entry in its info giving "path", the start of its records' URIs
 (see rdfRecordURI()), and "node", the function that turns a record and its URI
 into a node. An optional "related" callback returns additional nodes describing
 contributors, containers or assertions, and an optional "embed" callback reads
-what linked records hold onto the records themselves (see rdfResponseNodes()). Records are identified by their source
+what linked records hold onto the records themselves (see rdfResponseNodes()). An optional
+"record" callback adds what a record carries at its own URI (see recordAPI())
+and a page of records does not, because it would cost its lookup again for
+every record of the page. Records are identified by their source
 and id parameters. JSON-LD and Turtle are written from the same nodes, so both formats always say the same
 thing.
 
@@ -251,9 +254,23 @@ function pageURI($requestURI, $page) {
 // Add one-hop incoming and outgoing assertions for modules that opt in.
 // Query a page in batches, rather than querying once per returned record.
 // FALSE means a failed lookup, not a record with no relationships.
-function rdfResponseNodes($db, $module, $records) {
+function rdfResponseNodes($db, $module, $records, $ownURI = FALSE) {
   $nodes = rdfNodes($module, $records);
-  if (empty($module["rdf"]["links"]) || !$records) {return($nodes);}
+  // What a record carries at its own URI and a page of records does not: a
+  // lookup whose cost is bounded for one record, and would be that cost again
+  // for every one of the fifty on a page. A taxon's ancestors are walked a
+  // taxon at a time, so they are worth having where one record was asked for
+  // and nowhere else (see recordAPI(), and taxa_rdf_record()).
+  $own = FALSE;
+  if ($ownURI && isset($module["rdf"]["record"]) && $records) {
+    $added = call_user_func($module["rdf"]["record"], $db, $module, $records);
+    if ($added === FALSE) {return(FALSE);}
+    foreach ($added as $node) {$nodes[] = $node;}
+    $own = (bool)$added;
+  }
+  //A module that says more about its own records at their URI has two
+  //descriptions of them to put together; one that says nothing is unchanged
+  if (empty($module["rdf"]["links"]) || !$records) {return($own ? rdfMergeNodes($nodes) : $nodes);}
   $links = loadModule("links");
   $seen = array();
   $found = array();
@@ -363,8 +380,8 @@ function rdfMergeNodes($nodes) {
   return(array_values($merged));
 }
 
-function printRecordRDF($db, $module, $records, $output, $nextPage = NULL) {
-  $nodes = rdfResponseNodes($db, $module, $records);
+function printRecordRDF($db, $module, $records, $output, $nextPage = NULL, $ownURI = FALSE) {
+  $nodes = rdfResponseNodes($db, $module, $records, $ownURI);
   if ($nodes === FALSE) {
     http_response_code(500);
     printRDF(array(), $output);

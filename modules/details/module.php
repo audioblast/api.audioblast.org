@@ -24,6 +24,7 @@ function details_info() {
         "default" => "",
         "column" => "type",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "id" => array(
@@ -31,7 +32,8 @@ function details_info() {
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "name" => array(
         "desc" => "Name of the detail, e.g. tape, cd_track or temperature_start",

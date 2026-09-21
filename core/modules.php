@@ -15,6 +15,20 @@ function listModuleTypes() {
   ));
 }
 
+/*
+Whether a filter takes several values at once, which a module says by setting
+"multiple" on the parameter (see filterValues() for how they are given).
+
+Only a filter that matches a value exactly can take several: a column matched
+by what it contains, or by a range, has no reading of several values that is
+not a guess. A parameter that takes several cannot match a value with a comma
+in it when it is given them in one string, so it is for the parameters that
+name records -- an id, a source, a type -- rather than for free text.
+*/
+function paramTakesMany($info) {
+  return(!empty($info["multiple"]) && ($info["op"] ?? "none") === "=");
+}
+
 function loadModules_analysisDefaultParams() {
   $ret = array(
     "source" => array(
@@ -59,14 +73,16 @@ function analysis_index_module($opts) {
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "id" => array(
         "desc" => "filter by id within source",
         "type" => "string",
         "default" => "",
         "column" => "id",
-        "op" => "="
+        "op" => "=",
+        "multiple" => TRUE
       ),
       "startTime" => array(
         "desc" => "start time(s) to return",
@@ -136,6 +152,16 @@ function loadModule($mod) {
           );
           break;
         }
+      }
+    }
+    // Whether a filter takes several values at once is something a client has
+    // to be told rather than find out: an unrecognised parameter is refused,
+    // so nothing can be learnt by trying. Every filter says which it is, so
+    // that a missing answer is never mistaken for "no".
+    if (isset($module["params"])) {
+      foreach ($module["params"] as $pname => $pinfo) {
+        if (in_array($pinfo["op"] ?? "none", array("", "none"))) {continue;}
+        $module["params"][$pname]["multiple"] = paramTakesMany($pinfo);
       }
     }
     } else {

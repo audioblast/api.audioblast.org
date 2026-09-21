@@ -16,6 +16,7 @@ function traitstaxa_info() {
         "default" => "",
         "column" => "source",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "traitID" => array(
@@ -24,6 +25,7 @@ function traitstaxa_info() {
         "default" => "",
         "column" => "traitID",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "taxonID" => array(
@@ -32,6 +34,7 @@ function traitstaxa_info() {
         "default" => "",
         "column" => "taxonID",
         "op" => "=",
+        "multiple" => TRUE,
         "autocomplete" => TRUE
       ),
       "taxon" => array(
