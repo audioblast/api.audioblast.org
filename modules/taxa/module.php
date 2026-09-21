@@ -143,18 +143,24 @@ function taxa_rdf_key($pair) {
 //same taxon, which is how audioBLAST! knows that two of its own rows are one
 define("TAXA_EXACT_MATCH", "http://www.w3.org/2004/02/skos/core#exactMatch");
 
-// The taxon of an external taxonomy that a link says a taxa row is, as the
-// source holding it and its IRI, or NULL where the link says something else. A
-// taxa row is a source's own taxon concept, and audioBLAST! holds one for every
-// source that knows the taxon; a link to the Catalogue of Life says which taxon
-// that is. The holding source comes back with the IRI because the taxa matched
-// to are looked up by it as well, as every other record is.
+// The taxon that a link says a taxa row is, as the type of record it is, the
+// source holding it and its id there, or NULL where the link says something
+// else. A taxa row is a source's own taxon concept, and audioBLAST! holds one
+// for every source that knows the taxon; a link to the Catalogue of Life says
+// which taxon that is.
+//
+// What a row is matched to is a record like any other, so it is named the way
+// every record is. The Catalogue of Life is held as a source of its own, and a
+// row is matched to its row there, which a client resolves without leaving
+// audioBLAST!; a row matched to a taxonomy audioBLAST! does not hold is matched
+// to an iri instead, and reads the same way.
 function taxa_rdf_matched($link) {
   if (($link["subject_type"] ?? "") !== "taxa") {return(NULL);}
   if (($link["predicate"] ?? "") !== TAXA_EXACT_MATCH) {return(NULL);}
-  if (($link["object_type"] ?? "") !== "iri") {return(NULL);}
-  $iri = $link["object_id"] ?? "";
-  return(($iri === "") ? NULL : array($link["object_source"] ?? "", $iri));
+  $type = $link["object_type"] ?? "";
+  $id = $link["object_id"] ?? "";
+  if ($type === "" || $id === "") {return(NULL);}
+  return(array($type, $link["object_source"] ?? "", $id));
 }
 
 // The taxa rows that are the same taxon as the ones asked for, said of the
@@ -189,16 +195,15 @@ function taxa_rdf_equivalents($db, $module, $links) {
   $matched = array();
   $links_module = loadModule("links");
   foreach (array_chunk(array_values($taxa), 100) as $batch) {
-    $values = array(TAXA_EXACT_MATCH, "iri");
+    $values = array(TAXA_EXACT_MATCH);
     $places = array();
     foreach ($batch as $match) {
-      $places[] = "(?, ?)";
-      $values[] = $match[0];
-      $values[] = $match[1];
+      $places[] = "(?, ?, ?)";
+      foreach ($match as $part) {$values[] = $part;}
     }
     $sql = SELECTclause($links_module, NULL, "table", "internal");
-    $sql .= " WHERE `subject_type` = 'taxa' AND `predicate` = ? AND `object_type` = ?";
-    $sql .= " AND (`object_source`, `object_id`) IN (".implode(", ", $places).");";
+    $sql .= " WHERE `subject_type` = 'taxa' AND `predicate` = ?";
+    $sql .= " AND (`object_type`, `object_source`, `object_id`) IN (".implode(", ", $places).");";
     $stmt = $db->prepare($sql);
     if (!$stmt) {return(FALSE);}
     if (!$stmt->bind_param(str_repeat("s", count($values)), ...$values) || !$stmt->execute()) {

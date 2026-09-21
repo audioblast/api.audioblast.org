@@ -332,14 +332,27 @@ only join there was, which has already broken a client — audioblast.org's sear
 assumed `/data/taxa/?taxon=X` returned one row, and stopped working when
 iNaturalist's taxa were added.
 
-Each row is matched to the taxon of the Catalogue of Life it is, and the match is
-a link like any other: subject the taxa row, predicate
-`http://www.w3.org/2004/02/skos/core#exactMatch`, object the catalogue's taxon as
-an `iri`, with the name that was matched and any caveat in the remarks. The
-matching is `build/col_links.R` in the
-[small_ingests](https://github.com/audioblast/small_ingests) repository, which
-writes the links that the small ingests source then ingests under the source
-`col`. Rows matched to the same taxon are the same taxon.
+The Catalogue of Life is held as a source of its own, and each row of every other
+source is matched to the row of it that is the same taxon. The match is a link
+like any other: subject the taxa row, predicate
+`http://www.w3.org/2004/02/skos/core#exactMatch`, object the catalogue's row,
+with the name that was matched, any caveat, and the release it was matched
+against in the remarks. Rows matched to the same row are the same taxon.
+
+The catalogue's rows and the links are written by one import, `colR()` in
+[audioBlastIngest](https://github.com/audioblast/audioBlastIngest), because they
+are one fact: taxonBot was a set of Catalogue of Life rows that nothing
+refreshed, and its ids have been quietly becoming synonyms ever since. Rows and
+links written together, against the same release, cannot drift apart like that.
+Each of the catalogue's own rows carries its address in the catalogue as a
+further `skos:exactMatch` to an `iri`, so what audioBLAST! holds still joins to
+anything else citing the same taxon.
+
+The rows the catalogue holds are the taxa matched and every taxon above them, so
+the classification is a tree that can be walked by `parent_id` rather than the
+nine ranks the taxa table has columns for. *Acridoidea* is a superfamily and has
+no column, and neither iNaturalist nor bio.acousti.ca can place it; its parent
+can.
 
 A taxon's RDF says which rows those are, rather than leaving a client to gather
 every match of a taxonomy it may not hold:
@@ -349,15 +362,20 @@ every match of a taxonomy it may not hold:
     a dwc:Taxon ;
     dwc:scientificName "Aepyceros" ;
     dwc:subfamily "Aepycerotinae" ;
-    skos:exactMatch <https://api.checklistbank.org/dataset/3LR/taxon/PQQ>,
+    skos:exactMatch <https://api.audioblast.org/taxon/CoL/PQQ>,
         <https://api.audioblast.org/taxon/iNaturalist/42277> .
+
+<https://api.audioblast.org/taxon/CoL/PQQ>
+    a dwc:Taxon ;
+    dwc:scientificName "Aepyceros" ;
+    skos:exactMatch <https://api.checklistbank.org/dataset/3LR/taxon/PQQ> .
 ```
 
-The catalogue's taxon stays on the row as well as the equivalent row: it is what
-makes the two equivalent, and it is how a client reaches a taxonomy audioBLAST!
-does not hold. `skos:exactMatch` is transitive and symmetric, so saying the rows
-match each other adds nothing that the two matches did not already entail; it
-only saves the client the join.
+The catalogue's row stays on the row as well as the equivalent row: it is what
+makes the two equivalent, and it is the row a client follows to read the
+classification that placed them there. `skos:exactMatch` is transitive and
+symmetric, so saying the two source rows match each other adds nothing that the
+two matches did not already entail; it only saves the client the join.
 
 Nothing a source gives is changed or chosen between. Each row keeps its own
 classification, so a client reading both *Aepyceros* rows sees the disagreement
