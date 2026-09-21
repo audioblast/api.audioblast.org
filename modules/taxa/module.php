@@ -143,16 +143,18 @@ function taxa_rdf_key($pair) {
 //same taxon, which is how audioBLAST! knows that two of its own rows are one
 define("TAXA_EXACT_MATCH", "http://www.w3.org/2004/02/skos/core#exactMatch");
 
-// The IRI of the taxon of an external taxonomy that a link says a taxa row is,
-// or NULL where the link says something else. A taxa row is a source's own
-// taxon concept, and audioBLAST! holds one for every source that knows the
-// taxon; a link to the Catalogue of Life says which taxon that is.
+// The taxon of an external taxonomy that a link says a taxa row is, as the
+// source holding it and its IRI, or NULL where the link says something else. A
+// taxa row is a source's own taxon concept, and audioBLAST! holds one for every
+// source that knows the taxon; a link to the Catalogue of Life says which taxon
+// that is. The holding source comes back with the IRI because the taxa matched
+// to are looked up by it as well, as every other record is.
 function taxa_rdf_matched($link) {
   if (($link["subject_type"] ?? "") !== "taxa") {return(NULL);}
   if (($link["predicate"] ?? "") !== TAXA_EXACT_MATCH) {return(NULL);}
   if (($link["object_type"] ?? "") !== "iri") {return(NULL);}
   $iri = $link["object_id"] ?? "";
-  return(($iri === "") ? NULL : $iri);
+  return(($iri === "") ? NULL : array($link["object_source"] ?? "", $iri));
 }
 
 // The taxa rows that are the same taxon as the ones asked for, said of the
@@ -168,24 +170,35 @@ function taxa_rdf_matched($link) {
 // Nothing here chooses between the sources. Each row keeps the classification
 // its source gives it, and a client reading two equivalent rows sees both.
 function taxa_rdf_equivalents($db, $module, $links) {
-  //The rows asked for that are matched, by the taxon they are matched to
+  //The rows asked for that are matched, by the taxon they are matched to. The
+  //key ignores case, as the lookup that finds the taxa again does.
   $asked = array();
+  $taxa = array();
   foreach ($links as $link) {
-    $iri = taxa_rdf_matched($link);
-    if ($iri === NULL) {continue;}
-    $asked[$iri][] = rdfRecordURI($module, $link["subject_source"], $link["subject_id"]);
+    $match = taxa_rdf_matched($link);
+    if ($match === NULL) {continue;}
+    $key = taxa_rdf_key($match);
+    $taxa[$key] = $match;
+    $asked[$key][] = rdfRecordURI($module, $link["subject_source"], $link["subject_id"]);
   }
   if (!$asked) {return(array());}
 
-  //Every row matched to those taxa, the ones asked for among them
+  //Every row matched to those taxa, the ones asked for among them. The taxa are
+  //looked up by the source that holds them and their id there, which is how
+  //every other record of a page is looked up, in batches of the same size.
   $matched = array();
   $links_module = loadModule("links");
-  foreach (array_chunk(array_keys($asked), 100) as $batch) {
-    $values = array(TAXA_EXACT_MATCH);
-    foreach ($batch as $iri) {$values[] = $iri;}
+  foreach (array_chunk(array_values($taxa), 100) as $batch) {
+    $values = array(TAXA_EXACT_MATCH, "iri");
+    $places = array();
+    foreach ($batch as $match) {
+      $places[] = "(?, ?)";
+      $values[] = $match[0];
+      $values[] = $match[1];
+    }
     $sql = SELECTclause($links_module, NULL, "table", "internal");
-    $sql .= " WHERE `subject_type` = 'taxa' AND `object_type` = 'iri' AND `predicate` = ?";
-    $sql .= " AND `object_id` IN (".implode(", ", array_fill(0, count($batch), "?")).");";
+    $sql .= " WHERE `subject_type` = 'taxa' AND `predicate` = ? AND `object_type` = ?";
+    $sql .= " AND (`object_source`, `object_id`) IN (".implode(", ", $places).");";
     $stmt = $db->prepare($sql);
     if (!$stmt) {return(FALSE);}
     if (!$stmt->bind_param(str_repeat("s", count($values)), ...$values) || !$stmt->execute()) {
@@ -195,20 +208,22 @@ function taxa_rdf_equivalents($db, $module, $links) {
     $result = $stmt->get_result();
     if (!$result) {$stmt->close(); return(FALSE);}
     while ($link = $result->fetch_assoc()) {
-      $iri = taxa_rdf_matched($link);
-      if ($iri === NULL || !isset($asked[$iri])) {continue;}
-      $matched[$iri][] = rdfRecordURI($module, $link["subject_source"], $link["subject_id"]);
+      $match = taxa_rdf_matched($link);
+      if ($match === NULL) {continue;}
+      $key = taxa_rdf_key($match);
+      if (!isset($asked[$key])) {continue;}
+      $matched[$key][] = rdfRecordURI($module, $link["subject_source"], $link["subject_id"]);
     }
     $result->close();
     $stmt->close();
   }
 
   $nodes = array();
-  foreach ($asked as $iri => $taxa) {
-    foreach (array_unique($taxa) as $taxon) {
+  foreach ($asked as $key => $rows) {
+    foreach (array_unique($rows) as $taxon) {
       //A row is not an equivalent of itself, and a row matched to a taxon no
       //other row is matched to has none
-      $others = array_values(array_diff(array_unique($matched[$iri] ?? array()), array($taxon)));
+      $others = array_values(array_diff(array_unique($matched[$key] ?? array()), array($taxon)));
       if (!$others) {continue;}
       $nodes[] = array("@id" => $taxon,
         "skos:exactMatch" => array_map("rdfIRI", $others));

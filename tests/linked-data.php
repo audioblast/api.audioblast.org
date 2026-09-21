@@ -618,6 +618,10 @@ $impalaNodes = rdfResponseNodes($impalaDB, $taxonModule, array($impala));
 $impalaByID = array_column($impalaNodes, NULL, '@id');
 $sameTaxon = $impalaByID[$impalaURI]['skos:exactMatch'];
 check(count($impalaDB->queries) === 3, 'Equivalents are found in one further query, not one per row');
+//Matched taxa are looked up by the source holding them and their id there, the
+//same shape as every other record lookup, so the same index serves both
+check($impalaDB->bound[2] === array('http://www.w3.org/2004/02/skos/core#exactMatch', 'iri', 'col', $AEPYCEROS), 'Matched taxa are looked up by source and id, all bound');
+check(strpos($impalaDB->queries[2], $AEPYCEROS) === FALSE, 'Matched taxon is not interpolated into SQL');
 check(in_array(rdfIRI($otherImpalaURI), $sameTaxon, TRUE), 'The row of the other source is the same taxon');
 // The taxonomy's own taxon stays on the row as well: it is what makes the two
 // rows equivalent, and it is how a client reaches a taxonomy audioBLAST! does
