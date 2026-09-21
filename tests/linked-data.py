@@ -169,3 +169,18 @@ service = next(a.objects(image, AC.hasServiceAccessPoint))
 assert (service, AC.accessURI, URIRef("https://example.org/files/meta.jpg")) in a
 assert not list(a.triples((image, AC.accessURI, None)))
 print("Image, its licence, its pixels, the file it is served from and what it documents verified")
+
+SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
+impala = URIRef("https://api.audioblast.org/taxon/bio.acousti.ca/7785")
+other = URIRef("https://api.audioblast.org/taxon/iNaturalist/42277")
+catalogue = URIRef("https://api.checklistbank.org/dataset/3LR/taxon/PQQ")
+# A row is the same taxon as the row of another source matched to the same
+# taxon of the Catalogue of Life, and the catalogue's taxon stays on it too.
+assert (impala, SKOS.exactMatch, other) in a
+assert (impala, SKOS.exactMatch, catalogue) in a
+assert (impala, SKOS.exactMatch, impala) not in a
+# Each row still carries the classification its own source gives it, so the
+# disagreement the two sources have about Aepyceros is visible, not resolved.
+assert (impala, DWC.subfamily, Literal("Aepycerotinae")) in a
+assert len(list(a.objects(impala, SKOS.exactMatch))) == 2
+print("Taxa of different sources are matched to one taxon while each keeps its own classification")

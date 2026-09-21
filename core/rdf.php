@@ -80,6 +80,7 @@ function rdfContext() {
     "dwciri" => "http://rs.tdwg.org/dwc/iri/",
     "exif" => "http://ns.adobe.com/exif/1.0/",
     "mo" => "http://purl.org/ontology/mo/",
+    "skos" => "http://www.w3.org/2004/02/skos/core#",
     "xmp" => "http://ns.adobe.com/xap/1.0/",
     "xmpRights" => "http://ns.adobe.com/xap/1.0/rights/",
     "xsd" => "http://www.w3.org/2001/XMLSchema#"

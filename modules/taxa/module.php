@@ -7,7 +7,7 @@ function taxa_info() {
     "category" => "data",
     "table" => "taxa",
     "hname" => "Taxa",
-    "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST! RDF responses include incoming and outgoing links to recordings, traits and references, with relationship provenance, and the vernacular names a taxon is known by as dwc:vernacularName, each in the language it is in.",
+    "desc" => "This endpoint allows for the querying of the taxonomic hierarchy held within audioBLAST! A taxon is held once for every source that knows it, each with the classification its own source gives it, so a name can be held by several rows and those rows can disagree. RDF responses include incoming and outgoing links to recordings, traits and references, with relationship provenance, the vernacular names a taxon is known by as dwc:vernacularName, each in the language it is in, and the rows that are the same taxon as skos:exactMatch, which is how rows of different sources are known to be one taxon without any source's classification being overruled.",
     "see_also" => array(
       "<a href='#recordingstaxa'>Recordings-Taxa</a> provides autocompletes on taxon ranks with recordings.</a>",
       "<a href='#vernacularnames'>Vernacular names</a> gives the names these taxa are known by in a language."
@@ -129,7 +129,89 @@ function taxa_rdf_key($pair) {
   return(json_encode(array_map("strtolower", $pair)));
 }
 
+//The relationship that says a taxa row and a taxon of another taxonomy are the
+//same taxon, which is how audioBLAST! knows that two of its own rows are one
+define("TAXA_EXACT_MATCH", "http://www.w3.org/2004/02/skos/core#exactMatch");
+
+// The IRI of the taxon of an external taxonomy that a link says a taxa row is,
+// or NULL where the link says something else. A taxa row is a source's own
+// taxon concept, and audioBLAST! holds one for every source that knows the
+// taxon; a link to the Catalogue of Life says which taxon that is.
+function taxa_rdf_matched($link) {
+  if (($link["subject_type"] ?? "") !== "taxa") {return(NULL);}
+  if (($link["predicate"] ?? "") !== TAXA_EXACT_MATCH) {return(NULL);}
+  if (($link["object_type"] ?? "") !== "iri") {return(NULL);}
+  $iri = $link["object_id"] ?? "";
+  return(($iri === "") ? NULL : $iri);
+}
+
+// The taxa rows that are the same taxon as the ones asked for, said of the
+// rows themselves rather than left for a client to work out.
+//
+// Two rows are the same taxon when they are matched to the same taxon of an
+// external taxonomy, which is what the links from taxa to the Catalogue of
+// Life record. skos:exactMatch is transitive, so a row matched to the taxon
+// another row is matched to is that row; saying so here saves a client
+// gathering every match of a taxonomy it may not hold, and is what makes a
+// recording held under one source's taxon findable under another's.
+//
+// Nothing here chooses between the sources. Each row keeps the classification
+// its source gives it, and a client reading two equivalent rows sees both.
+function taxa_rdf_equivalents($db, $module, $links) {
+  //The rows asked for that are matched, by the taxon they are matched to
+  $asked = array();
+  foreach ($links as $link) {
+    $iri = taxa_rdf_matched($link);
+    if ($iri === NULL) {continue;}
+    $asked[$iri][] = rdfRecordURI($module, $link["subject_source"], $link["subject_id"]);
+  }
+  if (!$asked) {return(array());}
+
+  //Every row matched to those taxa, the ones asked for among them
+  $matched = array();
+  $links_module = loadModule("links");
+  foreach (array_chunk(array_keys($asked), 100) as $batch) {
+    $values = array(TAXA_EXACT_MATCH);
+    foreach ($batch as $iri) {$values[] = $iri;}
+    $sql = SELECTclause($links_module, NULL, "table", "internal");
+    $sql .= " WHERE `subject_type` = 'taxa' AND `object_type` = 'iri' AND `predicate` = ?";
+    $sql .= " AND `object_id` IN (".implode(", ", array_fill(0, count($batch), "?")).");";
+    $stmt = $db->prepare($sql);
+    if (!$stmt) {return(FALSE);}
+    if (!$stmt->bind_param(str_repeat("s", count($values)), ...$values) || !$stmt->execute()) {
+      $stmt->close();
+      return(FALSE);
+    }
+    $result = $stmt->get_result();
+    if (!$result) {$stmt->close(); return(FALSE);}
+    while ($link = $result->fetch_assoc()) {
+      $iri = taxa_rdf_matched($link);
+      if ($iri === NULL || !isset($asked[$iri])) {continue;}
+      $matched[$iri][] = rdfRecordURI($module, $link["subject_source"], $link["subject_id"]);
+    }
+    $result->close();
+    $stmt->close();
+  }
+
+  $nodes = array();
+  foreach ($asked as $iri => $taxa) {
+    foreach (array_unique($taxa) as $taxon) {
+      //A row is not an equivalent of itself, and a row matched to a taxon no
+      //other row is matched to has none
+      $others = array_values(array_diff(array_unique($matched[$iri] ?? array()), array($taxon)));
+      if (!$others) {continue;}
+      $nodes[] = array("@id" => $taxon,
+        "skos:exactMatch" => array_map("rdfIRI", $others));
+    }
+  }
+  return($nodes);
+}
+
 function taxa_rdf_embed($db, $module, $taxa, $links) {
+  //Which of the rows asked for are the same taxon as rows of other sources
+  $nodes = taxa_rdf_equivalents($db, $module, $links);
+  if ($nodes === FALSE) {return(FALSE);}
+
   $denotes = "http://purl.obolibrary.org/obo/IAO_0000219";
   $named = array();
   $pairs = array();
@@ -148,13 +230,12 @@ function taxa_rdf_embed($db, $module, $taxa, $links) {
       $named[$key][] = $taxon;
     }
   }
-  if (!$pairs) {return(array());}
+  if (!$pairs) {return($nodes);}
 
   $names = loadModule("vernacularnames");
   $records = rdfRecordsByID($db, $names, $pairs);
   if ($records === FALSE) {return(FALSE);}
 
-  $nodes = array();
   foreach ($records as $record) {
     $name = rdfLang($record["vernacularName"] ?? NULL, $record["language"] ?? NULL);
     if ($name === NULL) {continue;}
