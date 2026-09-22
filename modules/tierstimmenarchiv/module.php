@@ -2,7 +2,8 @@
 
 function tierstimmenarchiv_info() {
   $info = array(
-    "mname" => "Tierstimmenarchiv",
+    //The archive's own prefix for its records, e.g. TSA:Anas_acuta_DIG_195_1_0
+    "mname" => "TSA",
     "version" => 1.0,
     "category" => "source",
     "hname" => "Animal Sound Archive",
