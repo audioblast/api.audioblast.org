@@ -551,8 +551,11 @@ terms are used where it has them: `ac:hashFunction` (always `SHA-256`) and
 duration. The rest come from the Music Ontology, which Audiovisual Core already
 borrows the sample rate from: `mo:sample_rate`, `mo:channels`, `mo:bitsPerSample`
 (given only for lossless formats) and `mo:encoding` for the codec, e.g.
-`pcm_s16le`. Bit rate, size in bytes, and how and when the file was measured stay
-in JSON only. A recording that has not been measured, or whose file was missing,
+`pcm_s16le`. Neither has a term for the bit rate or the size of the file, so
+these are EBUCore's: `ebucore:bitRate` in bits a second, as an
+`xsd:nonNegativeInteger`, and `ebucore:fileSize` in bytes, as an `xsd:double`,
+which is the range EBUCore gives it. How and when the file was measured stay in
+JSON only. A recording that has not been measured, or whose file was missing,
 has none of these.
 
 Until sources supply stable representation IDs, access-point fragment IDs use a

@@ -417,7 +417,8 @@ function recordings_rdf_related($recording, $uri) {
 //source's own duration and sample rate are, and the two never contradict each
 //other. Audiovisual Core's terms are used where it has them, and the Music
 //Ontology, which it borrows the sample rate from, where it does not. Bit rate
-//and size in bytes have no term in either, so stay in JSON.
+//and size in bytes have no term in either, and are EBUCore's, typed as its
+//ranges are: the size as xsd:double, the bit rate as xsd:nonNegativeInteger.
 function recordings_rdf_service($recording, $uri) {
   $service = rdfServiceAccessPoint($uri, $recording["filename"] ?? NULL, $recording["mime"] ?? NULL);
   if ($service === NULL) {return(NULL);}
@@ -431,6 +432,10 @@ function recordings_rdf_service($recording, $uri) {
   rdfAdd($service, "mo:channels", rdfInteger($recording["calculated_channels"] ?? NULL));
   rdfAdd($service, "mo:bitsPerSample", rdfInteger($recording["calculated_bit_depth"] ?? NULL));
   rdfAdd($service, "mo:encoding", $recording["calculated_codec"] ?? NULL);
+  $rate = $recording["calculated_bit_rate"] ?? NULL;
+  if (preg_match('/^[0-9]+$/', (string)$rate)) {rdfAdd($service, "ebucore:bitRate", rdfTyped($rate, "xsd:nonNegativeInteger"));}
+  $size = $recording["calculated_size_raw"] ?? NULL;
+  if (preg_match('/^[0-9]+$/', (string)$size)) {rdfAdd($service, "ebucore:fileSize", rdfTyped($size, "xsd:double"));}
   return($service);
 }
 
