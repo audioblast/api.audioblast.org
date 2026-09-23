@@ -29,7 +29,12 @@ function recordAPI($db) {
   $id = implode("/", array_map("rawurldecode", array_slice($path, 3)));
 
   $output = $_GET["output"] ?? NULL;
-  if ($output === NULL) {
+  if ($output !== NULL) {
+    $output = outputValue($module, $_GET["output"]);
+    if ($output === NULL) {
+      badRequest(htmlspecialchars(outputProblem($module, $_GET["output"]), ENT_QUOTES));
+    }
+  } else {
     header("Vary: Accept");
     $output = rdfNegotiate($_SERVER["HTTP_ACCEPT"] ?? "") ?? "JSON";
   }
