@@ -122,6 +122,62 @@ function analysis_index_module($opts) {
 }
 
 /*
+The values `output` takes on a module or one of its endpoints. Every one of
+them is answered by the same code, which serves JSON, nakedJSON and tabulator
+whatever the module says, and RDF (the outputs of rdfOutputs()) where the module
+describes its records in RDF; a module's own list adds what more it takes. The
+lists modules declared had drifted from what they served, taxa leaving out
+tabulator and traits nakedJSON, and they are now what a caller is held to.
+
+An embed prints what its own callback makes of `output`, and is given only the
+values it declares.
+*/
+function outputValues($module, $embed=FALSE) {
+  $values = $embed ? array() : array("JSON", "nakedJSON", "tabulator");
+  if (!$embed && isset($module["rdf"])) {
+    $values = array_merge($values, array("JSON-LD", "Turtle"));
+  }
+  $values = array_merge($values, $module["params"]["output"]["allowed"] ?? array());
+  return(array_values(array_unique($values)));
+}
+
+/*
+The values a parameter that chooses how records are represented takes: the
+outputs above for `output`, and what the module declares for `format`.
+*/
+function representationValues($module, $name, $embed=FALSE) {
+  if ($name === "output") {return(outputValues($module, $embed));}
+  return($module["params"][$name]["allowed"] ?? array());
+}
+
+/*
+The value of `output` or `format` a caller meant, as the module spells it, or
+NULL where the module has no such value. Case is not a difference that can mean
+anything here: `turtle` was answered in JSON and `AC` with the internal columns,
+the defaults, under an HTTP 200.
+*/
+function representationValue($module, $name, $given, $embed=FALSE) {
+  if (!is_string($given)) {return(NULL);}
+  foreach (representationValues($module, $name, $embed) as $value) {
+    if (strcasecmp($value, $given) === 0) {return($value);}
+  }
+  return(NULL);
+}
+
+function representationProblem($module, $name, $given, $embed=FALSE) {
+  return("Parameter `".$name."` does not take `".(is_string($given) ? $given : "")."`."
+    ." It takes: ".implode(", ", representationValues($module, $name, $embed)).".");
+}
+
+function outputValue($module, $given, $embed=FALSE) {
+  return(representationValue($module, "output", $given, $embed));
+}
+
+function outputProblem($module, $given, $embed=FALSE) {
+  return(representationProblem($module, "output", $given, $embed));
+}
+
+/*
 Load single module info
 */
 function loadModule($mod) {
@@ -138,6 +194,7 @@ function loadModule($mod) {
     if (isset($module["params"]["output"])) {
       $module["params"]["output"]["column"] = "";
       $module["params"]["output"]["op"] = "";
+      $module["params"]["output"]["allowed"] = outputValues($module);
     }
     // Expose an internal/ac output-format selector on any module that maps at
     // least one field to an Audiovisual Core term (unless it defines its own).

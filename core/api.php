@@ -109,6 +109,19 @@ function moduleAPI($db) {
     parse_url($_SERVER["REQUEST_URI"], PHP_URL_QUERY) ?? "");
   if ($problem !== NULL) {badRequest(htmlspecialchars($problem, ENT_QUOTES));}
 
+  //An output or format the module has no such thing as was answered with the
+  //default, and one written in the wrong case likewise. The value meant is put
+  //back as the module spells it, for everything below that reads it.
+  foreach (array("output", "format") as $name) {
+    if (!isset($_GET[$name])) {continue;}
+    $embed = ($parts[1] == "embed");
+    $value = representationValue($module, $name, $_GET[$name], $embed);
+    if ($value === NULL) {
+      badRequest(htmlspecialchars(representationProblem($module, $name, $_GET[$name], $embed), ENT_QUOTES));
+    }
+    $_GET[$name] = $value;
+  }
+
   $params = array();
   $notes = array();
   $rdf = FALSE;                   //Flag. Set when records are returned as RDF (see core/rdf.php).
