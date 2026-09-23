@@ -434,7 +434,7 @@ function recordings_rdf_service($recording, $uri) {
   rdfAdd($service, "mo:encoding", $recording["calculated_codec"] ?? NULL);
   $rate = $recording["calculated_bit_rate"] ?? NULL;
   if (preg_match('/^[0-9]+$/', (string)$rate)) {rdfAdd($service, "ebucore:bitRate", rdfTyped($rate, "xsd:nonNegativeInteger"));}
-  $size = $recording["calculated_size_raw"] ?? NULL;
+  $size = $recording["calculated_bytes"] ?? NULL;
   if (preg_match('/^[0-9]+$/', (string)$size)) {rdfAdd($service, "ebucore:fileSize", rdfTyped($size, "xsd:double"));}
   return($service);
 }
