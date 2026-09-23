@@ -401,14 +401,37 @@ function recordings_rdf_node($recording, $uri) {
   rdfAdd($node, "ac:providerManagedID", $recording["id"]);
   rdfAdd($node, "dcterms:available", rdfDate($recording["post_date"]));
   rdfAdd($node, "ac:furtherInformationURL", rdfURL($recording["info_url"]));
-  $service = rdfServiceAccessPoint($uri, $recording["filename"] ?? NULL, $recording["mime"] ?? NULL);
+  $service = recordings_rdf_service($recording, $uri);
   if ($service !== NULL) {$node["ac:hasServiceAccessPoint"] = rdfIRI($service["@id"]);}
   return($node);
 }
 
 function recordings_rdf_related($recording, $uri) {
-  $service = rdfServiceAccessPoint($uri, $recording["filename"] ?? NULL, $recording["mime"] ?? NULL);
+  $service = recordings_rdf_service($recording, $uri);
   return($service === NULL ? array() : array($service));
+}
+
+//The recording's file as a service access point, with what audioBlastAnalyse
+//measured of it (the calculated_ fields). They are measurements of the file,
+//so they are said of the access point rather than of the recording, where the
+//source's own duration and sample rate are, and the two never contradict each
+//other. Audiovisual Core's terms are used where it has them, and the Music
+//Ontology, which it borrows the sample rate from, where it does not. Bit rate
+//and size in bytes have no term in either, so stay in JSON.
+function recordings_rdf_service($recording, $uri) {
+  $service = rdfServiceAccessPoint($uri, $recording["filename"] ?? NULL, $recording["mime"] ?? NULL);
+  if ($service === NULL) {return(NULL);}
+  $hash = $recording["calculated_hash"] ?? NULL;
+  if ($hash !== NULL && $hash !== "") {
+    rdfAdd($service, "ac:hashFunction", "SHA-256");
+    rdfAdd($service, "ac:hashValue", $hash);
+  }
+  rdfAdd($service, "ac:mediaDuration", rdfDecimal($recording["calculated_duration"] ?? NULL));
+  rdfAdd($service, "mo:sample_rate", rdfDecimal($recording["calculated_sample_rate"] ?? NULL));
+  rdfAdd($service, "mo:channels", rdfInteger($recording["calculated_channels"] ?? NULL));
+  rdfAdd($service, "mo:bitsPerSample", rdfInteger($recording["calculated_bit_depth"] ?? NULL));
+  rdfAdd($service, "mo:encoding", $recording["calculated_codec"] ?? NULL);
+  return($service);
 }
 
 function recordings_embed_info() {
