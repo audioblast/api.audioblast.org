@@ -842,9 +842,12 @@ check($measuredService['mo:encoding'] === 'pcm_s16le', 'Measured codec');
 check($measuredNodes[0]['ac:mediaDuration'] === rdfTyped('30', 'xsd:decimal')
   && $measuredNodes[0]['mo:sample_rate'] === rdfTyped('48000', 'xsd:decimal'), 'The source says its own on the recording');
 check(array_keys($measuredService) === array('@id', '@type', 'ac:accessURI', 'dc:format', 'ac:hashFunction', 'ac:hashValue',
-  'ac:mediaDuration', 'mo:sample_rate', 'mo:channels', 'mo:bitsPerSample', 'mo:encoding'), 'Bit rate and size have no term');
+  'ac:mediaDuration', 'mo:sample_rate', 'mo:channels', 'mo:bitsPerSample', 'mo:encoding', 'ebucore:bitRate', 'ebucore:fileSize'),
+  'Nothing more is said of the file');
+check($measuredService['ebucore:bitRate'] === rdfTyped('1411200', 'xsd:nonNegativeInteger'), 'Measured bit rate from EBUCore');
+check($measuredService['ebucore:fileSize'] === rdfTyped('5283884', 'xsd:double'), 'Measured size from EBUCore, typed as its range is');
 $unmeasured = $accessRecording;
-foreach (array('hash', 'duration', 'sample_rate', 'channels', 'bit_depth', 'codec') as $c) {$unmeasured['calculated_'.$c] = NULL;}
+foreach (array('hash', 'duration', 'sample_rate', 'channels', 'bit_depth', 'codec', 'bit_rate', 'size_raw') as $c) {$unmeasured['calculated_'.$c] = NULL;}
 check(rdfNodes($recordingModule, array($unmeasured))[1] === $service, 'A file not measured is described as before');
 $nodes = array_merge($nodes, array($measuredService));
 
