@@ -5,9 +5,10 @@ function recordings_info() {
     "mname" => "recordings",
     "version" => 1.0,
     "category" => "data",
-    "table" => "recordings",
+    //recordings with what audioBlastAnalyse measured of each file joined on
+    "table" => "v-recordings",
     "hname" => "Recordings",
-    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way.",
+    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way. The calculated_ fields are what audioBLAST! measured of the file itself, rather than what its source says about it, and are empty for a recording that has not been measured yet: calculated_status says how measuring it went (ok, missing or unreadable).",
     //Recordings as RDF (see core/rdf.php), identified by https://api.audioblast.org/recording/{source}/{id}
     "rdf" => array(
       "links" => TRUE,
@@ -236,6 +237,96 @@ function recordings_info() {
         "column" => "channels",
         "default" => "",
         "op" => "range"
+      ),
+      "calculated_hash" => array(
+        "desc" => "SHA-256 hash of the file, as measured",
+        "type" => "string",
+        "column" => "calculated_hash",
+        "default" => "",
+        "op" => "=",
+        "multiple" => TRUE
+      ),
+      "calculated_duration" => array(
+        "desc" => "Duration of the file in seconds, as measured",
+        "type" => "range",
+        "column" => "calculated_duration",
+        "default" => "",
+        "op" => "range"
+      ),
+      "calculated_channels" => array(
+        "desc" => "Number of channels in the file, as measured",
+        "type" => "range",
+        "column" => "calculated_channels",
+        "default" => "",
+        "op" => "range"
+      ),
+      "calculated_sample_rate" => array(
+        "desc" => "Samples a second in the file, in Hz, as measured",
+        "type" => "range",
+        "column" => "calculated_sample_rate",
+        "default" => "",
+        "op" => "range"
+      ),
+      "calculated_bit_depth" => array(
+        "desc" => "Bits a sample is held in, as measured, for lossless formats only",
+        "type" => "range",
+        "column" => "calculated_bit_depth",
+        "default" => "",
+        "op" => "range"
+      ),
+      "calculated_bit_rate" => array(
+        "desc" => "Bit rate of the file, in bits a second, as measured",
+        "type" => "range",
+        "column" => "calculated_bit_rate",
+        "default" => "",
+        "op" => "range"
+      ),
+      "calculated_codec" => array(
+        "desc" => "Format the audio in the file is in, as measured, e.g. mp3 or pcm_s16le",
+        "type" => "string",
+        "column" => "calculated_codec",
+        "default" => "",
+        "op" => "=",
+        "multiple" => TRUE,
+        "autocomplete" => TRUE
+      ),
+      "calculated_bytes" => array(
+        "desc" => "Size of the file in bytes, as measured",
+        "type" => "range",
+        "column" => "calculated_size_raw",
+        "default" => "",
+        "op" => "range"
+      ),
+      "calculated_status" => array(
+        "desc" => "How measuring the file went: ok, missing (there was no file) or unreadable (no audio could be read from it). Empty where it has not been measured",
+        "type" => "string",
+        "column" => "calculated_status",
+        "default" => "",
+        "op" => "=",
+        "multiple" => TRUE,
+        "autocomplete" => TRUE
+      ),
+      "calculated_error" => array(
+        "desc" => "What went wrong in measuring the file, where something did",
+        "type" => "string",
+        "column" => "calculated_error",
+        "default" => "",
+        "op" => "none"
+      ),
+      "calculated_at" => array(
+        "desc" => "When the file was measured",
+        "type" => "string",
+        "column" => "calculated_at",
+        "default" => "",
+        "op" => "none"
+      ),
+      "calculated_by" => array(
+        "desc" => "What measured the file, as the package and its version, e.g. audioBlastAnalyse 0.2.0",
+        "type" => "string",
+        "column" => "calculated_by",
+        "default" => "",
+        "op" => "=",
+        "autocomplete" => TRUE
       ),
       "format" => array(
         "desc" => "Data representation to return.",
