@@ -127,6 +127,11 @@ function rdfDecimal($value) {
   return(preg_match('/^-?[0-9]+(\.[0-9]+)?$/', (string)$value) ? rdfTyped($value, "xsd:decimal") : NULL);
 }
 
+//A whole number as an xsd:integer, or NULL if the value isn't one
+function rdfInteger($value) {
+  return(preg_match('/^-?[0-9]+$/', (string)$value) ? rdfTyped($value, "xsd:integer") : NULL);
+}
+
 //An ISO 8601 date (YYYY-MM-DD, or YYYY-MM or YYYY when only the month or year
 //is known) as a typed literal, or NULL if the value isn't one. With a time of
 //day (HH:MM or HH:MM:SS) a whole date becomes a date and time. Where the time
