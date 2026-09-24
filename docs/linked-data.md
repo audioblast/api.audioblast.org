@@ -539,8 +539,24 @@ The recording's sample rate, rights holder and place use the terms Audiovisual
 Core borrows for them: `mo:sample_rate` from the Music Ontology, `xmpRights:Owner`
 for who holds the rights, and `dwc:countryCode` and `dwc:locality` for where the
 recording was made, which is not always where a specimen was collected.
-Audiovisual Core has no term for the number of channels, so `channels` stays in
-JSON only rather than being given an invented property.
+Audiovisual Core has no term for the number of channels, so the source's
+`channels` stays in JSON only.
+
+What audioBlastAnalyse measured of the file (the `calculated_` fields, from the
+`recordings-calculated` table) is said of the service access point, as they are
+measurements of that file rather than statements about the recording, so they
+sit beside the source's own values without contradicting them. Audiovisual Core
+terms are used where it has them: `ac:hashFunction` (always `SHA-256`) and
+`ac:hashValue` for the file's hash, and `ac:mediaDuration` for its measured
+duration. The rest come from the Music Ontology, which Audiovisual Core already
+borrows the sample rate from: `mo:sample_rate`, `mo:channels`, `mo:bitsPerSample`
+(given only for lossless formats) and `mo:encoding` for the codec, e.g.
+`pcm_s16le`. Neither has a term for the bit rate or the size of the file, so
+these are EBUCore's: `ebucore:bitRate` in bits a second, as an
+`xsd:nonNegativeInteger`, and `ebucore:fileSize` in bytes, as an `xsd:double`,
+which is the range EBUCore gives it. How and when the file was measured stay in
+JSON only. A recording that has not been measured, or whose file was missing,
+has none of these.
 
 Until sources supply stable representation IDs, access-point fragment IDs use a
 SHA-256 digest of the exact URL, scoped to the recording URI. Recording and

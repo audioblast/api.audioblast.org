@@ -89,7 +89,7 @@ function data_counts($params) {
   // so avoid loading every module until we know we have a cache miss.
   $data_module = loadModule("data");
   $wc = WHEREclause(generateParams($data_module["endpoints"]["fetch_data_counts"], $params));
-  $speedbird_hash = hash("sha256", "dc-v2".$wc);
+  $speedbird_hash = hash("sha256", "dc-v3".$wc);
   if($params["cache"]==true) {
     $ret = speedbird_get($speedbird_hash);
     if ($ret != FALSE) {
@@ -102,7 +102,9 @@ function data_counts($params) {
   foreach ($modules as $name => $info) {
     if ($info["category"] != "data") {continue;}
     if ($i > 0) { $sql .= ", ";}
-    $sql .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
+    // Each count is named after the endpoint it belongs to, not the table behind it: a table may be a view,
+    // as recordings is, or named differently, as recordings-taxa is, and neither is what a client asks for.
+    $sql .= "(SELECT COUNT(*) FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["mname"]."`";
     $i++;
   }
   $links_wc = $wc.(trim($wc) === "" ? " WHERE " : " AND ");

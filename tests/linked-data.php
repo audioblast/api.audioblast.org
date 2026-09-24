@@ -822,6 +822,39 @@ if (isset($argv[1])) {
 }
 $nodes = array_merge($nodes, $accessNodes);
 
+// What was measured of the file is said of its access point, never of the
+// recording, whose duration and sample rate are what the source says.
+$measured = $accessRecording;
+$measured['duration'] = '30'; $measured['sample_rate'] = '48000';
+$measured['calculated_hash'] = str_repeat('ab', 32); $measured['calculated_duration'] = '29.95';
+$measured['calculated_sample_rate'] = '44100'; $measured['calculated_channels'] = '2';
+$measured['calculated_bit_depth'] = '16'; $measured['calculated_codec'] = 'pcm_s16le';
+$measured['calculated_bit_rate'] = '1411200'; $measured['calculated_bytes'] = '5283884';
+// Records reach RDF with the module's field names, never its columns'
+foreach (array_keys($measured) as $field) {
+  check(isset($recordingModule['params'][$field]), $field.' is a field recordings are served with');
+}
+$measuredNodes = rdfNodes($recordingModule, array($measured));
+$measuredService = $measuredNodes[1];
+check($measuredService['@id'] === $service['@id'], 'Measuring a file does not change its identity');
+check($measuredService['ac:hashFunction'] === 'SHA-256' && $measuredService['ac:hashValue'] === $measured['calculated_hash'], 'Hash in Audiovisual Core terms');
+check($measuredService['ac:mediaDuration'] === rdfTyped('29.95', 'xsd:decimal'), 'Measured duration');
+check($measuredService['mo:sample_rate'] === rdfTyped('44100', 'xsd:decimal'), 'Measured sample rate');
+check($measuredService['mo:channels'] === rdfTyped('2', 'xsd:integer'), 'Measured channels');
+check($measuredService['mo:bitsPerSample'] === rdfTyped('16', 'xsd:integer'), 'Measured bit depth');
+check($measuredService['mo:encoding'] === 'pcm_s16le', 'Measured codec');
+check($measuredNodes[0]['ac:mediaDuration'] === rdfTyped('30', 'xsd:decimal')
+  && $measuredNodes[0]['mo:sample_rate'] === rdfTyped('48000', 'xsd:decimal'), 'The source says its own on the recording');
+check(array_keys($measuredService) === array('@id', '@type', 'ac:accessURI', 'dc:format', 'ac:hashFunction', 'ac:hashValue',
+  'ac:mediaDuration', 'mo:sample_rate', 'mo:channels', 'mo:bitsPerSample', 'mo:encoding', 'ebucore:bitRate', 'ebucore:fileSize'),
+  'Nothing more is said of the file');
+check($measuredService['ebucore:bitRate'] === rdfTyped('1411200', 'xsd:nonNegativeInteger'), 'Measured bit rate from EBUCore');
+check($measuredService['ebucore:fileSize'] === rdfTyped('5283884', 'xsd:double'), 'Measured size from EBUCore, typed as its range is');
+$unmeasured = $accessRecording;
+foreach (array('hash', 'duration', 'sample_rate', 'channels', 'bit_depth', 'codec', 'bit_rate', 'bytes') as $c) {$unmeasured['calculated_'.$c] = NULL;}
+check(rdfNodes($recordingModule, array($unmeasured))[1] === $service, 'A file not measured is described as before');
+$nodes = array_merge($nodes, array($measuredService));
+
 // Framing must retain every triple, including when both ends are requested.
 $recordingURI = 'https://api.audioblast.org/recording/fixture/rec1';
 $frameInput = rdfMergeNodes(array_merge(rdfNodes($module, array($ref)),

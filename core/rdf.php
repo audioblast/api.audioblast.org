@@ -81,6 +81,7 @@ function rdfContext() {
     "dcterms" => "http://purl.org/dc/terms/",
     "dwc" => "http://rs.tdwg.org/dwc/terms/",
     "dwciri" => "http://rs.tdwg.org/dwc/iri/",
+    "ebucore" => "http://www.ebu.ch/metadata/ontologies/ebucore/ebucore#",
     "exif" => "http://ns.adobe.com/exif/1.0/",
     "mo" => "http://purl.org/ontology/mo/",
     "skos" => "http://www.w3.org/2004/02/skos/core#",
@@ -125,6 +126,11 @@ function rdfURL($value) {
 //A decimal number as an xsd:decimal, or NULL if the value isn't one
 function rdfDecimal($value) {
   return(preg_match('/^-?[0-9]+(\.[0-9]+)?$/', (string)$value) ? rdfTyped($value, "xsd:decimal") : NULL);
+}
+
+//A whole number as an xsd:integer, or NULL if the value isn't one
+function rdfInteger($value) {
+  return(preg_match('/^-?[0-9]+$/', (string)$value) ? rdfTyped($value, "xsd:integer") : NULL);
 }
 
 //An ISO 8601 date (YYYY-MM-DD, or YYYY-MM or YYYY when only the month or year
