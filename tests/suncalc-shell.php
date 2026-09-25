@@ -16,8 +16,24 @@ metacharacter alone, and a bracketed parameter (tz[]=x) arrives as an array.
 None of it may reach the shell as anything but one literal argument.
 */
 $today = date('Y-m-d');
-$defaults = array("date" => "today (".$today.")", "period" => "year",
-                  "lat" => 50.1, "lon" => 1.38, "tz" => "UTC");
+$info = suncalc_info();
+$defaults = array();
+foreach ($info["endpoints"]["days_phases"]["params"] as $pname => $pinfo) {
+  if (isset($pinfo["default"])) {$defaults[$pname] = $pinfo["default"];}
+}
+
+/*
+lat and lon default to the defaults of sonicscrewdriver's daysPhases(), which
+this module wraps. The module's own values are what reach R, since daysPhases.R
+passes all five arguments explicitly, so the package's defaults never apply and
+a difference here would quietly answer for somewhere else. lon read 1.38 until
+2026-09-25, which is 1.83 with its digits reversed: 32 km west, and every phase
+boundary at the default location out by 1 minute 48 seconds.
+*/
+check($defaults["lat"] === 50.1, "The default latitude is the one daysPhases() uses");
+check($defaults["lon"] === 1.83, "The default longitude is the one daysPhases() uses");
+check($defaults["date"] === "today (".$today.")", "The default date is today, as documented");
+check($defaults["period"] === "year" && $defaults["tz"] === "UTC", "and the period and timezone are as documented");
 
 //The command a request builds, or "" when it is refused before anything runs
 function built($over=array()) {
@@ -41,20 +57,20 @@ function command($date, $period, $lat, $lon, $tz) {
 }
 
 // A request that can be answered, with every argument quoted
-check(built() === command($today, "year", "50.1", "1.38", "UTC"),
+check(built() === command($today, "year", "50.1", "1.83", "UTC"),
   "The documented defaults are accepted: ".built());
-check(built(array("date" => "today")) === command($today, "year", "50.1", "1.38", "UTC"),
+check(built(array("date" => "today")) === command($today, "year", "50.1", "1.83", "UTC"),
   "and a date written as today alone");
 check(built(array("date" => "2024-06-15", "period" => "month", "lat" => "-33.87",
                   "lon" => "151.21", "tz" => "Australia/Sydney"))
       === command("2024-06-15", "month", "-33.87", "151.21", "Australia/Sydney"),
   "and an explicit date, a month, and a named timezone");
-check(built(array("date" => "2024-02-29")) === command("2024-02-29", "year", "50.1", "1.38", "UTC"),
+check(built(array("date" => "2024-02-29")) === command("2024-02-29", "year", "50.1", "1.83", "UTC"),
   "and a leap day");
 check(built(array("lat" => "-90", "lon" => "180")) === command($today, "year", "-90", "180", "UTC"),
   "and the ends of both ranges");
 // lat and lon are passed on as the numbers they were read as, not as written
-check(built(array("lat" => " 12.5")) === command($today, "year", "12.5", "1.38", "UTC"),
+check(built(array("lat" => " 12.5")) === command($today, "year", "12.5", "1.83", "UTC"),
   "A latitude is passed on as a number, not as the string it was written as");
 check(built(array("lon" => "1e2")) === command($today, "year", "50.1", "100", "UTC"),
   "and so is one written in exponent notation");
@@ -126,7 +142,7 @@ $probe = str_replace("Rscript --quiet --vanilla ./modules/suncalc/daysPhases.R",
 $out = array();
 $retval = null;
 exec($probe, $out, $retval);
-check($out === array("[2024-06-15]", "[month]", "[50.1]", "[1.38]", "[Australia/Sydney]"),
+check($out === array("[2024-06-15]", "[month]", "[50.1]", "[1.83]", "[Australia/Sydney]"),
   "daysPhases.R is started with five literal arguments: ".implode(" ", $out));
 
 print("suncalc-shell: all checks passed\n");

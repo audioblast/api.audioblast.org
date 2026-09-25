@@ -36,6 +36,7 @@ function suncalc_info() {
             "default" => "year",
             "op" => "="
           ),
+         //lat and lon are the defaults of daysPhases(), which this module wraps
          "lat" => array(
             "desc" => "Decimal latitude",
             "type" => "float",
@@ -45,7 +46,7 @@ function suncalc_info() {
          "lon" => array(
             "desc" => "Decimal longitude",
             "type" => "float",
-            "default" => 1.38,
+            "default" => 1.83,
             "op" => "="
           ),
          "tz" => array(
