@@ -855,6 +855,33 @@ foreach (array('hash', 'duration', 'sample_rate', 'channels', 'bit_depth', 'code
 check(rdfNodes($recordingModule, array($unmeasured))[1] === $service, 'A file not measured is described as before');
 $nodes = array_merge($nodes, array($measuredService));
 
+// Waveform peaks made from the file are a second access point beside it.
+check(isset($recordingModule['params']['peaks_url']), 'peaks_url is a field recordings are served with');
+$peaked = $accessRecording;
+$peaked['peaks_url'] = 'https://example.org/peaks/rec1.json';
+$peakedNodes = rdfNodes($recordingModule, array($peaked));
+check(count($peakedNodes) === 3 && $peakedNodes[1] === $service, 'The file keeps its access point beside the peaks');
+$peaksService = $peakedNodes[2];
+check($peaksService['@id'] !== $service['@id'], 'Peaks have an access point of their own');
+check($peakedNodes[0]['ac:hasServiceAccessPoint'] === array(rdfIRI($service['@id']), rdfIRI($peaksService['@id'])),
+  'Recording points to both access points');
+check($peaksService['ac:accessURI'] === rdfIRI($peaked['peaks_url']) && $peaksService['dc:format'] === 'application/json',
+  'Peaks file and its format');
+check($peaksService['ac:variant'] === array(rdfIRI('http://rs.tdwg.org/acvariant/values/v008'),
+  rdfIRI('https://vocab.audioblast.org/cv/variant#WaveformPeaks')), 'Peaks are a visual variant, of the waveform peaks kind');
+check($peaksService['dcterms:conformsTo'] === rdfIRI('https://github.com/bbc/audiowaveform/blob/master/doc/DataFormat.md'),
+  'Peaks say how to read them');
+check(rdfNodes($recordingModule, array($accessRecording)) === $accessNodes, 'A recording without peaks is described as before');
+foreach (array(NULL, '', 'not a url') as $none) {
+  $unpeaked = $accessRecording; $unpeaked['peaks_url'] = $none;
+  check(rdfNodes($recordingModule, array($unpeaked)) === $accessNodes, 'No peaks access point without a URL');
+}
+$peaksOnly = $peaked; $peaksOnly['filename'] = NULL; $peaksOnly['mime'] = NULL;
+$peaksOnlyNodes = rdfNodes($recordingModule, array($peaksOnly));
+check(count($peaksOnlyNodes) === 2 && $peaksOnlyNodes[0]['ac:hasServiceAccessPoint'] === rdfIRI($peaksService['@id']),
+  'Peaks alone are one access point');
+$nodes = array_merge($nodes, array($peaksService));
+
 // Framing must retain every triple, including when both ends are requested.
 $recordingURI = 'https://api.audioblast.org/recording/fixture/rec1';
 $frameInput = rdfMergeNodes(array_merge(rdfNodes($module, array($ref)),
