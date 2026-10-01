@@ -61,6 +61,7 @@ This is an export inventory, not a check of the current production database.
 | https://vocab.audioblast.org/cv/topic#Terminology | relationship target |
 | https://vocab.audioblast.org/cv/renderingType#Mnemonic | kind of a rendering |
 | https://vocab.audioblast.org/cv/renderingType#MusicalNotation | kind of a rendering |
+| https://vocab.audioblast.org/cv/variant#WaveformPeaks | service access point variant (`ac:variant`) |
 
 ## Curation notes
 
@@ -132,7 +133,32 @@ ingest takes only the colour one, because an images record holds a single file
 and so cannot say that another image is its thumbnail; Audiovisual Core says
 that with `ac:variant` on a service access point, which the images table does
 not model. Reconsider if images ever grow variants, and note that
-`rdfContext()` in `core/rdf.php` has no `acvariant` prefix yet.
+`rdfContext()` in `core/rdf.php` has no `acvariant` prefix yet. Variant values
+are written as full IRIs, as `acsubtype` values are.
+
+## Waveform peaks, which need a term
+
+Recordings now have a second service access point, for the waveform peaks
+audioBlastAnalyse makes from the file (see "Recording representations and
+service access points" in [linked-data.md](linked-data.md)).
+`acvariant:v008` (Visual) covers it, but is too broad to say what the file is,
+so the access point also gives the placeholder
+`https://vocab.audioblast.org/cv/variant#WaveformPeaks`.
+
+The vocabulary server was checked on 2026-10-01. It has no `variant`
+vocabulary, and searches for waveform, oscillogram and peak found no matching
+term.
+
+Draft definition, for when it is published:
+
+> *Waveform peaks:* the minimum and maximum sample value of each successive
+> block of samples of an audio recording, from which its waveform
+> (oscillogram) can be drawn without the audio. The file's format, block size
+> and bit depth are given by the access point's `dcterms:conformsTo` and by the
+> file itself.
+
+Its broader term is `acvariant:v008`. A `variant` vocabulary could later hold
+other representations made from a recording, such as spectrogram tiles.
 
 The `referenceContent#Sonagram` and `#Oscillogram` terms above are a different
 concept and should not be conflated with this: they say what a *reference*
