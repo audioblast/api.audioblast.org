@@ -8,7 +8,7 @@ function recordings_info() {
     //recordings with what audioBlastAnalyse measured of each file joined on
     "table" => "v-recordings",
     "hname" => "Recordings",
-    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way. The calculated_ fields are what audioBLAST! measured of the file itself, rather than what its source says about it, and are empty for a recording that has not been measured yet: calculated_status says how measuring it went (ok, missing or unreadable).",
+    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way. The calculated_ fields are what audioBLAST! measured of the file itself, rather than what its source says about it, and are empty for a recording that has not been measured yet: calculated_status says how measuring it went (ok, missing or unreadable). peaks_url, where there is one, is the waveform peaks made from the file, which the RDF gives as a second service access point beside the file's.",
     //Recordings as RDF (see core/rdf.php), identified by https://api.audioblast.org/recording/{source}/{id}
     "rdf" => array(
       "links" => TRUE,
@@ -328,6 +328,13 @@ function recordings_info() {
         "op" => "=",
         "autocomplete" => TRUE
       ),
+      "peaks_url" => array(
+        "desc" => "URL of the waveform peaks audioBLAST! made from the file, to draw its waveform from without the audio: a BBC audiowaveform JSON file (version 2), mixed to one channel, with the minimum and maximum of each 1/86 s at 8 bits. Empty where none have been made",
+        "type" => "string",
+        "column" => "peaks_url",
+        "default" => "",
+        "op" => "none"
+      ),
       "format" => array(
         "desc" => "Data representation to return.",
         "type" => "string",
@@ -401,14 +408,42 @@ function recordings_rdf_node($recording, $uri) {
   rdfAdd($node, "ac:providerManagedID", $recording["id"]);
   rdfAdd($node, "dcterms:available", rdfDate($recording["post_date"]));
   rdfAdd($node, "ac:furtherInformationURL", rdfURL($recording["info_url"]));
-  $service = recordings_rdf_service($recording, $uri);
-  if ($service !== NULL) {$node["ac:hasServiceAccessPoint"] = rdfIRI($service["@id"]);}
+  $services = array();
+  foreach (recordings_rdf_services($recording, $uri) as $service) {$services[] = rdfIRI($service["@id"]);}
+  if (count($services) > 0) {$node["ac:hasServiceAccessPoint"] = count($services) === 1 ? $services[0] : $services;}
   return($node);
 }
 
 function recordings_rdf_related($recording, $uri) {
-  $service = recordings_rdf_service($recording, $uri);
-  return($service === NULL ? array() : array($service));
+  return(recordings_rdf_services($recording, $uri));
+}
+
+//Each representation of the recording there is somewhere to get: its file, and
+//the waveform peaks made from it
+function recordings_rdf_services($recording, $uri) {
+  $services = array();
+  foreach (array(recordings_rdf_service($recording, $uri), recordings_rdf_peaks($recording, $uri)) as $service) {
+    if ($service !== NULL) {$services[] = $service;}
+  }
+  return($services);
+}
+
+//The waveform peaks audioBLAST! made from the recording's file, as a service
+//access point of their own: a BBC audiowaveform JSON file that its waveform can
+//be drawn from without the audio. Audiovisual Core's Visual variant (v008) is
+//"a visual or graphic representation of a media resource that is not an
+//image", with an oscillogram among its examples; WaveformPeaks says which kind, and
+//is a placeholder until vocab.audioblast.org defines it (see
+//docs/vocabulary-backlog.md). Without a URL there is nothing to point to.
+function recordings_rdf_peaks($recording, $uri) {
+  $url = $recording["peaks_url"] ?? NULL;
+  if (rdfURL($url) === NULL) {return(NULL);}
+  $peaks = rdfServiceAccessPoint($uri, $url, "application/json");
+  $peaks["ac:variant"] = array(
+    rdfIRI("http://rs.tdwg.org/acvariant/values/v008"),
+    rdfIRI("https://vocab.audioblast.org/cv/variant#WaveformPeaks"));
+  $peaks["dcterms:conformsTo"] = rdfIRI("https://github.com/bbc/audiowaveform/blob/master/doc/DataFormat.md");
+  return($peaks);
 }
 
 //The recording's file as a service access point, with what audioBlastAnalyse
