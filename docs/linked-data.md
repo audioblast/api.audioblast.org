@@ -531,7 +531,29 @@ JSON and the existing flat `format=ac` output are unchanged.
 The current source schema supplies one recording file. Future audio variants,
 spectrograms and thumbnails can each have their own access point, including
 several representations with the same MIME type. No future representations or
-quality labels are fabricated. Recording-level title, creator, taxon, capture
+quality labels are fabricated.
+
+Waveform peaks that audioBlastAnalyse has made from the file (`peaks_url`, from
+the `analysis-audiowaveform` table) are the first such representation: a
+second access point, so a recording with peaks has two
+`ac:hasServiceAccessPoint` values.
+- Its `ac:accessURI` is the peaks file, and its `dc:format` is
+  `application/json`.
+- It has two `ac:variant` values:
+  - Audiovisual Core's `http://rs.tdwg.org/acvariant/values/v008` (Visual), "a
+    visual or graphic representation of a media resource that is not an
+    image", with a sonogram and an oscillogram as its examples. That is too
+    broad to tell a client what the file is.
+  - `https://vocab.audioblast.org/cv/variant#WaveformPeaks`, which says which
+    kind. It is a placeholder until the vocabulary server defines it (see
+    [vocabulary-backlog.md](vocabulary-backlog.md)).
+- `dcterms:conformsTo` points at the BBC audiowaveform data-format
+  specification, which says how to read the file.
+
+Nothing measured of the audio is said of the peaks. A recording without peaks
+is described exactly as before.
+
+Recording-level title, creator, taxon, capture
 date, duration, rights and information page stay on the recording: the current
 schema does not provide separate representation-specific values for these.
 
