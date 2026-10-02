@@ -87,6 +87,10 @@ function requestsHTML() {
   $ret .= "<p>A parameter given twice (<strong>?id=12&amp;id=15</strong>) is refused with a";
   $ret .= " <strong>400</strong>. Only the last of them used to be applied and the rest were dropped, so a";
   $ret .= " request naming two records was answered about one of them and read as an answer about both.</p>";
+  $ret .= "<p>AI applications that support the Model Context Protocol can query the data modules through";
+  $ret .= " the MCP server at <strong>https://api.audioblast.org/mcp</strong>, for example with";
+  $ret .= " <strong>claude mcp add --transport http audioblast https://api.audioblast.org/mcp</strong>. Its";
+  $ret .= " tools give what these endpoints give.</p>";
   $ret .= "</div>";
   return($ret);
 }
