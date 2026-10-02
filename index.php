@@ -6,11 +6,14 @@ $page = "API";
 if (isHomepage()) {$page = "home";}
 if (isEmbedPage()) {$page = "embed";}
 if (isRecordPage()) {$page = "record";}
+if (isMCPPage()) {$page = "mcp";}
 
 if ($page == "API") {
   moduleAPI($db);
 } else if ($page == "record") {
   recordAPI($db);
+} else if ($page == "mcp") {
+  mcpServe();
 } else {
   ?>
   <html>

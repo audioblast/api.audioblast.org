@@ -36,6 +36,57 @@ function badRequest($message) {
 }
 
 /*
+The parameters a module is queried with: the inputs it declares, escaped for the
+query, with a filter given several values at once split into them, and the
+module's defaults for the rest. The MCP server's tools (core/mcp-tools.php) query
+modules with these too, so that both give the same answer to the same question.
+*/
+function moduleParams($db, $module, $inputs) {
+  $params = array();
+  foreach ($module["params"] as $pname => $pinfo) {
+    if (isset($inputs[$pname])) {
+      if (is_array($inputs[$pname])) {
+        $params[$pname] = array();
+        foreach ($inputs[$pname] as $key => $value) {
+          $params[$pname][$db->real_escape_string($key)] = $db->real_escape_string($value);
+        }
+      } else if (paramTakesMany($pinfo) && strpos($inputs[$pname], ",") !== FALSE) {
+        //A filter given several values at once (see filterValues()). The reply
+        //gives them back as the values they were read as rather than as the
+        //one string they were written as, so that a caller can see how its
+        //request was split.
+        $params[$pname] = array();
+        foreach (filterValues($inputs[$pname]) as $value) {
+          $params[$pname][] = $db->real_escape_string($value);
+        }
+      } else {
+        $params[$pname] = $db->real_escape_string($inputs[$pname]);
+      }
+    } else {
+      if (isset($pinfo["default"])) {
+        $params[$pname] = $pinfo["default"];
+      }
+    }
+  }
+  return($params);
+}
+
+/*
+The condition an autocomplete adds to a module's filters: values of the field
+that start with ("starts") or contain ("contains") what was typed, which is
+already escaped.
+*/
+function autocompleteFilter($module, $field, $op, $value) {
+  return(array(
+    "column" => $module["params"][$field]["column"],
+    "op" => $op,
+    "value" => $value,
+    "type" => "string",
+    "fulltext" => !empty($module["params"][$field]["fulltext"])
+  ));
+}
+
+/*
 This is the main function for returning API data
 */
 function moduleAPI($db) {
@@ -122,38 +173,12 @@ function moduleAPI($db) {
     $_GET[$name] = $value;
   }
 
-  $params = array();
   $notes = array();
   $rdf = FALSE;                   //Flag. Set when records are returned as RDF (see core/rdf.php).
 
   $notes["input_params"] = $_GET;
 
-  //Sanitise parameters and apply defaults
-  foreach ($module["params"] as $pname => $pinfo) {
-    if (isset($_GET[$pname])) {
-      if (is_array($_GET[$pname])) {
-        $params[$pname] = array();
-        foreach ($_GET[$pname] as $key => $value) {
-          $params[$pname][mysqli_real_escape_string($db, $key)] = mysqli_real_escape_string($db, $value);
-        }
-      } else if (paramTakesMany($pinfo) && strpos($_GET[$pname], ",") !== FALSE) {
-        //A filter given several values at once (see filterValues()). The reply
-        //gives them back as the values they were read as rather than as the
-        //one string they were written as, so that a caller can see how its
-        //request was split.
-        $params[$pname] = array();
-        foreach (filterValues($_GET[$pname]) as $value) {
-          $params[$pname][] = mysqli_real_escape_string($db, $value);
-        }
-      } else {
-        $params[$pname] = mysqli_real_escape_string($db, $_GET[$pname]);
-      }
-    } else {
-      if (isset($pinfo["default"])) {
-        $params[$pname] = $pinfo["default"];
-      }
-    }
-  }
+  $params = moduleParams($db, $module, $_GET);
 
   //Without an output parameter, clients of a module that gives RDF can ask for
   //it in their Accept header
@@ -203,13 +228,7 @@ function moduleAPI($db) {
 
     $select = SELECTclause($module, $field, "autocomplete");
     $where = generateParams($module, $params);
-    $where[] = array(
-      "column" => $module["params"][$field]["column"],
-      "op" => $op,
-      "value" => $value,
-      "type" => "string",
-      "fulltext" => !empty($module["params"][$field]["fulltext"])
-    );
+    $where[] = autocompleteFilter($module, $field, $op, $value);
   } else if (isset($parts[3]) && $parts[3] == "columns") {
     $execute_query = FALSE;
     foreach ($module["params"] as $name => $info) {

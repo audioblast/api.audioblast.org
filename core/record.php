@@ -22,11 +22,42 @@ function isRecordPage() {
   return(recordModule($_SERVER["REQUEST_URI"]) !== NULL);
 }
 
+//The module, source and id of the record at a URI or path, or NULL where it is
+//no record's. The id is everything after the source, so it may hold a /.
+function recordAt($uri) {
+  $module = recordModule($uri);
+  if ($module === NULL) {return(NULL);}
+  $path = explode("/", parse_url($uri, PHP_URL_PATH));
+  return(array(
+    "module" => $module,
+    "source" => rawurldecode($path[2]),
+    "id" => implode("/", array_map("rawurldecode", array_slice($path, 3)))
+  ));
+}
+
+/*
+The record of a module with this source and id, NULL where there is none, or
+FALSE where the lookup failed. The record's own URI is answered with it, and so
+is the MCP server's get_record tool (core/mcp-tools.php).
+*/
+function recordByID($db, $module, $source, $id) {
+  //Source and id are matched exactly, which the table's key on them makes quick
+  $sql  = SELECTclause($module, NULL, "table", "internal");
+  $sql .= " WHERE `".$module["params"]["source"]["column"]."` = ? AND `".$module["params"][$module["rdf"]["id"] ?? "id"]["column"]."` = ? LIMIT 1;";
+  $stmt = $db->prepare($sql);
+  if (!$stmt) {return(FALSE);}
+  $stmt->bind_param("ss", $source, $id);
+  $result = $stmt->execute() ? $stmt->get_result() : FALSE;
+  if (!$result) {return(FALSE);}
+  $record = $result->fetch_assoc();
+  return(is_array($record) ? $record : NULL);
+}
+
 function recordAPI($db) {
-  $module = recordModule($_SERVER["REQUEST_URI"]);
-  $path = explode("/", parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH));
-  $source = rawurldecode($path[2]);
-  $id = implode("/", array_map("rawurldecode", array_slice($path, 3)));
+  $at = recordAt($_SERVER["REQUEST_URI"]);
+  $module = $at["module"];
+  $source = $at["source"];
+  $id = $at["id"];
 
   $output = $_GET["output"] ?? NULL;
   if ($output !== NULL) {
@@ -39,19 +70,11 @@ function recordAPI($db) {
     $output = rdfNegotiate($_SERVER["HTTP_ACCEPT"] ?? "") ?? "JSON";
   }
 
-  //Source and id are matched exactly, which the table's key on them makes quick
-  $sql  = SELECTclause($module, NULL, "table", "internal");
-  $sql .= " WHERE `".$module["params"]["source"]["column"]."` = ? AND `".$module["params"][$module["rdf"]["id"] ?? "id"]["column"]."` = ? LIMIT 1;";
-  $stmt = $db->prepare($sql);
-  $result = FALSE;
-  if ($stmt) {
-    $stmt->bind_param("ss", $source, $id);
-    $result = $stmt->execute() ? $stmt->get_result() : FALSE;
-  }
-  $record = $result ? $result->fetch_assoc() : NULL;
+  $record = recordByID($db, $module, $source, $id);
 
-  if ($result === FALSE) {
+  if ($record === FALSE) {
     http_response_code(500);
+    $record = NULL;
   } else if ($record === NULL) {
     http_response_code(404);
   } else if ($record["source"] !== $source || $record[$module["rdf"]["id"] ?? "id"] !== $id) {

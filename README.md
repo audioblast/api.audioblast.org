@@ -3,6 +3,8 @@ Application Programming Interface (API) for [audioBlast](https://audioblast.org)
 
 The public API is documented at [api.audioblast.org](https://api.audioblast.org).
 
+AI applications that support the Model Context Protocol can query it through the MCP server at `https://api.audioblast.org/mcp` (see [docs/mcp.md](docs/mcp.md)).
+
 ## Extending functionality
 The API functionality is expanded through a modular interface, exploring the [modules](https://github.com/audioblast/api.audioblast.org/tree/master/modules) directory will provide an overview of how these modules are written. 
 
