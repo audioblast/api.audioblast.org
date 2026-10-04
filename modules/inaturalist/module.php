@@ -8,26 +8,20 @@ function inaturalist_info() {
     "hname" => "iNaturalist",
     "url" => "https://www.inaturalist.org",
     "sources" => array(
-      //Harvested from the iNaturalist API by audioBlastIngest, which needs no
-      //API key to read. Each taxon group is a source of its own, so a harvest
-      //that fails skips that group rather than every group: iNaturalist holds
-      //about a million recordings altogether, and the birds alone are most of
-      //them.
       array(
         "type" => "recordings",
-        //Orthoptera
+        //Harvested from the iNaturalist API by audioBlastIngest, which needs no
+        //API key to read. iNaturalist holds about a million recordings
+        //altogether, and the birds alone are most of them.
+        //
+        //Every taxon is one source, which is the taxon_id given empty. The
+        //harvest is streamed, and its upload deletes the source's links before
+        //inserting, so two harvests under one name, such as one for each taxon
+        //group, would wipe each other's links; audioBlastIngest harvests
+        //nothing while a streamed source has more than one entry. A harvest of
+        //every taxon took about 16 hours in September 2026.
         "inaturalist" => array(
-          "taxon_id" => array("47651")
-        ),
-        "process" => array(
-          "sourceR"
-        )
-      ),
-      array(
-        "type" => "recordings",
-        //Cicadidae
-        "inaturalist" => array(
-          "taxon_id" => array("50186")
+          "taxon_id" => array("")
         ),
         "process" => array(
           "sourceR"
