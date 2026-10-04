@@ -19,3 +19,5 @@ include("rdf.php");
 include("record.php");
 include("embed.php");
 include("cdn.php");
+include("mcp.php");
+include("mcp-tools.php");

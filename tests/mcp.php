@@ -1,0 +1,401 @@
+<?php
+// The MCP server (core/mcp.php) and its tools (core/mcp-tools.php), with a
+// fixture in place of the database. No settings are loaded. Run from the
+// repository root.
+require 'core/modules.php';
+require 'core/input.php';
+require 'core/query.php';
+require 'core/rdf.php';
+require 'core/record.php';
+require 'core/api.php';
+require 'core/mcp.php';
+require 'core/mcp-tools.php';
+set_error_handler(function($severity, $message, $file, $line) {
+  throw new ErrorException($message, 0, $severity, $file, $line);
+});
+function check($condition, $message) {
+  if (!$condition) {throw new Exception($message);}
+}
+function endsWith($text, $end) {
+  return(substr($text, -strlen($end)) === $end);
+}
+//What a tool that fails logs is the server's, not the test's, so it is kept out
+//of the test's output; a check that fails is printed rather than logged with it
+ini_set("error_log", sys_get_temp_dir()."/audioblast-mcp-test.log");
+set_exception_handler(function($e) {
+  //A check that fails is reported at the check, not inside check()
+  $line = ($e->getTrace()[0]["function"] ?? "") === "check" ? $e->getTrace()[0]["line"] : $e->getLine();
+  print("mcp: FAILED: ".$e->getMessage()." (line ".$line.")\n");
+  exit(1);
+});
+
+//The value in nested arrays at a list of keys, or NULL if it isn't there
+function valueAt($value, $keys) {
+  foreach ($keys as $key) {
+    if (!is_array($value) || !array_key_exists($key, $value)) {return(NULL);}
+    $value = $value[$key];
+  }
+  return($value);
+}
+
+//The ways a value decoded from JSON doesn't match a JSON Schema, or none if it
+//does. Only the keywords the tools' schemas use are checked. An empty array
+//matches both an object and a list. (From Ontomasticon's tests/unit.php.)
+function schemaProblems($value, $schema, $path = "") {
+  if (isset($schema["type"])) {
+    $isList = is_array($value) && array_values($value) === $value;
+    $matches = FALSE;
+    foreach ((array)$schema["type"] as $type) {
+      $matches = $matches || ($type == "object" && is_array($value) && (!$isList || count($value) == 0)) || ($type == "array" && $isList)
+        || ($type == "string" && is_string($value)) || ($type == "integer" && is_int($value)) || ($type == "boolean" && is_bool($value))
+        || ($type == "number" && (is_int($value) || is_float($value))) || ($type == "null" && $value === NULL);
+    }
+    if (!$matches) {return(array($path." isn't ".implode(" or ", (array)$schema["type"])));}
+  }
+  $problems = array();
+  if (isset($schema["enum"]) && !in_array($value, $schema["enum"], TRUE)) {
+    $problems[] = $path." isn't one of its values";
+  }
+  foreach ((is_array($value) && isset($schema["required"])) ? $schema["required"] : array() as $key) {
+    if (!array_key_exists($key, $value)) {$problems[] = $path."/".$key." is missing";}
+  }
+  foreach ((is_array($value) && isset($schema["properties"])) ? $schema["properties"] : array() as $key => $property) {
+    if (array_key_exists($key, $value)) {
+      $problems = array_merge($problems, schemaProblems($value[$key], $property, $path."/".$key));
+    }
+  }
+  foreach ((is_array($value) && isset($schema["items"])) ? $value : array() as $index => $item) {
+    $problems = array_merge($problems, schemaProblems($item, $schema["items"], $path."/".$index));
+  }
+  if (is_array($value) && isset($schema["additionalProperties"]) && is_array($schema["additionalProperties"])
+      && isset($schema["additionalProperties"]["type"])) {
+    foreach ($value as $key => $item) {
+      if (isset($schema["properties"][$key])) {continue;}
+      $problems = array_merge($problems, schemaProblems($item, $schema["additionalProperties"], $path."/".$key));
+    }
+  }
+  return($problems);
+}
+
+//The MCP server's response to a request, as array(status, headers, the body decoded, the body). An array is sent as JSON.
+function testMCPResponse($message, $headers = array(), $method = "POST") {
+  $response = mcpResponse($method, $headers, is_string($message) ? $message : mcpJSON($message));
+  return(array($response["status"], $response["headers"],
+    ($response["body"] === NULL) ? NULL : json_decode($response["body"], TRUE), $response["body"]));
+}
+
+//A request of protocol version 2026-07-28, which gives the version and the client's capabilities in its _meta
+function testMCPMessage($method, $params = array(), $id = 1) {
+  $params["_meta"] = array("io.modelcontextprotocol/protocolVersion" => "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities" => new stdClass());
+  return(array("jsonrpc" => "2.0", "id" => $id, "method" => $method, "params" => $params));
+}
+
+//The headers a request of protocol version 2026-07-28 repeats its version, method and tool name in
+function testMCPHeaders($method, $name = NULL) {
+  $headers = array("mcp-protocol-version" => "2026-07-28", "mcp-method" => $method);
+  if ($name !== NULL) {$headers["mcp-name"] = $name;}
+  return($headers);
+}
+
+//A tool's result, checked against the tool's output schema when it isn't an error
+function tool($name, $arguments) {
+  $result = mcpCallTool($name, $arguments);
+  check(is_array($result), "$name is a tool");
+  if ($result["isError"]) {return($result);}
+  $schema = NULL;
+  foreach (mcpTools() as $tool) {
+    if ($tool["name"] === $name) {$schema = $tool["outputSchema"];}
+  }
+  $data = json_decode(mcpJSON($result["structuredContent"]), TRUE);
+  $problems = schemaProblems($data, $schema);
+  check(!$problems, "$name matches its output schema: ".implode("; ", $problems));
+  check($result["content"][0]["text"] === mcpJSON($result["structuredContent"]), "$name gives its data as text too");
+  return($result);
+}
+
+function toolError($result) {
+  return($result["isError"] ? $result["content"][0]["text"] : NULL);
+}
+
+//The database, as the tools use it: queries that give rows, and the prepared
+//lookups of a record and of the links to and from it
+class MCPFixtureResult {
+  private $rows;
+  function __construct($rows) {$this->rows = $rows;}
+  function fetch_assoc() {return(array_shift($this->rows));}
+  function close() {}
+}
+class MCPFixtureStatement {
+  private $db;
+  private $sql;
+  private $values = array();
+  function __construct($db, $sql) {$this->db = $db; $this->sql = $sql;}
+  function bind_param($types, &...$values) {
+    check(strlen($types) === count($values), 'All lookup values are bound');
+    $this->values = $values;
+    return(TRUE);
+  }
+  function execute() {return(!$this->db->fail);}
+  function get_result() {
+    if (strpos($this->sql, '`links` WHERE') !== FALSE) {return(new MCPFixtureResult($this->db->links));}
+    $key = strtolower($this->values[0]."/".$this->values[1]);
+    return(new MCPFixtureResult(isset($this->db->records[$key]) ? array($this->db->records[$key]) : array()));
+  }
+  function close() {}
+}
+class MCPFixtureDB {
+  public $queries = array();
+  public $rows = array();
+  public $total = 0;
+  public $records = array();
+  public $links = array();
+  public $fail = FALSE;
+  public $throw = FALSE;
+  function real_escape_string($value) {return(addslashes((string)$value));}
+  function query($sql) {
+    $this->queries[] = $sql;
+    if ($this->throw) {throw new mysqli_sql_exception("Table 'audioblast.v-recordings' doesn't exist");}
+    if ($this->fail) {return(FALSE);}
+    if (strpos($sql, 'COUNT(*)') !== FALSE) {return(new MCPFixtureResult(array(array("total" => (string)$this->total))));}
+    return(new MCPFixtureResult($this->rows));
+  }
+  function prepare($sql) {
+    $this->queries[] = $sql;
+    return(new MCPFixtureStatement($this, $sql));
+  }
+  //A record that the lookups find by its source and id, regardless of case
+  function hold($record, $idField = "id") {
+    $this->records[strtolower($record["source"]."/".$record[$idField])] = $record;
+  }
+}
+$db = new MCPFixtureDB();
+
+// Routing: the server's address, with or without a slash, and nothing else.
+foreach (array("/mcp" => TRUE, "/mcp/" => TRUE, "/mcp?x=1" => TRUE, "/mcpx" => FALSE, "/data/mcp/" => FALSE, "/" => FALSE) as $path => $isMCP) {
+  $_SERVER["REQUEST_URI"] = $path;
+  check(isMCPPage() === $isMCP, 'Routing of '.$path);
+}
+
+// Protocol: clients of earlier versions start with initialize.
+$initialize = array("jsonrpc" => "2.0", "id" => 1, "method" => "initialize",
+  "params" => array("protocolVersion" => "2025-06-18", "capabilities" => new stdClass(),
+    "clientInfo" => array("name" => "Test", "version" => "1")));
+list($status, $headers, $response) = testMCPResponse($initialize);
+check($status === 200 && valueAt($response, array("result", "protocolVersion")) === "2025-06-18", 'Initialize gives the version asked for');
+check(valueAt($response, array("result", "serverInfo", "name")) === "audioblast-api", 'Server named');
+check(valueAt($response, array("result", "capabilities", "tools")) === array(), 'Server has tools');
+check(strpos((string)valueAt($response, array("result", "instructions")), "audioBLAST!: ") === 0, 'Instructions say what audioBLAST! is first');
+check(strpos(mcpInstructions(), "give its URI") !== FALSE, 'Instructions say how to cite a record');
+check(count(preg_grep('/^Mcp-Session-Id:/i', $headers)) === 0, 'No session');
+check(in_array("Content-Type: application/json; charset=utf-8", $headers), 'JSON response');
+$initialize["params"]["protocolVersion"] = "2024-11-05";
+list(, , $response) = testMCPResponse($initialize);
+check(valueAt($response, array("result", "protocolVersion")) === "2025-11-25", 'Unsupported version gets the newest that starts with initialize');
+list($status, , , $body) = testMCPResponse(array("jsonrpc" => "2.0", "method" => "notifications/initialized"), array("mcp-protocol-version" => "2025-06-18"));
+check($status === 202 && $body === NULL, 'Notification accepted without a reply');
+list(, , , $body) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 2, "method" => "ping"), array("mcp-protocol-version" => "2025-06-18"));
+check(strpos((string)$body, '"result":{}') !== FALSE, 'Ping gives an empty object');
+list($status, , $response) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 3, "method" => "tools/list"), array("mcp-protocol-version" => "2025-11-25"));
+check($status === 200 && array_column((array)valueAt($response, array("result", "tools")), "name")
+  === array("list_modules", "describe_module", "query_module", "suggest_values", "get_record"), 'Tools listed in order');
+list($status, , $response) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 4, "method" => "tools/list"));
+check($status === 200 && count((array)valueAt($response, array("result", "tools"))) === 5, 'Clients of 2025-03-26 give no version header');
+list($status, , $response) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 5, "method" => "resources/list"), array("mcp-protocol-version" => "2025-11-25"));
+check($status === 200 && valueAt($response, array("error", "code")) === -32601, 'Unknown method is an error only in the response for earlier versions');
+list($status, , $response) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 6, "method" => "tools/list"), array("mcp-protocol-version" => "2099-01-01"));
+check($status === 400 && valueAt($response, array("error", "code")) === -32022, 'Unsupported version in header refused');
+
+// Protocol: from 2026-07-28 each request stands alone.
+list($status, , $response, $body) = testMCPResponse(testMCPMessage("server/discover"), testMCPHeaders("server/discover"));
+check($status === 200 && valueAt($response, array("result", "supportedVersions")) === mcpVersions(), 'Discover gives the versions');
+check(strpos($body, '"capabilities":{"tools":{}}') !== FALSE, 'Capabilities are an object');
+check(valueAt($response, array("result", "resultType")) === "complete" && valueAt($response, array("result", "ttlMs")) === 300000
+  && valueAt($response, array("result", "cacheScope")) === "public", 'Complete, cacheable result');
+check(valueAt($response, array("result", "_meta", "io.modelcontextprotocol/serverInfo", "title")) === "audioBLAST! API", 'Server info in _meta');
+list($status, , $response) = testMCPResponse(testMCPMessage("server/discover"), array("mcp-protocol-version" => "2026-07-28"));
+check($status === 400 && valueAt($response, array("error", "code")) === -32020, 'Method header required');
+list($status, , $response) = testMCPResponse(testMCPMessage("server/discover"), testMCPHeaders("tools/list"));
+check($status === 400 && valueAt($response, array("error", "code")) === -32020, 'Method header must match');
+list($status, , $response) = testMCPResponse(testMCPMessage("ping"), testMCPHeaders("ping"));
+check($status === 404 && valueAt($response, array("error", "code")) === -32601, 'Ping is not a 2026-07-28 method');
+$call = testMCPMessage("tools/call", array("name" => "list_modules", "arguments" => new stdClass()));
+list($status, , $response) = testMCPResponse($call, testMCPHeaders("tools/call", "get_record"));
+check($status === 400 && valueAt($response, array("error", "code")) === -32020, 'Tool name header must match');
+list($status, , $response) = testMCPResponse($call, testMCPHeaders("tools/call", "=?base64?".base64_encode("list_modules")."?="));
+check($status === 200 && valueAt($response, array("result", "isError")) === FALSE
+  && valueAt($response, array("result", "resultType")) === "complete", 'Encoded tool name decoded, tool called');
+list($status, , $response) = testMCPResponse(testMCPMessage("tools/call", array("name" => "drop_tables")), testMCPHeaders("tools/call", "drop_tables"));
+check($status === 200 && valueAt($response, array("error", "code")) === -32602, 'Unknown tool');
+
+// Protocol: what isn't a request.
+list($status, $headers) = testMCPResponse("", array(), "GET");
+check($status === 405 && in_array("Allow: POST, OPTIONS", $headers), 'GET not allowed');
+list($status) = testMCPResponse("", array(), "DELETE");
+check($status === 405, 'DELETE not allowed');
+list($status, $headers) = testMCPResponse("", array(), "OPTIONS");
+check($status === 204 && !preg_grep('/^Access-Control-Allow-(Origin|Methods|Headers):/i', $headers),
+  'Preflight answered, leaving the cross-origin headers to the server in front of the API');
+list($status, , $response) = testMCPResponse("{not json");
+check($status === 400 && valueAt($response, array("error", "code")) === -32700 && !array_key_exists("id", (array)$response), 'Parse error without an id');
+list($status, , $response) = testMCPResponse(array(testMCPMessage("tools/list"), testMCPMessage("server/discover", array(), 2)), testMCPHeaders("tools/list"));
+check($status === 400 && valueAt($response, array("error", "code")) === -32600, 'Batches refused');
+$nullID = testMCPMessage("tools/list"); $nullID["id"] = NULL;
+list($status, , $response) = testMCPResponse($nullID, testMCPHeaders("tools/list"));
+check($status === 400 && valueAt($response, array("error", "code")) === -32600, 'Null id refused');
+list($status) = testMCPResponse(str_repeat(" ", MCP_BODY_LIMIT + 1));
+check($status === 413, 'Too large');
+list($status) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 7, "result" => new stdClass()));
+check($status === 202, 'A response from the client is ignored');
+
+// The tools: named as MCP asks, described, taking and giving objects, only reading.
+$tools = mcpTools();
+foreach ($tools as $tool) {
+  check(preg_match('/^[A-Za-z0-9_.-]{1,128}$/D', $tool["name"]) === 1 && $tool["description"] != ""
+    && $tool["inputSchema"]["type"] === "object" && $tool["outputSchema"]["type"] === "object"
+    && $tool["annotations"]["readOnlyHint"] === TRUE, 'Tool '.$tool["name"].' well formed');
+}
+check(strpos(mcpJSON($tools), '"inputSchema":{"type":"object","additionalProperties":false}') !== FALSE, 'A tool without arguments takes an empty object');
+$names = $tools[1]["inputSchema"]["properties"]["module"]["enum"];
+check(count($names) === 17 && in_array("recordings", $names) && in_array("traitstaxa", $names), 'The data modules are the modules');
+check(!array_intersect($names, array("aci", "birdnet_selection", "modules", "suncalc", "bioacoustica")), 'No analysis, standalone or source modules');
+check(schemaProblems(array("modules" => "none"), $tools[0]["outputSchema"]) === array("/modules isn't array"), "The schema check finds a result that doesn't match");
+
+// list_modules
+$listed = tool("list_modules", array());
+$byName = array_column($listed["structuredContent"]["modules"], NULL, "name");
+check(array_keys($byName) === $names, 'Every data module listed');
+check($byName["annomate"]["record_uri_template"] === "https://api.audioblast.org/annotation/{source}/{annotation_id}", 'Record URIs by the id they use');
+check($byName["ecoint"]["record_uri_template"] === NULL, 'A module whose records have no URIs');
+check(strpos($byName["recordings"]["description"], "Audiovisual Core") !== FALSE, 'Modules described as they describe themselves');
+
+// describe_module
+$described = tool("describe_module", array("module" => "recordings"))["structuredContent"];
+$filters = array_column($described["filters"], NULL, "name");
+check($filters["taxon"]["match"] === "words" && $filters["taxon"]["suggest"] === TRUE, 'A full-text filter matches by words');
+check($filters["id"]["match"] === "exact" && $filters["id"]["multiple"] === TRUE, 'An exact filter that takes several values');
+check($filters["source"]["match"] === "contains" && $filters["duration"]["match"] === "range", 'Contains and range filters');
+check(!isset($filters["peaks_url"]) && in_array("peaks_url", $described["fields"]), 'A field that is not a filter is still a field');
+check(!in_array("output", $described["fields"]) && !isset($filters["output"]) && !isset($filters["format"]), 'Output and format are not the tools\' to give');
+check(isset($described["matches"]["words"]) && strpos($described["matches"]["words"], "Gryllus") !== FALSE, 'The ways of matching are explained');
+$taxa = tool("describe_module", array("module" => "taxa"))["structuredContent"];
+check($taxa["see_also"] && strpos(implode(" ", $taxa["see_also"]), "<") === FALSE, 'See also as plain text');
+check($taxa["record_uri_template"] === "https://api.audioblast.org/taxon/{source}/{id}", 'Taxon URIs');
+check(strpos((string)toolError(mcpCallTool("describe_module", array("module" => "recording"))), "recordings") !== FALSE, 'An unknown module lists the modules');
+check(toolError(mcpCallTool("describe_module", array("module" => "aci"))) !== NULL, 'Analysis modules are not reached');
+check(toolError(mcpCallTool("describe_module", array("module" => "../settings/db"))) !== NULL, 'A path is not a module');
+
+// query_module: filters are checked as the API checks them.
+$db->rows = array();
+$problem = toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("family" => "Gryllidae"))));
+check(strpos((string)$problem, "Parameter `family` is not recognised. This module can be filtered by: source, id,") === 0, 'Unknown filter refused, naming the filters');
+check(strpos($problem, "output") === FALSE, 'The filters named are those a tool can give');
+check(strpos((string)toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("output" => "Turtle")))), "Parameter `output` is not recognised") === 0, 'Output is not a filter');
+check(strpos((string)toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("page" => 2)))), "argument of its own") !== FALSE, 'Page is not a filter');
+check(strpos((string)toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("path" => "x")))), "Parameter `path` is not recognised") === 0, "The rewrite's parameter is not a filter");
+check(strpos((string)toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("peaks_url" => "x")))), "cannot be filtered on") !== FALSE, 'A field that is not a filter');
+check(strpos((string)toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("taxon" => array("a", "b"))))), "takes one value") !== FALSE, 'One value where one is taken');
+check(toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("id" => TRUE)))) !== NULL, 'A value that is not text or a number');
+check(toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("id" => array(array("12")))))) !== NULL, 'Lists of lists');
+check(toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => array("id" => array("a" => "12"))))) !== NULL, 'Values as a list');
+check(toolError(mcpCallTool("query_module", array("module" => "recordings", "filters" => "id=12"))) !== NULL, 'Filters as an object');
+foreach (array(0, 101, "ten", 2.5) as $size) {
+  check(toolError(mcpCallTool("query_module", array("module" => "recordings", "page_size" => $size))) !== NULL, 'Page size out of range: '.var_export($size, TRUE));
+}
+check(toolError(mcpCallTool("query_module", array("module" => "recordings", "page" => 0))) !== NULL, 'Pages start at 1');
+check(toolError(mcpCallTool("query_module", array("module" => "recordings", "count" => "yes"))) !== NULL, 'Count is true or false');
+check(!$db->queries, 'Nothing refused reaches the database');
+
+// query_module: a page of records, with one more asked for to tell whether there is another.
+$row = function($id) {return(array("source" => "bio.acousti.ca", "id" => $id, "taxon" => "Gryllus campestris", "license" => "CC BY"));};
+$db->rows = array($row("12"), $row("15"), $row("17"));
+$page = tool("query_module", array("module" => "recordings", "page" => 2, "page_size" => 2.0,
+  "filters" => array("id" => array("12", 15, "17"), "source" => "O'Brien", "duration" => "10:20")))["structuredContent"];
+$sql = $db->queries[0];
+check(count($db->queries) === 1, 'No count unless asked for');
+check(strpos($sql, "SELECT `source` as `source`, `id` as `id`") === 0 && strpos($sql, "FROM `audioblast`.`v-recordings`") !== FALSE, 'Every field, by its name');
+check(strpos($sql, "`id` IN ('12', '15', '17')") !== FALSE, 'Several values match any of them');
+check(strpos($sql, "`source` LIKE '%O\\'Brien%'") !== FALSE, 'Values escaped as the API escapes them');
+check(strpos($sql, "CAST(`Duration` AS DECIMAL(65,10)) >= CAST('10' AS DECIMAL(65,10)) AND CAST(`Duration` AS DECIMAL(65,10)) <= CAST('20' AS DECIMAL(65,10))") !== FALSE, 'Ranges as the API reads them');
+check(endsWith($sql, " LIMIT 2, 3;"), 'The second page, and one record more');
+check($page["more"] === TRUE && count($page["rows"]) === 2 && $page["total"] === NULL && $page["page"] === 2 && $page["page_size"] === 2, 'A page and whether there is another');
+check(array_keys($page["rows"][0])[0] === "record_uri" && $page["rows"][0]["record_uri"] === "https://api.audioblast.org/recording/bio.acousti.ca/12", 'Records come with their URIs');
+check($page["rows"][1]["license"] === "CC BY", 'Records as the database gives them');
+$db->queries = array(); $db->rows = array($row("12")); $db->total = 1234;
+$counted = tool("query_module", array("module" => "recordings", "filters" => array("id" => "12, 15"), "count" => TRUE))["structuredContent"];
+check(strpos($db->queries[0], "`id` IN ('12', '15')") !== FALSE, 'Several values joined with commas');
+check($counted["more"] === FALSE && $counted["total"] === 1234, 'Counted when asked');
+check($db->queries[1] === "SELECT COUNT(*) as `total` FROM `audioblast`.`v-recordings` WHERE `id` IN ('12', '15') ;", 'Counted with the same filters');
+$db->queries = array();
+$ecoint = tool("query_module", array("module" => "ecoint"))["structuredContent"];
+check(!isset($ecoint["rows"][0]["record_uri"]) && strpos($db->queries[0], "WHERE") === FALSE && endsWith($db->queries[0], " LIMIT 0, 21;"), 'No filters, the first page, and no URIs where records have none');
+$db->fail = TRUE;
+check(toolError(mcpCallTool("query_module", array("module" => "recordings"))) === "The query failed on the database.", 'A failed query');
+$db->fail = FALSE; $db->throw = TRUE;
+check(toolError(mcpCallTool("query_module", array("module" => "recordings"))) === "The query failed on the database.", 'A query that throws, as mysqli does from PHP 8.1');
+$db->throw = FALSE;
+
+// suggest_values
+$db->queries = array(); $db->rows = array(array("taxon" => "Gryllus"), array("taxon" => NULL), array("taxon" => "Gryllus bimaculatus"));
+$suggested = tool("suggest_values", array("module" => "taxa", "field" => "taxon", "text" => "Gryll", "limit" => 2))["structuredContent"];
+check($db->queries[0] === "SELECT DISTINCT(`taxon`) as `taxon`  FROM `audioblast`.`taxa` WHERE `taxon` LIKE 'Gryll%'  LIMIT 0, 3;", 'Values starting with the text, as autocomplete asks for them');
+check($suggested["values"] === array("Gryllus") && $suggested["more"] === TRUE, 'Values, without the empty ones');
+$db->queries = array();
+tool("suggest_values", array("module" => "recordings", "field" => "taxon", "text" => "Gryllus", "match" => "contains"));
+check(strpos($db->queries[0], "MATCH(`taxon`) AGAINST ('Gryllus*' IN BOOLEAN MODE)") !== FALSE, 'Contains on a full-text field searches its words');
+$db->queries = array();
+tool("suggest_values", array("module" => "recordings", "field" => "country", "filters" => array("source" => "xeno-canto")));
+check(strpos($db->queries[0], "WHERE `source` LIKE '%xeno-canto%'  LIMIT 0, 21;") !== FALSE, 'Without text, every value of the records the filters match');
+check(strpos((string)toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "genus"))), "these are: taxon, rank.") !== FALSE, 'A field without values to suggest names those with them');
+check(toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "taxon", "match" => "sounds like"))) !== NULL, 'Starts or contains');
+check(toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "taxon", "limit" => 0))) !== NULL, 'Limit out of range');
+
+// get_record
+$ref = array('source' => 'fixture', 'id' => 'book/a #1', 'type' => 'article', 'title' => 'A title', 'year' => '1922');
+$uri = 'https://api.audioblast.org/reference/fixture/book/a%20%231';
+$db->hold($ref);
+$db->links = array(array('source' => 'curator', 'id' => 'citation',
+  'subject_type' => 'recordings', 'subject_source' => 'fixture', 'subject_id' => 'rec1',
+  'predicate' => 'http://purl.org/dc/terms/isReferencedBy',
+  'object_type' => 'references', 'object_source' => 'fixture', 'object_id' => $ref['id'],
+  'qualifier' => NULL, 'remarks' => 'p. 7'));
+$got = tool("get_record", array("uri" => $uri))["structuredContent"];
+check($got["uri"] === $uri && $got["module"] === "references" && $got["record"] === $ref && $got["note"] === NULL, 'A record by its URI');
+check($got["linked_data"]["@context"] === rdfContext() && $got["linked_data"]["@graph"] === rdfResponseNodes($db, loadModule("references"), array($ref), TRUE), 'With the linked data its URI gives');
+check(strpos(mcpJSON($got["linked_data"]), "https://api.audioblast.org/recording/fixture/rec1") !== FALSE, 'Including the records linked to it');
+check(tool("get_record", array("module" => "references", "source" => "fixture", "id" => "book/a #1"))["structuredContent"]["uri"] === $uri, 'A record by its module, source and id');
+check(tool("get_record", array("uri" => "/reference/fixture/book/a%20%231"))["structuredContent"]["uri"] === $uri, 'A record by its path');
+$db->links = array();
+$db->hold(array('source' => 'Fixture', 'id' => 'Case', 'title' => 'Held with capitals'));
+check(tool("get_record", array("module" => "references", "source" => "fixture", "id" => "case"))["structuredContent"]["uri"] === "https://api.audioblast.org/reference/Fixture/Case", 'Each record has one URI, whatever the case asked for');
+check(strpos((string)toolError(mcpCallTool("get_record", array("module" => "references", "source" => "fixture", "id" => "none"))), "No record of references has the source `fixture` and the id `none`.") === 0, 'A record that is not held');
+check(strpos((string)toolError(mcpCallTool("get_record", array("module" => "ecoint", "source" => "a", "id" => "1"))), "no URIs of their own") !== FALSE, 'Records without URIs');
+check(toolError(mcpCallTool("get_record", array("uri" => "https://example.org/reference/fixture/1"))) !== NULL, 'A URI elsewhere is not a record');
+check(toolError(mcpCallTool("get_record", array("uri" => "https://api.audioblast.org/data/recordings/"))) !== NULL, 'An endpoint is not a record');
+check(toolError(mcpCallTool("get_record", array("module" => "references", "source" => "fixture"))) !== NULL, 'A record needs its id');
+check(toolError(mcpCallTool("get_record", array())) !== NULL, 'A record needs naming');
+// A taxon at its own URI comes with its classification.
+$db->hold(array('source' => 'fixture', 'id' => '2', 'parent_id' => '1', 'taxon' => 'Gryllus campestris', 'rank' => 'species'));
+$db->hold(array('source' => 'fixture', 'id' => '1', 'parent_id' => '', 'taxon' => 'Gryllus', 'rank' => 'genus'));
+$taxon = tool("get_record", array("uri" => "https://api.audioblast.org/taxon/fixture/2"))["structuredContent"];
+check(in_array("https://api.audioblast.org/taxon/fixture/1", array_column($taxon["linked_data"]["@graph"], "@id")), 'A taxon comes with the taxa it is inside');
+// A record with more links than are worth giving at once says where to find them.
+for ($i = 0; $i < 1000; $i++) {
+  $db->links[] = array('source' => 'curator', 'id' => 'many'.$i, 'subject_type' => 'recordings',
+    'subject_source' => 'fixture', 'subject_id' => 'rec'.$i, 'predicate' => 'http://purl.obolibrary.org/obo/IAO_0000136',
+    'object_type' => 'references', 'object_source' => 'fixture', 'object_id' => $ref['id'], 'qualifier' => NULL, 'remarks' => NULL);
+}
+$crowded = tool("get_record", array("uri" => $uri))["structuredContent"];
+check($crowded["linked_data"] === NULL && strpos($crowded["note"], "query_module on links") !== FALSE && $crowded["record"] === $ref, 'Too many links to give at once');
+$db->links = array();
+$db->fail = TRUE;
+check(toolError(mcpCallTool("get_record", array("uri" => $uri))) === "The query failed on the database.", 'A failed lookup is not a missing record');
+$db->fail = FALSE;
+
+// Through the protocol, a tool's result is the result of tools/call.
+list($status, , $response) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 8, "method" => "tools/call",
+  "params" => array("name" => "describe_module", "arguments" => array("module" => "links"))), array("mcp-protocol-version" => "2025-06-18"));
+check($status === 200 && valueAt($response, array("result", "structuredContent", "name")) === "links", 'Tool called through the protocol');
+check(mcpCallTool("delete_everything", array()) === NULL, 'No tool, no result');
+
+print("mcp: all checks passed\n");
