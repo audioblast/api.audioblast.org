@@ -75,6 +75,24 @@ function taxa_info() {
         "op" => "=",
         "autocomplete" => TRUE
       ),
+      //The ranks below a species, which the taxa table has columns for but the
+      //recordings-taxa and traits-taxa tables may not: a module serves every
+      //column it has a parameter for, so they are taxa's alone until those
+      //tables are known to hold them
+      "form" => array(
+        "desc" => "Form name, e.g. Bos taurus f. taurus",
+        "type" => "string",
+        "default" => "",
+        "column" => "Form",
+        "op" => "="
+      ),
+      "subspecies" => array(
+        "desc" => "Subspecies name",
+        "type" => "string",
+        "default" => "",
+        "column" => "Subspecies",
+        "op" => "="
+      ),
       "species" => array(
         "desc" => "Species name",
         "type" => "string",

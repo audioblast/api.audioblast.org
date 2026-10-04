@@ -118,6 +118,19 @@ foreach (array("recordingstaxa", "traitstaxa", "taxa") as $name) {
   }
 }
 
+// The ranks below a species are taxa's alone, as the joined tables are not
+// known to hold them
+$taxa = loadModule("taxa");
+check(request($taxa, "/data/taxa/", array("subspecies" => "Larus fuscus fuscus",
+  "output" => "nakedJSON")) === NULL, "taxa takes the rank subspecies");
+check(request($taxa, "/data/taxa/", array("form" => "Bos taurus f. taurus",
+  "output" => "nakedJSON")) === NULL, "taxa takes the rank form");
+foreach (array("recordingstaxa", "traitstaxa") as $name) {
+  $filters = listFilterParams(loadModule($name));
+  check(!in_array("form", $filters) && !in_array("subspecies", $filters),
+    $name." asks for a rank its table may not hold");
+}
+
 /*
 The requests audioblast.org makes of the API, which is its largest caller: the
 tables of ab-tabulator.js, the search plugins, and the homepage counts. None of
