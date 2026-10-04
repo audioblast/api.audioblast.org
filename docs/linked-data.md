@@ -350,7 +350,7 @@ anything else citing the same taxon.
 
 The rows the catalogue holds are the taxa matched and every taxon above them, so
 the classification is a tree that can be walked by `parent_id` rather than the
-nine ranks the taxa table has columns for. *Acridoidea* is a superfamily and has
+ranks the taxa table has columns for. *Acridoidea* is a superfamily and has
 no column, and neither iNaturalist nor bio.acousti.ca can place it; its parent
 can.
 
