@@ -12,7 +12,7 @@ function annomate_info() {
       "links" => TRUE, "node" => "annomate_rdf_node", "related" => "annomate_rdf_related"),
     "params" => array(
       "source" => array(
-        "desc" => "Recording source",
+        "desc" => "Source of the annotation",
         "type" => "string",
         "default" => "",
         "column" => "source",
@@ -26,6 +26,14 @@ function annomate_info() {
         "column" => "source_id",
         "op" => "=",
         "multiple" => TRUE,
+        "autocomplete" => TRUE
+      ),
+      "recording_source" => array(
+        "desc" => "Source of the recording, which need not be the annotation's (e.g. a corpus marking regions of xeno-canto recordings)",
+        "type" => "string",
+        "default" => "",
+        "column" => "recording_source",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "annotator" => array(
@@ -158,9 +166,14 @@ function annomate_info() {
 }
 
 // Annotation identity differs from the recording ID; preserve existing JSON keys.
+// The recording is of recording_source, which a source marking regions of
+// another source's recordings gives; an annotation without it is of a recording
+// of its own source.
 function annomate_rdf_recording($annotation) {
-  if (($annotation["source"] ?? "") === "" || ($annotation["source_id"] ?? "") === "") {return(NULL);}
-  return(rdfRecordURI(loadModule("recordings"), $annotation["source"], $annotation["source_id"]));
+  $source = $annotation["recording_source"] ?? "";
+  if ($source === "") {$source = $annotation["source"] ?? "";}
+  if ($source === "" || ($annotation["source_id"] ?? "") === "") {return(NULL);}
+  return(rdfRecordURI(loadModule("recordings"), $source, $annotation["source_id"]));
 }
 
 function annomate_rdf_node($annotation, $uri) {

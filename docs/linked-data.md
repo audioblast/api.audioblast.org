@@ -503,7 +503,11 @@ Ordinary JSON retains `annotation_id` and `source_id` with their existing meanin
 Modules may set `rdf.id` to select an existing ID parameter; the default is `id`.
 
 Each ROI uses `ac:startTime` and `ac:endTime` for offsets in seconds, and
-`ac:isROIOf` to identify `/recording/{source}/{source_id}`. The annotation graph
+`ac:isROIOf` to identify `/recording/{recording_source}/{source_id}`. `source` is
+the source giving the annotation and `recording_source` the source of the
+recording, which differ when one source marks regions of another's recordings
+(a corpus of xeno-canto recordings, say); without a `recording_source` the
+recording is the annotation's own source's. The annotation graph
 also includes the recording's inverse `ac:hasROI` relationship and, when supplied,
 a service access point holding its `ac:accessURI`. This does not fetch or expand all annotations in recording
 responses. Missing recording identifiers do not produce a fabricated recording URI.
