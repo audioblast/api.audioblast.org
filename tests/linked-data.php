@@ -771,6 +771,17 @@ check(!isset($annotationNodes[0]['ac:accessURI']), 'Access URL belongs to record
 $sparseAnnotation = array('source' => 'fixture', 'annotation_id' => 'sparse');
 check(count(rdfNodes($annotationModule, array($sparseAnnotation))) === 1, 'Missing recording creates no invented target');
 check(count(annomate_rdf_node($sparseAnnotation, 'https://example.org/roi')) === 2, 'Missing values omitted');
+// A source can mark regions of another source's recordings: the ROI is its own,
+// the recording the other source's.
+$corpusAnnotation = $annotation;
+$corpusAnnotation['source'] = 'corpus'; $corpusAnnotation['recording_source'] = 'xeno-canto';
+$corpusNodes = rdfNodes($annotationModule, array($corpusAnnotation));
+$corpusRecording = rdfRecordURI(loadModule('recordings'), 'xeno-canto', 'rec1');
+check($corpusNodes[0]['@id'] === rdfRecordURI($annotationModule, 'corpus', $annotation['annotation_id']), 'ROI of another source keeps its own identity');
+check($corpusNodes[0]['ac:isROIOf'] === rdfIRI($corpusRecording), 'ROI is of the recording source\'s recording');
+check($corpusNodes[1]['@id'] === $corpusRecording, 'Recording side names the recording source');
+$ownAnnotation = $annotation; $ownAnnotation['recording_source'] = '';
+check(rdfNodes($annotationModule, array($ownAnnotation)) === $annotationNodes, 'Empty recording source is the annotation\'s own');
 $annotationDB = new FixtureDB($annotation);
 $_SERVER['REQUEST_URI'] = '/annotation/fixture/book/a%20%231';
 $_GET = array('output' => 'JSON');
