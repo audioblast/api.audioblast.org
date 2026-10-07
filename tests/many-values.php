@@ -128,6 +128,13 @@ check(strpos($where, "`source` = 'xeno-canto'") !== FALSE, "A recording's source
 check(strpos($where, "`id` IN ('100991', '699100')") !== FALSE, "beside its ids");
 check(strpos($where, "LIKE") === FALSE, "with nothing the key cannot answer");
 
+// So is every module's source: a source is a name, not text to search, and a
+// value contained anywhere in a column is something no index can answer
+foreach (loadModules() as $name => $module) {
+  if (!isset($module["params"]["source"]["op"])) {continue;}
+  check($module["params"]["source"]["op"] === "=", $name."'s source is matched exactly");
+}
+
 /*
 The requests audioblast.org makes are unchanged: none of them gives a filter
 more than one value, and a comma in one of its searches is still part of what

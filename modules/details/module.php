@@ -11,11 +11,11 @@ function details_info() {
     "source_notes" => "Details are ingested from each source's details, and replace the details that the source gave before, including those it gave of other sources' records. The details that other sources gave of a source's records are theirs, and stay. Their names are each source's own, and are not yet matched to vocabulary terms, so details are not given as RDF.",
     "params" => array(
       "source" => array(
-        "desc" => "Source that gave the detail",
+        "desc" => "Source that gave the detail, by its exact name (letter case aside)",
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "type" => array(

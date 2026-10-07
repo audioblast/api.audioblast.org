@@ -13,11 +13,11 @@ function annomate_info() {
       "links" => TRUE, "node" => "annomate_rdf_node", "related" => "annomate_rdf_related"),
     "params" => array(
       "source" => array(
-        "desc" => "Source of the annotation",
+        "desc" => "Source of the annotation, by its exact name (letter case aside)",
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "source_id" => array(
