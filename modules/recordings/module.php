@@ -19,11 +19,13 @@ function recordings_info() {
     ),
     "params" => array(
       "source" => array(
-        "desc" => "Source",
+        //Matched exactly, so that the table's key on source and id serves it,
+        //alone or with id; a value contained anywhere in it could use no index
+        "desc" => "Source, by its exact name (letter case aside), e.g. xeno-canto",
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "id" => array(

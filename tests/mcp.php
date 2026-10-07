@@ -274,7 +274,8 @@ $described = tool("describe_module", array("module" => "recordings"))["structure
 $filters = array_column($described["filters"], NULL, "name");
 check($filters["taxon"]["match"] === "words" && $filters["taxon"]["suggest"] === TRUE, 'A full-text filter matches by words');
 check($filters["id"]["match"] === "exact" && $filters["id"]["multiple"] === TRUE, 'An exact filter that takes several values');
-check($filters["source"]["match"] === "contains" && $filters["duration"]["match"] === "range", 'Contains and range filters');
+check($filters["locality"]["match"] === "contains" && $filters["duration"]["match"] === "range", 'Contains and range filters');
+check($filters["source"]["match"] === "exact", "A recording's source is matched exactly, as the key on source and id needs");
 check(!isset($filters["peaks_url"]) && in_array("peaks_url", $described["fields"]), 'A field that is not a filter is still a field');
 check(!in_array("output", $described["fields"]) && !isset($filters["output"]) && !isset($filters["format"]), 'Output and format are not the tools\' to give');
 check(isset($described["matches"]["words"]) && strpos($described["matches"]["words"], "Gryllus") !== FALSE, 'The ways of matching are explained');
@@ -315,7 +316,7 @@ $sql = $db->queries[0];
 check(count($db->queries) === 1, 'No count unless asked for');
 check(strpos($sql, "SELECT `source` as `source`, `id` as `id`") === 0 && strpos($sql, "FROM `audioblast`.`v-recordings`") !== FALSE, 'Every field, by its name');
 check(strpos($sql, "`id` IN ('12', '15', '17')") !== FALSE, 'Several values match any of them');
-check(strpos($sql, "`source` LIKE '%O\\'Brien%'") !== FALSE, 'Values escaped as the API escapes them');
+check(strpos($sql, "`source` = 'O\\'Brien'") !== FALSE, 'Values escaped as the API escapes them');
 check(strpos($sql, "CAST(`Duration` AS DECIMAL(65,10)) >= CAST('10' AS DECIMAL(65,10)) AND CAST(`Duration` AS DECIMAL(65,10)) <= CAST('20' AS DECIMAL(65,10))") !== FALSE, 'Ranges as the API reads them');
 check(endsWith($sql, " LIMIT 2, 3;"), 'The second page, and one record more');
 check($page["more"] === TRUE && count($page["rows"]) === 2 && $page["total"] === NULL && $page["page"] === 2 && $page["page_size"] === 2, 'A page and whether there is another');
@@ -345,7 +346,7 @@ tool("suggest_values", array("module" => "recordings", "field" => "taxon", "text
 check(strpos($db->queries[0], "MATCH(`taxon`) AGAINST ('Gryllus*' IN BOOLEAN MODE)") !== FALSE, 'Contains on a full-text field searches its words');
 $db->queries = array();
 tool("suggest_values", array("module" => "recordings", "field" => "country", "filters" => array("source" => "xeno-canto")));
-check(strpos($db->queries[0], "WHERE `source` LIKE '%xeno-canto%'  LIMIT 0, 21;") !== FALSE, 'Without text, every value of the records the filters match');
+check(strpos($db->queries[0], "WHERE `source` = 'xeno-canto'  LIMIT 0, 21;") !== FALSE, 'Without text, every value of the records the filters match');
 check(strpos((string)toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "genus"))), "these are: taxon, rank.") !== FALSE, 'A field without values to suggest names those with them');
 check(toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "taxon", "match" => "sounds like"))) !== NULL, 'Starts or contains');
 check(toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "taxon", "limit" => 0))) !== NULL, 'Limit out of range');
