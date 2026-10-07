@@ -139,6 +139,8 @@ class MCPFixtureStatement {
   function execute() {return(!$this->db->fail);}
   function get_result() {
     if (strpos($this->sql, '`links` WHERE') !== FALSE) {return(new MCPFixtureResult($this->db->links));}
+    //The annotations of a recording, read by the recording they mark
+    if (strpos($this->sql, '(`recording_source`, `source_id`) IN') !== FALSE) {return(new MCPFixtureResult($this->db->annotations));}
     $key = strtolower($this->values[0]."/".$this->values[1]);
     return(new MCPFixtureResult(isset($this->db->records[$key]) ? array($this->db->records[$key]) : array()));
   }
@@ -150,6 +152,7 @@ class MCPFixtureDB {
   public $total = 0;
   public $records = array();
   public $links = array();
+  public $annotations = array();
   public $fail = FALSE;
   public $throw = FALSE;
   function real_escape_string($value) {return(addslashes((string)$value));}
@@ -388,7 +391,29 @@ for ($i = 0; $i < 1000; $i++) {
 }
 $crowded = tool("get_record", array("uri" => $uri))["structuredContent"];
 check($crowded["linked_data"] === NULL && strpos($crowded["note"], "query_module on links") !== FALSE && $crowded["record"] === $ref, 'Too many links to give at once');
+check(strpos($crowded["note"], "annomate") === FALSE, 'A record without regions of interest is not sent to annomate for them');
 $db->links = array();
+// A recording comes with the regions of interest annotations mark on it. They
+// are not links, so one with too many to give at once says where they are.
+$recording = array_merge(array_fill_keys(array_keys(loadModule("recordings")["params"]), NULL),
+  array('source' => 'fixture', 'id' => 'rec1'));
+$recordingURI = "https://api.audioblast.org/recording/fixture/rec1";
+$db->hold($recording);
+$region = function($i) {
+  return(array('source' => 'corpus', 'annotation_id' => 'roi-'.$i, 'recording_source' => 'fixture', 'source_id' => 'rec1'));
+};
+$db->annotations = array($region(1), $region(2));
+$marked = tool("get_record", array("uri" => $recordingURI))["structuredContent"];
+check(array_column($marked["linked_data"]["@graph"], NULL, "@id")[$recordingURI]["ac:hasROI"] ===
+  array(rdfIRI("https://api.audioblast.org/annotation/corpus/roi-1"), rdfIRI("https://api.audioblast.org/annotation/corpus/roi-2"))
+  && $marked["note"] === NULL, 'A recording comes with its regions of interest');
+$db->annotations = array_map($region, range(1, 4000));
+$crowdedRecording = tool("get_record", array("uri" => $recordingURI))["structuredContent"];
+check($crowdedRecording["linked_data"] === NULL && strpos($crowdedRecording["note"], "query_module on links") !== FALSE,
+  'A recording with too many regions to give at once comes without its linked data');
+check(strpos($crowdedRecording["note"], "query_module on annomate, filtered by recording_source `fixture` and source_id `rec1`") !== FALSE,
+  'and says its regions are annotations, and how to find them');
+$db->annotations = array();
 $db->fail = TRUE;
 check(toolError(mcpCallTool("get_record", array("uri" => $uri))) === "The query failed on the database.", 'A failed lookup is not a missing record');
 $db->fail = FALSE;
