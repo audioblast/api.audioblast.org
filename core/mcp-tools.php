@@ -246,10 +246,11 @@ function mcpCorporaInstructions() {
   $text .= "object_source and object_id. Each link's subject_id is a region's annotation_id, and its qualifier is the split the ";
   $text .= "region is in, such as Training or Validation, which the qualifier filter chooses. To get the regions, give annomate up ";
   $text .= "to ".MAX_FILTER_VALUES." of those ids at once as annotation_id; annomate's source filter gives every region a source ";
-  $text .= "holds, of whichever corpus. A region's recording is its recording_source and source_id. Its frequency_low and ";
-  $text .= "frequency_high, in Hz, are details: type annomate, record_source the region's source, id its annotation_id. A later ";
-  $text .= "version of a corpus links to the one it came from by http://purl.org/dc/terms/source, and has its own regions. Every ";
-  $text .= "annotation of a recording, whichever source gave it, is found with annomate's recording_source and source_id.";
+  $text .= "holds, of whichever corpus. A region's recording is its recording_source and source_id, and its frequency bounds, in ";
+  $text .= "Hz, are its freq_low and freq_high. Its other values, such as svl_label, are details: type annomate, record_source the ";
+  $text .= "region's source, id its annotation_id. A later version of a corpus links to the one it came from by ";
+  $text .= "http://purl.org/dc/terms/source, and has its own regions. Every annotation of a recording, whichever source gave it, is ";
+  $text .= "found with annomate's recording_source and source_id.";
   return($text);
 }
 

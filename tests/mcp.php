@@ -447,7 +447,10 @@ check(strpos((string)toolError(mcpCallTool("query_module", array("module" => "an
   'The instructions give as many ids at once as annomate takes');
 $db->queries = array();
 tool("query_module", array("module" => "details", "filters" => array("type" => "annomate", "record_source" => "corpus", "id" => array("corpus-v2-12-1", "corpus-v2-12-2"))));
-$where($db->queries[0], array("`type` = 'annomate'", "`record_source` = 'corpus'", "`id` IN ('corpus-v2-12-1', 'corpus-v2-12-2')"), "The regions' frequencies");
+$where($db->queries[0], array("`type` = 'annomate'", "`record_source` = 'corpus'", "`id` IN ('corpus-v2-12-1', 'corpus-v2-12-2')"), "The regions' other values");
+$regionFields = tool("describe_module", array("module" => "annomate"))["structuredContent"]["fields"];
+check(in_array("freq_low", $regionFields) && in_array("freq_high", $regionFields) && strpos($corpora, "are its freq_low and freq_high") !== FALSE,
+  "A region's frequency bounds are its own");
 $db->queries = array();
 tool("query_module", array("module" => "annomate", "filters" => array("recording_source" => "xeno-canto", "source_id" => "280667")));
 $where($db->queries[0], array("`recording_source` = 'xeno-canto'", "`source_id` = '280667'"), 'Every annotation of a recording, whichever source gave it');
@@ -519,8 +522,11 @@ $notes("recordingstaxa", array("several rows", "source and id"), 'Recordings-tax
 $notes("traits", array("Peak Frequency (kHz)", "value_min and value_max", "inference_notes", "type traits, record_source bio.acousti.ca"), 'Traits notes');
 check($described["traits"]["filters"]["value"]["match"] === "exact" && $described["traits"]["filters"]["value_min"]["match"] === "range"
   && isset($described["details"]["filters"]["name"]), 'Trait values are text, their ranges numbers, and their notes details');
-$notes("annomate", array("BirdNet-Lite", "source_id is the id of the recording", "seconds", "matched as text"), 'Annotation notes');
-check($described["annomate"]["filters"]["time_start"]["match"] === "exact" && isset($described["annomate"]["filters"]["annotator"]), 'Annotation times are matched as text');
+$notes("annomate", array("BirdNet-Lite", "source_id is the id of the recording", "seconds", "freq_low and freq_high", "matched as text"), 'Annotation notes');
+foreach (array("time_start", "time_end", "freq_low", "freq_high") as $bound) {
+  check($described["annomate"]["filters"][$bound]["match"] === "exact", 'An annotation\'s '.$bound.' is matched as text');
+}
+check(isset($described["annomate"]["filters"]["annotator"]), 'Annotations can be filtered by annotator');
 
 // Through the protocol, a tool's result is the result of tools/call.
 list($status, , $response) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 8, "method" => "tools/call",

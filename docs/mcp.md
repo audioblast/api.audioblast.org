@@ -91,8 +91,8 @@ tools above, as the server's instructions tell clients.
 |---|---|
 | Every corpus | `query_module` on `links`, with `predicate` `http://purl.org/dc/terms/type` and `object_id` `https://vocab.audioblast.org/Corpus`. Each link's `subject_source` and `subject_id` are a corpus's source and id. |
 | A corpus's regions of interest, a page at a time | `query_module` on `links`, with `predicate` `http://purl.org/dc/terms/isPartOf`, `object_type` `references`, and the corpus's source and id as `object_source` and `object_id`. Each link's `subject_id` is a region's `annotation_id`, and its `qualifier` is the split the region is in, such as `Training` or `Validation`, which the `qualifier` filter chooses. |
-| The regions themselves | `query_module` on `annomate`, with up to 100 of those ids as `annotation_id`. A region's recording is its `recording_source` and `source_id`. |
-| A region's other values | `query_module` on `details`, with `type` `annomate`, `record_source` the region's source and `id` its `annotation_id`, or a list of them: `frequency_low` and `frequency_high` in Hz, and `svl_label`. |
+| The regions themselves | `query_module` on `annomate`, with up to 100 of those ids as `annotation_id`. A region's recording is its `recording_source` and `source_id`, and its frequency bounds, in Hz, are its `freq_low` and `freq_high`. |
+| A region's other values | `query_module` on `details`, with `type` `annomate`, `record_source` the region's source and `id` its `annotation_id`, or a list of them, such as `svl_label`. |
 | The version a corpus was made from | `query_module` on `links`, with the corpus as `subject_type`, `subject_source` and `subject_id`. A later version links to the one it came from by `http://purl.org/dc/terms/source`, and has its own regions. |
 | Every annotation of a recording, whichever source gave it | `query_module` on `annomate`, with `recording_source` and `source_id`. |
 
