@@ -22,8 +22,7 @@ $details = loadModule("details");
 /*
 A detail is served with the source that gave it and the source of the record it
 belongs to, which differ where a source gives details of another's records: a
-corpus giving the frequencies of the regions it marked on xeno-canto's
-recordings, say.
+corpus giving details of the xeno-canto recordings it marked regions of, say.
 */
 $select = SELECTclause($details, NULL, "table", "internal");
 check(strpos($select, "`source` as `source`") !== FALSE, "A detail says which source gave it");
