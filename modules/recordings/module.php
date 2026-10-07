@@ -8,13 +8,14 @@ function recordings_info() {
     //recordings with what audioBlastAnalyse measured of each file joined on
     "table" => "v-recordings",
     "hname" => "Recordings",
-    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way. The calculated_ fields are what audioBLAST! measured of the file itself, rather than what its source says about it, and are empty for a recording that has not been measured yet: calculated_status says how measuring it went (ok, missing or unreadable). peaks_url, where there is one, is the waveform peaks made from the file, which the RDF gives as a second service access point beside the file's.",
+    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way. The RDF gives each recording the regions of interest that annotations mark on it, as ac:hasROI, whichever source gave them; in JSON they are the annotations at /data/annomate/?recording_source={source}&amp;source_id={id}. The calculated_ fields are what audioBLAST! measured of the file itself, rather than what its source says about it, and are empty for a recording that has not been measured yet: calculated_status says how measuring it went (ok, missing or unreadable). peaks_url, where there is one, is the waveform peaks made from the file, which the RDF gives as a second service access point beside the file's.",
     //Recordings as RDF (see core/rdf.php), identified by https://api.audioblast.org/recording/{source}/{id}
     "rdf" => array(
       "links" => TRUE,
       "path" => "recording",
       "node" => "recordings_rdf_node",
-      "related" => "recordings_rdf_related"
+      "related" => "recordings_rdf_related",
+      "lookup" => "recordings_rdf_rois"
     ),
     "params" => array(
       "source" => array(
@@ -416,6 +417,47 @@ function recordings_rdf_node($recording, $uri) {
 
 function recordings_rdf_related($recording, $uri) {
   return(recordings_rdf_services($recording, $uri));
+}
+
+//The regions of interest annotations mark on the recordings, as ac:hasROI of
+//each: the inverse of the ac:isROIOf an annotation gives (see
+//annomate_rdf_node()), so that what marks a recording, and through the
+//annotations' links the corpora they are part of, can be found from the
+//recording. An annotation names the recording it is of by recording_source and
+//source_id, and its own source need not be the recording's, so the annotations
+//are found by those whoever gave them: a page of recordings in one query for
+//every 100 (see rdfRecordsByID()). Each region is its annotation's URI, where
+//what the annotation says is given.
+function recordings_rdf_rois($db, $module, $recordings) {
+  $annomate = loadModule("annomate");
+  $uris = array();
+  $pairs = array();
+  foreach ($recordings as $recording) {
+    $key = recordings_rdf_key($recording["source"], $recording["id"]);
+    $uris[$key] = rdfRecordURI($module, $recording["source"], $recording["id"]);
+    $pairs[$key] = array($recording["source"], $recording["id"]);
+  }
+  $annotations = rdfRecordsByID($db, $annomate, $pairs, array("recording_source", "source_id"));
+  if ($annotations === FALSE) {return(FALSE);}
+  $rois = array();
+  foreach ($annotations as $annotation) {
+    $key = recordings_rdf_key($annotation["recording_source"], $annotation["source_id"]);
+    if (!isset($uris[$key])) {continue;}
+    $rois[$key][rdfRecordURI($annomate, $annotation["source"], $annotation["annotation_id"])] = TRUE;
+  }
+  $nodes = array();
+  foreach ($rois as $key => $regions) {
+    $iris = array_map("rdfIRI", array_keys($regions));
+    $nodes[] = array("@id" => $uris[$key], "ac:hasROI" => (count($iris) === 1) ? $iris[0] : $iris);
+  }
+  return($nodes);
+}
+
+//The database compares text regardless of case, so an annotation can name its
+//recording cased differently from the recording itself and still be of it; the
+//key each is matched by ignores case, as the lookup does
+function recordings_rdf_key($source, $id) {
+  return(json_encode(array(strtolower((string)$source), strtolower((string)$id))));
 }
 
 //Each representation of the recording there is somewhere to get: its file, and

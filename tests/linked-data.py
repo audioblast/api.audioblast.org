@@ -64,6 +64,14 @@ assert not list(a.objects(recording, URIRef("http://purl.org/dc/elements/1.1/for
 assert not list(a.objects(roi, AC.accessURI))
 print("Annotation ROI bounds, recording relationships and access metadata verified")
 
+# A recording has the regions marked on it by its own source and by a corpus of
+# another source, and a recording nothing marks has none.
+corpus_rois = [URIRef(f"https://api.audioblast.org/annotation/corpus/roi-{n}") for n in (7, 8)]
+assert set(a.objects(recording, AC.hasROI)) == {roi, *corpus_rois}
+assert (URIRef("https://api.audioblast.org/annotation/corpus/roi-9"), None, None) not in a
+assert not list(a.objects(URIRef("https://api.audioblast.org/recording/fixture/rec2"), AC.hasROI))
+print("Recording regions of interest from its own source and a corpus verified")
+
 XSD = Namespace("http://www.w3.org/2001/XMLSchema#")
 specimen = URIRef("https://api.audioblast.org/specimen/fixture/book/a%20%231")
 assert (specimen, RDF.type, DWC.Occurrence) in a
