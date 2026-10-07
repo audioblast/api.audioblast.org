@@ -392,6 +392,136 @@ $db->fail = TRUE;
 check(toolError(mcpCallTool("get_record", array("uri" => $uri))) === "The query failed on the database.", 'A failed lookup is not a missing record');
 $db->fail = FALSE;
 
+// Corpora: the instructions say how to find them and their regions with the tools, after everything else, so that a client
+// that cuts the instructions short keeps what it needs for every other record.
+$corpora = mcpCorporaInstructions();
+check(endsWith(mcpInstructions(), "\n\n".$corpora), 'Corpora come last in the instructions');
+foreach (array(MCP_CORPUS_TYPE, "http://purl.org/dc/terms/type", "http://purl.org/dc/terms/isPartOf", "http://purl.org/dc/terms/source") as $iri) {
+  check(strpos($corpora, $iri) !== FALSE, 'The instructions name '.$iri);
+}
+check(strpos($tools[4]["description"], "corpus") !== FALSE, 'get_record says a corpus comes without its regions');
+$naming = array();
+foreach (array_merge(glob("core/*.php"), glob("modules/*/module.php")) as $file) {
+  if (strpos(file_get_contents($file), MCP_CORPUS_TYPE) !== FALSE) {$naming[] = $file;}
+}
+check($naming === array("core/mcp-tools.php"), 'The placeholder address of the corpus term is in one place: '.implode(", ", $naming));
+// Each filter the instructions name is one its module has, matching exactly, and taking a list where a list of ids is given.
+$named = array(
+  "links" => array("predicate" => FALSE, "object_id" => FALSE, "object_type" => FALSE, "object_source" => FALSE, "qualifier" => FALSE),
+  "annomate" => array("annotation_id" => TRUE, "recording_source" => FALSE, "source_id" => FALSE),
+  "details" => array("type" => FALSE, "record_source" => FALSE, "id" => TRUE)
+);
+foreach ($named as $name => $filters) {
+  $described = array_column(tool("describe_module", array("module" => $name))["structuredContent"]["filters"], NULL, "name");
+  foreach ($filters as $filter => $list) {
+    check(strpos($corpora, $filter) !== FALSE, "The instructions name $filter");
+    check(($described[$filter]["match"] ?? NULL) === "exact" && (!$list || $described[$filter]["multiple"]),
+      "$name has the filter $filter, matching exactly".($list ? " and taking a list" : ""));
+  }
+}
+// The steps, as the database gets them.
+$where = function($sql, $conditions, $message) {
+  foreach ($conditions as $condition) {check(strpos($sql, $condition) !== FALSE, $message.": ".$condition);}
+};
+$db->queries = array(); $db->rows = array();
+tool("query_module", array("module" => "links", "filters" => array("predicate" => "http://purl.org/dc/terms/type", "object_id" => MCP_CORPUS_TYPE)));
+$where($db->queries[0], array("`predicate` = 'http://purl.org/dc/terms/type'", "`object_id` = '".MCP_CORPUS_TYPE."'"), 'Corpora found by their type');
+$db->queries = array();
+$db->rows = array(array('source' => 'corpus', 'id' => 'l1', 'subject_type' => 'annomate', 'subject_source' => 'corpus', 'subject_id' => 'corpus-v2-12-1',
+  'predicate' => 'http://purl.org/dc/terms/isPartOf', 'object_type' => 'references', 'object_source' => 'corpus', 'object_id' => 'corpus-v2',
+  'qualifier' => 'Validation', 'remarks' => NULL));
+$parts = tool("query_module", array("module" => "links", "page_size" => MCP_PAGE_MAX, "filters" => array("predicate" => "http://purl.org/dc/terms/isPartOf",
+  "object_type" => "references", "object_source" => "corpus", "object_id" => "corpus-v2", "qualifier" => "Validation")))["structuredContent"];
+$where($db->queries[0], array("`predicate` = 'http://purl.org/dc/terms/isPartOf'", "`object_type` = 'references'", "`object_source` = 'corpus'",
+  "`object_id` = 'corpus-v2'", "`qualifier` = 'Validation'"), "A split of a corpus's regions");
+check($parts["rows"][0]["subject_id"] === "corpus-v2-12-1" && $parts["rows"][0]["qualifier"] === "Validation", "Each link names a region and its split");
+$ids = array();
+for ($i = 1; $i <= MAX_FILTER_VALUES; $i++) {$ids[] = "corpus-v2-12-".$i;}
+$db->queries = array(); $db->rows = array();
+tool("query_module", array("module" => "annomate", "page_size" => MCP_PAGE_MAX, "filters" => array("annotation_id" => $ids)));
+check(strpos($db->queries[0], "`annotation_id` IN ('corpus-v2-12-1', 'corpus-v2-12-2', ") !== FALSE && endsWith($db->queries[0], " LIMIT 0, 101;"),
+  "A page of a corpus's regions by their ids");
+$ids[] = "one too many";
+check(strpos((string)toolError(mcpCallTool("query_module", array("module" => "annomate", "filters" => array("annotation_id" => $ids)))),
+  "takes at most ".MAX_FILTER_VALUES.".") !== FALSE && strpos($corpora, "up to ".MAX_FILTER_VALUES." of those ids") !== FALSE,
+  'The instructions give as many ids at once as annomate takes');
+$db->queries = array();
+tool("query_module", array("module" => "details", "filters" => array("type" => "annomate", "record_source" => "corpus", "id" => array("corpus-v2-12-1", "corpus-v2-12-2"))));
+$where($db->queries[0], array("`type` = 'annomate'", "`record_source` = 'corpus'", "`id` IN ('corpus-v2-12-1', 'corpus-v2-12-2')"), "The regions' frequencies");
+$db->queries = array();
+tool("query_module", array("module" => "annomate", "filters" => array("recording_source" => "xeno-canto", "source_id" => "280667")));
+$where($db->queries[0], array("`recording_source` = 'xeno-canto'", "`source_id` = '280667'"), 'Every annotation of a recording, whichever source gave it');
+// A corpus's thousands of regions are more than get_record gives, and its note says how to page through them instead.
+$corpus = array('source' => 'corpus', 'id' => 'corpus-v2', 'type' => 'misc', 'title' => 'A corpus');
+$db->hold($corpus);
+for ($i = 0; $i < 1000; $i++) {
+  $db->links[] = array('source' => 'corpus', 'id' => 'part'.$i, 'subject_type' => 'annomate', 'subject_source' => 'corpus', 'subject_id' => 'corpus-v2-12-'.$i,
+    'predicate' => 'http://purl.org/dc/terms/isPartOf', 'object_type' => 'references', 'object_source' => 'corpus', 'object_id' => 'corpus-v2',
+    'qualifier' => 'Training', 'remarks' => NULL);
+}
+$got = tool("get_record", array("module" => "references", "source" => "corpus", "id" => "corpus-v2"))["structuredContent"];
+check($got["record"] === $corpus && $got["linked_data"] === NULL && strpos($got["note"], "object_type, object_source and object_id") !== FALSE,
+  'A corpus comes without its regions, and a note on paging through them');
+$db->links = array();
+
+// Reading the data: what the instructions, the tools and the modules' notes tell a model is true of what the tools do.
+$data = mcpDataInstructions();
+check(strpos(mcpInstructions(), "\n\n".$data."\n\n".$corpora) !== FALSE, 'How to read the records comes before corpora');
+$described = array();
+foreach (array("taxa", "traits", "recordings", "recordingstaxa", "annomate", "links", "details") as $name) {
+  $described[$name] = tool("describe_module", array("module" => $name))["structuredContent"];
+  $described[$name]["filters"] = array_column($described[$name]["filters"], NULL, "name");
+}
+// Names: exact filters match one form of a name, so other forms are looked for as suggest_values can.
+check($described["taxa"]["filters"]["taxon"]["match"] === "exact" && $described["traits"]["filters"]["taxon"]["match"] === "exact"
+  && $described["recordingstaxa"]["filters"]["species"]["match"] === "exact", 'Taxa are filtered by one form of their name');
+check(strpos($data, "Gryllus Gryllus campestris") !== FALSE && strpos($data, "contains as the match") !== FALSE
+  && in_array("contains", $tools[3]["inputSchema"]["properties"]["match"]["enum"], TRUE), 'Other forms of a name are looked for with suggest_values');
+// Taxa of every source are gathered by their links to CoL, and recordings' links to their taxa say which are in the background.
+foreach (array("http://www.w3.org/2004/02/skos/core#exactMatch", "http://purl.obolibrary.org/obo/IAO_0000136",
+  "https://vocab.audioblast.org/cv/recordingContent#NonFocalTaxa", "source CoL") as $named) {
+  check(strpos($data, $named) !== FALSE, 'The instructions name '.$named);
+}
+check($described["links"]["filters"]["qualifier"]["match"] === "exact", "A link's qualifier is chosen exactly");
+check(strpos(mcpInstructions(), "an empty license field means the licence is unknown") !== FALSE && in_array("license", $described["recordings"]["fields"]),
+  'An empty licence is unknown');
+check(strpos(mcpInstructions(), "Most predicates of links come from IAO, Dublin Core, Darwin Core and SKOS") !== FALSE
+  && strpos(mcpInstructions(), "https://vocab.audioblast.org/api/mcp") !== FALSE, 'Where the terms of links are defined');
+// Words: any one of them, only the last as the start of a word.
+$db->queries = array(); $db->rows = array();
+tool("query_module", array("module" => "recordings", "filters" => array("taxon" => "Gryllus campestris")));
+check(strpos($db->queries[0], "MATCH(`taxon`) AGAINST ('Gryllus campestris*' IN BOOLEAN MODE)") !== FALSE
+  && strpos(mcpMatches()["words"], "the last of them as the start of a word") !== FALSE
+  && strpos(mcpMatches()["words"], "every other campestris") !== FALSE, 'Words match as the explanation says');
+// suggest_values: no order, and contains on a name matches by words, even where its filter matches exactly.
+$db->queries = array();
+tool("suggest_values", array("module" => "taxa", "field" => "taxon", "text" => "campestris", "match" => "contains"));
+check(strpos($db->queries[0], "ORDER BY") === FALSE && strpos($tools[3]["description"], "no particular order") !== FALSE, 'Values in no particular order');
+check(strpos($db->queries[0], "MATCH(`taxon`) AGAINST ('campestris*' IN BOOLEAN MODE)") !== FALSE
+  && strpos($tools[3]["description"], "such as the names of taxa and recordings, contains matches as the words match does") !== FALSE,
+  "Contains on a taxon's name matches by words");
+// A comma is part of the value of a filter that takes one.
+$db->queries = array();
+tool("query_module", array("module" => "recordings", "filters" => array("country" => "GB,FR")));
+check($described["recordings"]["filters"]["country"]["multiple"] === FALSE && strpos($db->queries[0], "`country` = 'GB,FR'") !== FALSE
+  && strpos($tools[2]["inputSchema"]["properties"]["filters"]["description"], "country GB,FR finds nothing") !== FALSE, 'A comma in a value of its own');
+// get_record never gives details, which have no linked data, and says how to find them.
+check(!isset(loadModule("details")["rdf"]) && strpos($tools[4]["description"], "details") !== FALSE
+  && isset($described["details"]["filters"]["record_source"], $described["details"]["filters"]["type"], $described["details"]["filters"]["id"]),
+  "A record's details are found apart from it");
+// The modules' notes, and the fields and filters they name.
+$notes = function($name, $words, $message) use ($described) {
+  foreach ($words as $word) {check(strpos((string)$described[$name]["source_notes"], $word) !== FALSE, $message.': '.$word);}
+};
+$notes("recordings", array("recording_type Soundscape", "Sounds of Norway", "empty license", "Animal Sound Archive (TSA)", "calculated_hash"), 'Recordings notes');
+check(isset($described["recordings"]["filters"]["recording_type"], $described["recordings"]["filters"]["calculated_hash"]), 'Soundscapes and shared files can be filtered');
+$notes("recordingstaxa", array("several rows", "source and id"), 'Recordings-taxa notes');
+$notes("traits", array("Peak Frequency (kHz)", "value_min and value_max", "inference_notes", "type traits, record_source bio.acousti.ca"), 'Traits notes');
+check($described["traits"]["filters"]["value"]["match"] === "exact" && $described["traits"]["filters"]["value_min"]["match"] === "range"
+  && isset($described["details"]["filters"]["name"]), 'Trait values are text, their ranges numbers, and their notes details');
+$notes("annomate", array("BirdNet-Lite", "source_id is the id of the recording", "seconds", "matched as text"), 'Annotation notes');
+check($described["annomate"]["filters"]["time_start"]["match"] === "exact" && isset($described["annomate"]["filters"]["annotator"]), 'Annotation times are matched as text');
+
 // Through the protocol, a tool's result is the result of tools/call.
 list($status, , $response) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 8, "method" => "tools/call",
   "params" => array("name" => "describe_module", "arguments" => array("module" => "links"))), array("mcp-protocol-version" => "2025-06-18"));

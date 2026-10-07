@@ -8,6 +8,7 @@ function traits_info() {
     "table" => "traits",
     "hname" => "Traits",
     "desc" => "This endpoint allows for the querying of the organism traits held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), traits are given as RDF: Darwin Core MeasurementOrFacts whose types link to terms at vocab.audioblast.org. Each trait is identified by https://api.audioblast.org/trait/{source}/{id}, which gives the trait in the same way. RDF responses include incoming and outgoing relationships from the links table, including source references and taxa.",
+    "source_notes" => "A trait's unit is in its name, e.g. Peak Frequency (kHz). Its value is text, matched exactly; value_min and value_max are given only for a value written as a range, so a range filter on them misses values that are single numbers. Many of BioAcoustica's traits were not measured on their own taxon but inferred, e.g. from a value given for the suborder Ensifera, or calculated from annotations. Such a trait has a detail named inference_notes that says so: its details are those with type traits, record_source bio.acousti.ca and the trait's id.",
     //Traits as RDF (see core/rdf.php), identified by https://api.audioblast.org/trait/{source}/{id}
     "rdf" => array(
       "links" => TRUE,

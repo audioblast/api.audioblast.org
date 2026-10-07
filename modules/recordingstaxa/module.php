@@ -8,7 +8,7 @@ function recordingstaxa_info() {
     "table" => "recordings-taxa",
     "hname" => "Recordings-Taxa",
     "desc" => "<p>Recordings linked to taxa. This is a join between the recordings and taxa tables, primarily of use in filtering recordings by taxonomic ranks higher than species.</p><p>The autocomplete values for the taxonomic ranks are limited to those taxa matched to recordings, for more complete taxonomic autocomplete use <a href='#taxa'>Taxa</a></p>.",
-    "source_notes" => "The sources used are a subset of those from Recordings.",
+    "source_notes" => "The sources used are a subset of those from Recordings. A recording is given once for each taxa record whose name its taxon matches, whichever source holds it, so the same recording can be several rows, and only the rows of taxa that give the higher ranks have them. Count recordings by their source and id, not by rows.",
     "params" => array(
       "source" => array(
         "desc" => "Source",
