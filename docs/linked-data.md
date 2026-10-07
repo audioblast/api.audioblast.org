@@ -145,7 +145,9 @@ They cover Unicode and escaping, sparse records, date precision, contributors,
 multiple attachments, cross-source links, qualifiers, distinct assertions,
 URI encoding, negotiation, JSON compatibility, 301/404 handling, embedded
 incoming/outgoing links, batching, query failures, reverse framing, multiple
-assertions and graph equivalence before and after framing. Production data and dangling-target counts have not been queried.
+assertions and graph equivalence before and after framing, and the regions of
+interest on a recording from its own source and from another source, beside a
+recording with none. Production data and dangling-target counts have not been queried.
 
 ## Specimens
 
@@ -509,8 +511,10 @@ recording, which differ when one source marks regions of another's recordings
 (a corpus of xeno-canto recordings, say); without a `recording_source` the
 recording is the annotation's own source's. The annotation graph
 also includes the recording's inverse `ac:hasROI` relationship and, when supplied,
-a service access point holding its `ac:accessURI`. This does not fetch or expand all annotations in recording
-responses. Missing recording identifiers do not produce a fabricated recording URI.
+a service access point holding its `ac:accessURI`. The recording's own graph
+gives the same `ac:hasROI` for every annotation of it (see
+[Regions on the recording](#regions-on-the-recording)). Missing recording
+identifiers do not produce a fabricated recording URI.
 
 Annotator, annotation date, information URL, taxon name and annotation category
 use `dcterms:creator`, `dcterms:created`, `rdfs:seeAlso`, `dwc:scientificName` and
@@ -524,6 +528,62 @@ frequency bounds in this table. No new vocabulary terms are needed.
 Incoming and outgoing links use the existing module type `annomate` and
 `annotation_id` as their source-local identity. Link predicates remain unchanged.
 See the [Audiovisual Core ROI terms](https://ac.tdwg.org/termlist/#ac_RegionOfInterest).
+
+### Regions on the recording
+
+A recording's RDF gives `ac:hasROI` for every annotation that marks a region
+of it, each as the annotation's URI, `/annotation/{source}/{annotation_id}`. As
+the tests give it, for a recording with a region its own source marked and two
+a corpus of another source marked:
+
+```turtle
+<https://api.audioblast.org/recording/fixture/rec1>
+    a <http://rs.tdwg.org/ac/terms/Media>, <http://purl.org/dc/dcmitype/Sound> ;
+    dcterms:type <http://purl.org/dc/dcmitype/Sound> ;
+    ac:providerLiteral "fixture" ;
+    ac:providerManagedID "rec1" ;
+    ac:hasROI <https://api.audioblast.org/annotation/fixture/book/a%20%231>,
+        <https://api.audioblast.org/annotation/corpus/roi-7>,
+        <https://api.audioblast.org/annotation/corpus/roi-8> .
+```
+
+This is the inverse of the annotation's `ac:isROIOf`, so the relationship now
+reads the same from either end. The annotations are found by the recording they
+name, `recording_source` and `source_id`, **whoever gave them**: the recording's
+own source, or a source marking regions of another source's recordings, such as
+the regions `jeantet-dufourq-2023` marks on xeno-canto recordings. The source
+and id are compared regardless of case, as the database compares them. An
+annotation without a `recording_source` would still say it is of its own
+source's recording but would not be found from the recording; since 6 October
+2026 every row has one, as the ingest fills it from `source` where a file gives
+none.
+
+Only the annotations' URIs are given, as for linked records elsewhere: what an
+annotation says — its bounds, taxon and annotator — and the links from it are at
+its URI. That is how a recording's corpora are found: a corpus is a reference
+whose regions are linked to it by `dcterms:isPartOf`, so following a
+recording's regions reaches the corpora that use it, which is what attribution
+and takedowns need. The recording's graph does not follow those links itself,
+as that would be a second hop for every region of every recording on a page.
+
+The regions are on `/recording/{source}/{id}`, on every page of
+`/data/recordings/?output=JSON-LD` (or `output=Turtle`), and so in what the MCP
+server's `get_record` gives for a recording, which is what the recording's URI
+gives. Ordinary JSON is unchanged: a recording has no new key, and a JSON page
+makes no lookup for regions. A JSON client finds a recording's annotations at
+`/data/annomate/?recording_source={source}&source_id={id}`, which the
+recordings module's description says. Every region is listed, without a cap,
+as the links of a record are.
+
+This is the `rdf.lookup` callback, which any module may declare for what
+another table says of its records without a link. Unlike `rdf.embed` it does
+not wait on the links found for the page, and unlike `rdf.record` it is asked
+on pages as well as at a record's own URI. It is given the whole page:
+`rdfRecordsByID()`, given the two fields to match on, reads the annotations of
+up to 100 recordings in one query, `WHERE (recording_source, source_id) IN
+(...)` with every value bound, which the table's `recording` index serves. A
+failed lookup propagates as HTTP 500 and an empty graph rather than as a
+recording with no regions, and an empty page makes no lookup.
 
 ## Recording representations and service access points
 
@@ -600,6 +660,6 @@ values are never inferred from filename extensions. No new vocabulary terms are
 needed. See the [Audiovisual Core service access point vocabulary](https://ac.tdwg.org/termlist/#7-11-service-access-point-vocabulary).
 
 Annotations still describe regions of the recording. Any future spectrogram
-pixel coordinates must identify the particular image representation. Recording
-responses still do not query annotations directly; discovery awaits links-table
-relationships.
+pixel coordinates must identify the particular image representation. A
+recording's regions are given on the recording itself (see
+[Regions on the recording](#regions-on-the-recording)).
