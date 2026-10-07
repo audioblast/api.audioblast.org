@@ -27,7 +27,8 @@ define("MCP_PAGE_MAX", 100);
 define("MCP_SUGGEST_LIMIT", 20);
 
 //The most bytes of linked data get_record gives. A taxon with thousands of recordings has thousands of links, which are better
-//read a page at a time from the links module than all at once.
+//read a page at a time from the links module than all at once, and a recording can have thousands of regions of interest,
+//which are better read from annomate.
 define("MCP_LINKED_DATA_LIMIT", 200000);
 
 //The term a references record is linked to by dcterms:type to say that it is a corpus. The address is a placeholder until the term
@@ -148,9 +149,10 @@ function mcpTools() {
       "title" => "Get a record",
       "description" => "Get one record by its URI (https://api.audioblast.org/{kind}/{source}/{id}, as query_module gives it), or by "
         ."its module, source and id, as a link gives them. The record comes with its linked data, as JSON-LD: the links to and from "
-        ."it (what a recording is of, what a reference is about, which specimen a recording was made of), and for a taxon its whole "
-        ."classification. A record with too many links to give at once, such as a corpus with thousands of regions, comes without "
-        ."its linked data, and with a note on finding its links a page at a time with query_module. A record's details, such as "
+        ."it (what a recording is of, what a reference is about, which specimen a recording was made of), for a recording the "
+        ."regions of interest annotations mark on it, as ac:hasROI, and for a taxon its whole classification. A record with too "
+        ."many links or regions to give at once, such as a corpus with thousands of regions, comes without its linked data, and "
+        ."with a note on finding them a page at a time with query_module. A record's details, such as "
         ."the tape a recording was made on, are never included: find them with query_module on details, with the record's source "
         ."as record_source, its module as type, and its id.",
       "inputSchema" => array("type" => "object", "properties" => array(
@@ -606,6 +608,12 @@ function mcpGetRecord($db, $arguments) {
     $note = "The record has too many links to give here. Find them a page at a time with query_module on links, filtered by "
       ."subject_type, subject_source and subject_id for the links from it, or by object_type, object_source and object_id for "
       ."the links to it, with the type being ".mcpModuleName($module).".";
+    //A recording's regions of interest are annotations rather than links (see
+    //recordings_rdf_rois()), and can be most of what made it too much
+    if (mcpHasRegions($nodes, $uri)) {
+      $note .= " Its regions of interest are annotations, not links: find them with query_module on annomate, filtered by "
+        ."recording_source `".$record["source"]."` and source_id `".$record[$module["rdf"]["id"] ?? "id"]."`.";
+    }
   }
   return(mcpToolResult(array(
     "uri" => $uri,
@@ -614,4 +622,12 @@ function mcpGetRecord($db, $arguments) {
     "linked_data" => $linked,
     "note" => $note
   )));
+}
+
+//Whether the linked data of the record at a URI gives it regions of interest
+function mcpHasRegions($nodes, $uri) {
+  foreach ($nodes as $node) {
+    if (($node["@id"] ?? NULL) === $uri && isset($node["ac:hasROI"])) {return(TRUE);}
+  }
+  return(FALSE);
 }
