@@ -783,7 +783,7 @@ $nodes = array_merge($nodes, array($describedNode));
 // Annotations use their own ID, never the recording ID, and retain ordinary JSON.
 $annotationModule = loadModule('annomate');
 $annotation = array('source' => 'fixture', 'annotation_id' => $ref['id'], 'source_id' => 'rec1',
-  'time_start' => '0', 'time_end' => '1.25', 'annotator' => 'Observer',
+  'time_start' => '0', 'time_end' => '1.25', 'freq_low' => '0', 'freq_high' => '7309.05', 'annotator' => 'Observer',
   'annotation_date' => '2026-09-19', 'annotation_info_url' => 'https://example.org/annotation',
   'recording_url' => 'https://example.org/audio.wav', 'taxon' => 'Example species',
   'type' => 'Call', 'lat' => '0', 'lon' => '-1.5', 'contact' => 'Unmapped');
@@ -791,6 +791,12 @@ $annotationURI = rdfRecordURI($annotationModule, 'fixture', $annotation['annotat
 $annotationNodes = rdfNodes($annotationModule, array($annotation));
 check($annotationNodes[0]['@id'] === $annotationURI, 'Annotation identity uses annotation_id');
 check($annotationNodes[0]['ac:startTime'] === rdfTyped('0', 'xsd:decimal'), 'Zero time preserved');
+check($annotationNodes[0]['ac:freqLow'] === rdfTyped('0', 'xsd:decimal'), 'Zero frequency preserved');
+check($annotationNodes[0]['ac:freqHigh'] === rdfTyped('7309.05', 'xsd:decimal'), 'Frequency bounds in Hz as decimals');
+// Audiovisual Core lets either bound be given without the other
+$lowOnly = $annotation; $lowOnly['freq_high'] = NULL;
+$lowOnlyNode = annomate_rdf_node($lowOnly, 'https://example.org/roi');
+check(isset($lowOnlyNode['ac:freqLow']) && !isset($lowOnlyNode['ac:freqHigh']), 'A missing bound is omitted, not invented');
 check(!isset($annotationNodes[0]['ac:accessURI']), 'Access URL belongs to recording');
 $sparseAnnotation = array('source' => 'fixture', 'annotation_id' => 'sparse');
 check(count(rdfNodes($annotationModule, array($sparseAnnotation))) === 1, 'Missing recording creates no invented target');

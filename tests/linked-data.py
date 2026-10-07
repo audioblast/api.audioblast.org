@@ -54,6 +54,8 @@ assert (roi, AC.isROIOf, recording) in a
 assert (recording, AC.hasROI, roi) in a
 assert (roi, AC.startTime, Literal("0", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
 assert (roi, AC.endTime, Literal("1.25", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
+assert (roi, AC.freqLow, Literal("0", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
+assert (roi, AC.freqHigh, Literal("7309.05", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
 services = list(a.objects(recording, AC.hasServiceAccessPoint))
 assert len(services) == 1
 assert (services[0], RDF.type, AC.ServiceAccessPoint) in a

@@ -96,6 +96,24 @@ function annomate_info() {
         "autocomplete" => FALSE,
         "ac" => "ac:endTime"
       ),
+      "freq_low" => array(
+        "desc" => "Lowest frequency of the region, in Hz",
+        "type" => "string",
+        "default" => "",
+        "column" => "freq_low",
+        "op" => "=",
+        "autocomplete" => FALSE,
+        "ac" => "ac:freqLow"
+      ),
+      "freq_high" => array(
+        "desc" => "Highest frequency of the region, in Hz",
+        "type" => "string",
+        "default" => "",
+        "column" => "freq_high",
+        "op" => "=",
+        "autocomplete" => FALSE,
+        "ac" => "ac:freqHigh"
+      ),
       "taxon" => array(
         "desc" => "Taxon",
         "type" => "string",
@@ -181,6 +199,7 @@ function annomate_rdf_node($annotation, $uri) {
   $recording = annomate_rdf_recording($annotation);
   if ($recording !== NULL) {$node["ac:isROIOf"] = rdfIRI($recording);}
   foreach (array("time_start" => "ac:startTime", "time_end" => "ac:endTime",
+    "freq_low" => "ac:freqLow", "freq_high" => "ac:freqHigh",
     "lat" => "dwc:decimalLatitude", "lon" => "dwc:decimalLongitude") as $field => $property) {
     $value = $annotation[$field] ?? NULL;
     rdfAdd($node, $property, rdfDecimal($value) ?? $value);

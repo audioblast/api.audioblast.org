@@ -504,8 +504,9 @@ Audiovisual Core `ac:RegionOfInterest` resources. The individual route is
 Ordinary JSON retains `annotation_id` and `source_id` with their existing meanings.
 Modules may set `rdf.id` to select an existing ID parameter; the default is `id`.
 
-Each ROI uses `ac:startTime` and `ac:endTime` for offsets in seconds, and
-`ac:isROIOf` to identify `/recording/{recording_source}/{source_id}`. `source` is
+Each ROI uses `ac:startTime` and `ac:endTime` for offsets in seconds,
+`ac:freqLow` and `ac:freqHigh` for its frequency bounds in Hz (the `freq_low`
+and `freq_high` fields), and `ac:isROIOf` to identify `/recording/{recording_source}/{source_id}`. `source` is
 the source giving the annotation and `recording_source` the source of the
 recording, which differ when one source marks regions of another's recordings
 (a corpus of xeno-canto recordings, say); without a `recording_source` the
@@ -522,8 +523,13 @@ use `dcterms:creator`, `dcterms:created`, `rdfs:seeAlso`, `dwc:scientificName` a
 properties. Numeric bounds and coordinates are typed as decimals; zero values
 are retained. Date-only ISO dates are typed; other source date strings and
 nondecimal source values are retained as literals without correction.
-`contact` remains available in JSON but is not mapped to RDF. There are no
-frequency bounds in this table. No new vocabulary terms are needed.
+`contact` remains available in JSON but is not mapped to RDF. A region bounded
+from 0 Hz has an `ac:freqLow` of 0 rather than none, and a region with only one
+frequency bound gives only that one, as Audiovisual Core allows; a region
+bounded in time alone, as BirdNET's detections and BioAcoustica's annotations
+are, has neither. Before these fields, the frequencies were only details of the
+annotation (`frequency_low` and `frequency_high`), and details are not given
+as RDF. No new vocabulary terms are needed.
 
 Incoming and outgoing links use the existing module type `annomate` and
 `annotation_id` as their source-local identity. Link predicates remain unchanged.
