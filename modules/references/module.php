@@ -12,11 +12,11 @@ function references_info() {
     "rdf" => array("links" => TRUE, "path" => "reference", "node" => "references_rdf_node", "related" => "references_rdf_related"),
     "params" => array(
       "source" => array(
-        "desc" => "Source",
+        "desc" => "Source, by its exact name (letter case aside)",
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "id" => array(

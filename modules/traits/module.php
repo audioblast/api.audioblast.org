@@ -34,11 +34,11 @@ function traits_info() {
     ),
     "params" => array(
       "source" => array(
-        "desc" => "Source",
+        "desc" => "Source, by its exact name (letter case aside)",
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "id" => array(
