@@ -7,15 +7,15 @@ function details_info() {
     "category" => "data",
     "table" => "details",
     "hname" => "Details",
-    "desc" => "This endpoint allows for the querying of the details of the records held within audioBLAST!: the things a record holds that have no column of their own, such as the tape a recording was made on, the temperature it was made at, or the field notes of a specimen. Each detail is a named value, with a unit where it is a measurement, belonging to the record of a data module (its type) with an id there. The details a record has of one name are numbered from 0 by delta. A source can give details of another source's records, such as a corpus giving the frequencies of the regions it marked on xeno-canto's recordings: source is the source that gave a detail, and record_source the source of the record it belongs to. A record's details, whichever source gave them, are those with its record_source, type and id.",
+    "desc" => "This endpoint allows for the querying of the details of the records held within audioBLAST!: the things a record holds that have no column of their own, such as the tape a recording was made on, the temperature it was made at, or the field notes of a specimen. Each detail is a named value, with a unit where it is a measurement, belonging to the record of a data module (its type) with an id there. The details a record has of one name are numbered from 0 by delta. A source can give details of another source's records, such as a corpus giving details of the xeno-canto recordings it marked regions of: source is the source that gave a detail, and record_source the source of the record it belongs to. A record's details, whichever source gave them, are those with its record_source, type and id.",
     "source_notes" => "Details are ingested from each source's details, and replace the details that the source gave before, including those it gave of other sources' records. The details that other sources gave of a source's records are theirs, and stay. Their names are each source's own, and are not yet matched to vocabulary terms, so details are not given as RDF.",
     "params" => array(
       "source" => array(
-        "desc" => "Source that gave the detail",
+        "desc" => "Source that gave the detail, by its exact name (letter case aside)",
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "type" => array(

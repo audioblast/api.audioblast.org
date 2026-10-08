@@ -5,24 +5,29 @@ function recordings_info() {
     "mname" => "recordings",
     "version" => 1.0,
     "category" => "data",
-    //recordings with what audioBlastAnalyse measured of each file joined on
+    //recordings with what audioBlastAnalyse measured of each file, and the
+    //addresses of the peaks and spectrogram tiles it made from it, joined on
     "table" => "v-recordings",
     "hname" => "Recordings",
-    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way. The calculated_ fields are what audioBLAST! measured of the file itself, rather than what its source says about it, and are empty for a recording that has not been measured yet: calculated_status says how measuring it went (ok, missing or unreadable). peaks_url, where there is one, is the waveform peaks made from the file, which the RDF gives as a second service access point beside the file's.",
+    "desc" => "This endpoint allows for the querying of recording metadata held within audioBLAST! With output=JSON-LD or output=Turtle (or, without output, an Accept header asking for application/ld+json or text/turtle), recordings are given as RDF in Audiovisual Core terms. Each recording is identified by https://api.audioblast.org/recording/{source}/{id}, which gives the recording in the same way. The RDF gives each recording the regions of interest that annotations mark on it, as ac:hasROI, whichever source gave them; in JSON they are the annotations at /data/annomate/?recording_source={source}&amp;source_id={id}. The calculated_ fields are what audioBLAST! measured of the file itself, rather than what its source says about it, and are empty for a recording that has not been measured yet: calculated_status says how measuring it went (ok, missing or unreadable). Held with those measurements is what audioBLAST! has made from the file, so that it can be shown without the audio: its waveform peaks (peaks_url) and its spectrogram tiles (spectrogram_url), each empty until it has been made. The RDF gives each as a service access point of its own beside the file's.",
+    "source_notes" => "Many recordings are soundscapes, with recording_type Soundscape and no taxon, and a count of recordings includes them. Sounds of Norway's give no author or licence either. An empty license means that the licence is unknown, not that the recording is free to use. The Animal Sound Archive (TSA) gives a recording of several species once for each of them, as recordings of their own with the same file: where a file has been measured, calculated_hash tells which recordings share it.",
     //Recordings as RDF (see core/rdf.php), identified by https://api.audioblast.org/recording/{source}/{id}
     "rdf" => array(
       "links" => TRUE,
       "path" => "recording",
       "node" => "recordings_rdf_node",
-      "related" => "recordings_rdf_related"
+      "related" => "recordings_rdf_related",
+      "lookup" => "recordings_rdf_rois"
     ),
     "params" => array(
       "source" => array(
-        "desc" => "Source",
+        //Matched exactly, so that the table's key on source and id serves it,
+        //alone or with id; a value contained anywhere in it could use no index
+        "desc" => "Source, by its exact name (letter case aside), e.g. xeno-canto",
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "id" => array(
@@ -329,9 +334,16 @@ function recordings_info() {
         "autocomplete" => TRUE
       ),
       "peaks_url" => array(
-        "desc" => "URL of the waveform peaks audioBLAST! made from the file, to draw its waveform from without the audio: a BBC audiowaveform JSON file (version 2), mixed to one channel, with the minimum and maximum of each 1/86 s at 8 bits. Empty where none have been made",
+        "desc" => "URL of the waveform peaks audioBLAST! made from the file and holds with its measurements, to draw its waveform from without the audio: a BBC audiowaveform JSON file (version 2) of the minimum and maximum of each block of samples, which says itself how many samples a block holds, at how many bits and for how many channels. Empty where none have been made",
         "type" => "string",
         "column" => "peaks_url",
+        "default" => "",
+        "op" => "none"
+      ),
+      "spectrogram_url" => array(
+        "desc" => "URL of the spectrogram tiles audioBLAST! made from the file and holds with its measurements, to show its spectrogram without the audio: the manifest (index.json) of a set of images, each a stretch of the recording, in the format of wavesurfer-tiled-spectrogram's SPEC.md (https://github.com/edwbaker/wavesurfer-tiled-spectrogram). The manifest says where the tiles are and how they were made. Empty where none have been made",
+        "type" => "string",
+        "column" => "spectrogram_url",
         "default" => "",
         "op" => "none"
       ),
@@ -418,11 +430,53 @@ function recordings_rdf_related($recording, $uri) {
   return(recordings_rdf_services($recording, $uri));
 }
 
+//The regions of interest annotations mark on the recordings, as ac:hasROI of
+//each: the inverse of the ac:isROIOf an annotation gives (see
+//annomate_rdf_node()), so that what marks a recording, and through the
+//annotations' links the corpora they are part of, can be found from the
+//recording. An annotation names the recording it is of by recording_source and
+//source_id, and its own source need not be the recording's, so the annotations
+//are found by those whoever gave them: a page of recordings in one query for
+//every 100 (see rdfRecordsByID()). Each region is its annotation's URI, where
+//what the annotation says is given.
+function recordings_rdf_rois($db, $module, $recordings) {
+  $annomate = loadModule("annomate");
+  $uris = array();
+  $pairs = array();
+  foreach ($recordings as $recording) {
+    $key = recordings_rdf_key($recording["source"], $recording["id"]);
+    $uris[$key] = rdfRecordURI($module, $recording["source"], $recording["id"]);
+    $pairs[$key] = array($recording["source"], $recording["id"]);
+  }
+  $annotations = rdfRecordsByID($db, $annomate, $pairs, array("recording_source", "source_id"));
+  if ($annotations === FALSE) {return(FALSE);}
+  $rois = array();
+  foreach ($annotations as $annotation) {
+    $key = recordings_rdf_key($annotation["recording_source"], $annotation["source_id"]);
+    if (!isset($uris[$key])) {continue;}
+    $rois[$key][rdfRecordURI($annomate, $annotation["source"], $annotation["annotation_id"])] = TRUE;
+  }
+  $nodes = array();
+  foreach ($rois as $key => $regions) {
+    $iris = array_map("rdfIRI", array_keys($regions));
+    $nodes[] = array("@id" => $uris[$key], "ac:hasROI" => (count($iris) === 1) ? $iris[0] : $iris);
+  }
+  return($nodes);
+}
+
+//The database compares text regardless of case, so an annotation can name its
+//recording cased differently from the recording itself and still be of it; the
+//key each is matched by ignores case, as the lookup does
+function recordings_rdf_key($source, $id) {
+  return(json_encode(array(strtolower((string)$source), strtolower((string)$id))));
+}
+
 //Each representation of the recording there is somewhere to get: its file, and
-//the waveform peaks made from it
+//the waveform peaks and spectrogram tiles made from it
 function recordings_rdf_services($recording, $uri) {
   $services = array();
-  foreach (array(recordings_rdf_service($recording, $uri), recordings_rdf_peaks($recording, $uri)) as $service) {
+  foreach (array(recordings_rdf_service($recording, $uri), recordings_rdf_peaks($recording, $uri),
+                 recordings_rdf_spectrogram($recording, $uri)) as $service) {
     if ($service !== NULL) {$services[] = $service;}
   }
   return($services);
@@ -444,6 +498,27 @@ function recordings_rdf_peaks($recording, $uri) {
     rdfIRI("https://vocab.audioblast.org/cv/variant#WaveformPeaks"));
   $peaks["dcterms:conformsTo"] = rdfIRI("https://github.com/bbc/audiowaveform/blob/master/doc/DataFormat.md");
   return($peaks);
+}
+
+//The spectrogram tiles audioBLAST! made from the recording's file, as a service
+//access point of their own: the manifest (index.json) of a set of images, each
+//a stretch of the recording, in the format of wavesurfer-tiled-spectrogram's
+//SPEC.md, from which a player shows the spectrogram without the audio. The
+//manifest says how the tiles were made, so nothing of that is said here. A
+//spectrogram is Audiovisual Core's Visual variant (v008), which gives a
+//sonogram among its examples; SpectrogramTiles says which kind, and is a
+//placeholder until vocab.audioblast.org defines it (see
+//docs/vocabulary-backlog.md). The tiles say what they conform to only once the
+//manifest's format has a published, versioned address. Without a URL there is
+//nothing to point to.
+function recordings_rdf_spectrogram($recording, $uri) {
+  $url = $recording["spectrogram_url"] ?? NULL;
+  if (rdfURL($url) === NULL) {return(NULL);}
+  $tiles = rdfServiceAccessPoint($uri, $url, "application/json");
+  $tiles["ac:variant"] = array(
+    rdfIRI("http://rs.tdwg.org/acvariant/values/v008"),
+    rdfIRI("https://vocab.audioblast.org/cv/variant#SpectrogramTiles"));
+  return($tiles);
 }
 
 //The recording's file as a service access point, with what audioBlastAnalyse

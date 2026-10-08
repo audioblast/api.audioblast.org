@@ -54,6 +54,8 @@ assert (roi, AC.isROIOf, recording) in a
 assert (recording, AC.hasROI, roi) in a
 assert (roi, AC.startTime, Literal("0", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
 assert (roi, AC.endTime, Literal("1.25", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
+assert (roi, AC.freqLow, Literal("0", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
+assert (roi, AC.freqHigh, Literal("7309.05", datatype=URIRef("http://www.w3.org/2001/XMLSchema#decimal"))) in a
 services = list(a.objects(recording, AC.hasServiceAccessPoint))
 assert len(services) == 1
 assert (services[0], RDF.type, AC.ServiceAccessPoint) in a
@@ -63,6 +65,14 @@ assert not list(a.objects(recording, AC.accessURI))
 assert not list(a.objects(recording, URIRef("http://purl.org/dc/elements/1.1/format")))
 assert not list(a.objects(roi, AC.accessURI))
 print("Annotation ROI bounds, recording relationships and access metadata verified")
+
+# A recording has the regions marked on it by its own source and by a corpus of
+# another source, and a recording nothing marks has none.
+corpus_rois = [URIRef(f"https://api.audioblast.org/annotation/corpus/roi-{n}") for n in (7, 8)]
+assert set(a.objects(recording, AC.hasROI)) == {roi, *corpus_rois}
+assert (URIRef("https://api.audioblast.org/annotation/corpus/roi-9"), None, None) not in a
+assert not list(a.objects(URIRef("https://api.audioblast.org/recording/fixture/rec2"), AC.hasROI))
+print("Recording regions of interest from its own source and a corpus verified")
 
 XSD = Namespace("http://www.w3.org/2001/XMLSchema#")
 specimen = URIRef("https://api.audioblast.org/specimen/fixture/book/a%20%231")

@@ -7,8 +7,10 @@ has an "rdf" entry in its info giving "path", the start of its records' URIs
 (see rdfRecordURI()), and "node", the function that turns a record and its URI
 into a node. An optional "related" callback returns additional nodes describing
 contributors, containers or assertions, and an optional "embed" callback reads
-what linked records hold onto the records themselves (see rdfResponseNodes()). An optional
-"record" callback adds what a record carries at its own URI (see recordAPI())
+what linked records hold onto the records themselves (see rdfResponseNodes()). An
+optional "lookup" callback reads what another table says of a page of records
+without a link, such as the regions of interest annotations mark on recordings.
+An optional "record" callback adds what a record carries at its own URI (see recordAPI())
 and a page of records does not, because it would cost its lookup again for
 every record of the page. Records are identified by their source
 and id parameters. JSON-LD and Turtle are written from the same nodes, so both formats always say the same
@@ -267,16 +269,27 @@ function rdfResponseNodes($db, $module, $records, $ownURI = FALSE) {
   // for every one of the fifty on a page. A taxon's ancestors are walked a
   // taxon at a time, so they are worth having where one record was asked for
   // and nowhere else (see recordAPI(), and taxa_rdf_record()).
-  $own = FALSE;
+  $more = FALSE;
   if ($ownURI && isset($module["rdf"]["record"]) && $records) {
     $added = call_user_func($module["rdf"]["record"], $db, $module, $records);
     if ($added === FALSE) {return(FALSE);}
     foreach ($added as $node) {$nodes[] = $node;}
-    $own = (bool)$added;
+    $more = (bool)$added;
   }
-  //A module that says more about its own records at their URI has two
+  // What another table says of the records without a link, such as the
+  // annotations that mark regions of a recording, which name it by its source
+  // and id. The callback is given the whole page, so that it can read it in a
+  // bounded number of queries rather than one for every record, and it is
+  // asked on a page of records as much as at a record's own URI.
+  if (isset($module["rdf"]["lookup"]) && $records) {
+    $read = call_user_func($module["rdf"]["lookup"], $db, $module, $records);
+    if ($read === FALSE) {return(FALSE);}
+    foreach ($read as $node) {$nodes[] = $node;}
+    $more = $more || (bool)$read;
+  }
+  //A module that says more about its records than their nodes do has two
   //descriptions of them to put together; one that says nothing is unchanged
-  if (empty($module["rdf"]["links"]) || !$records) {return($own ? rdfMergeNodes($nodes) : $nodes);}
+  if (empty($module["rdf"]["links"]) || !$records) {return($more ? rdfMergeNodes($nodes) : $nodes);}
   $links = loadModule("links");
   $seen = array();
   $found = array();
@@ -330,12 +343,14 @@ function rdfResponseNodes($db, $module, $records, $ownURI = FALSE) {
 // The records of a module with these (source, id) pairs, looked up in batches
 // so that a page of them costs a bounded number of queries however many pairs
 // it has. Pairs are bound, never interpolated. FALSE means a failed lookup,
-// not that no record matched.
-function rdfRecordsByID($db, $module, $pairs) {
+// not that no record matched. Given two other fields of the module, the pairs
+// are their values instead, such as the recording an annotation is of.
+function rdfRecordsByID($db, $module, $pairs, $fields = NULL) {
   $records = array();
   if (!$pairs) {return($records);}
-  $source = $module["params"]["source"]["column"];
-  $id = $module["params"][$module["rdf"]["id"] ?? "id"]["column"];
+  $fields = $fields ?? array("source", $module["rdf"]["id"] ?? "id");
+  $source = $module["params"][$fields[0]]["column"];
+  $id = $module["params"][$fields[1]]["column"];
   foreach (array_chunk(array_values($pairs), 100) as $batch) {
     $values = array();
     $places = array();

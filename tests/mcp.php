@@ -139,6 +139,8 @@ class MCPFixtureStatement {
   function execute() {return(!$this->db->fail);}
   function get_result() {
     if (strpos($this->sql, '`links` WHERE') !== FALSE) {return(new MCPFixtureResult($this->db->links));}
+    //The annotations of a recording, read by the recording they mark
+    if (strpos($this->sql, '(`recording_source`, `source_id`) IN') !== FALSE) {return(new MCPFixtureResult($this->db->annotations));}
     $key = strtolower($this->values[0]."/".$this->values[1]);
     return(new MCPFixtureResult(isset($this->db->records[$key]) ? array($this->db->records[$key]) : array()));
   }
@@ -150,6 +152,7 @@ class MCPFixtureDB {
   public $total = 0;
   public $records = array();
   public $links = array();
+  public $annotations = array();
   public $fail = FALSE;
   public $throw = FALSE;
   function real_escape_string($value) {return(addslashes((string)$value));}
@@ -274,8 +277,10 @@ $described = tool("describe_module", array("module" => "recordings"))["structure
 $filters = array_column($described["filters"], NULL, "name");
 check($filters["taxon"]["match"] === "words" && $filters["taxon"]["suggest"] === TRUE, 'A full-text filter matches by words');
 check($filters["id"]["match"] === "exact" && $filters["id"]["multiple"] === TRUE, 'An exact filter that takes several values');
-check($filters["source"]["match"] === "contains" && $filters["duration"]["match"] === "range", 'Contains and range filters');
+check($filters["locality"]["match"] === "contains" && $filters["duration"]["match"] === "range", 'Contains and range filters');
+check($filters["source"]["match"] === "exact", "A recording's source is matched exactly, as the key on source and id needs");
 check(!isset($filters["peaks_url"]) && in_array("peaks_url", $described["fields"]), 'A field that is not a filter is still a field');
+check(!isset($filters["spectrogram_url"]) && in_array("spectrogram_url", $described["fields"]), "A recording's spectrogram tiles are a field too");
 check(!in_array("output", $described["fields"]) && !isset($filters["output"]) && !isset($filters["format"]), 'Output and format are not the tools\' to give');
 check(isset($described["matches"]["words"]) && strpos($described["matches"]["words"], "Gryllus") !== FALSE, 'The ways of matching are explained');
 $taxa = tool("describe_module", array("module" => "taxa"))["structuredContent"];
@@ -315,7 +320,7 @@ $sql = $db->queries[0];
 check(count($db->queries) === 1, 'No count unless asked for');
 check(strpos($sql, "SELECT `source` as `source`, `id` as `id`") === 0 && strpos($sql, "FROM `audioblast`.`v-recordings`") !== FALSE, 'Every field, by its name');
 check(strpos($sql, "`id` IN ('12', '15', '17')") !== FALSE, 'Several values match any of them');
-check(strpos($sql, "`source` LIKE '%O\\'Brien%'") !== FALSE, 'Values escaped as the API escapes them');
+check(strpos($sql, "`source` = 'O\\'Brien'") !== FALSE, 'Values escaped as the API escapes them');
 check(strpos($sql, "CAST(`Duration` AS DECIMAL(65,10)) >= CAST('10' AS DECIMAL(65,10)) AND CAST(`Duration` AS DECIMAL(65,10)) <= CAST('20' AS DECIMAL(65,10))") !== FALSE, 'Ranges as the API reads them');
 check(endsWith($sql, " LIMIT 2, 3;"), 'The second page, and one record more');
 check($page["more"] === TRUE && count($page["rows"]) === 2 && $page["total"] === NULL && $page["page"] === 2 && $page["page_size"] === 2, 'A page and whether there is another');
@@ -345,7 +350,7 @@ tool("suggest_values", array("module" => "recordings", "field" => "taxon", "text
 check(strpos($db->queries[0], "MATCH(`taxon`) AGAINST ('Gryllus*' IN BOOLEAN MODE)") !== FALSE, 'Contains on a full-text field searches its words');
 $db->queries = array();
 tool("suggest_values", array("module" => "recordings", "field" => "country", "filters" => array("source" => "xeno-canto")));
-check(strpos($db->queries[0], "WHERE `source` LIKE '%xeno-canto%'  LIMIT 0, 21;") !== FALSE, 'Without text, every value of the records the filters match');
+check(strpos($db->queries[0], "WHERE `source` = 'xeno-canto'  LIMIT 0, 21;") !== FALSE, 'Without text, every value of the records the filters match');
 check(strpos((string)toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "genus"))), "these are: taxon, rank.") !== FALSE, 'A field without values to suggest names those with them');
 check(toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "taxon", "match" => "sounds like"))) !== NULL, 'Starts or contains');
 check(toolError(mcpCallTool("suggest_values", array("module" => "taxa", "field" => "taxon", "limit" => 0))) !== NULL, 'Limit out of range');
@@ -387,10 +392,168 @@ for ($i = 0; $i < 1000; $i++) {
 }
 $crowded = tool("get_record", array("uri" => $uri))["structuredContent"];
 check($crowded["linked_data"] === NULL && strpos($crowded["note"], "query_module on links") !== FALSE && $crowded["record"] === $ref, 'Too many links to give at once');
+check(strpos($crowded["note"], "annomate") === FALSE, 'A record without regions of interest is not sent to annomate for them');
 $db->links = array();
+// A recording comes with the regions of interest annotations mark on it. They
+// are not links, so one with too many to give at once says where they are.
+$recording = array_merge(array_fill_keys(array_keys(loadModule("recordings")["params"]), NULL),
+  array('source' => 'fixture', 'id' => 'rec1'));
+$recordingURI = "https://api.audioblast.org/recording/fixture/rec1";
+$db->hold($recording);
+$region = function($i) {
+  return(array('source' => 'corpus', 'annotation_id' => 'roi-'.$i, 'recording_source' => 'fixture', 'source_id' => 'rec1'));
+};
+$db->annotations = array($region(1), $region(2));
+$marked = tool("get_record", array("uri" => $recordingURI))["structuredContent"];
+check(array_column($marked["linked_data"]["@graph"], NULL, "@id")[$recordingURI]["ac:hasROI"] ===
+  array(rdfIRI("https://api.audioblast.org/annotation/corpus/roi-1"), rdfIRI("https://api.audioblast.org/annotation/corpus/roi-2"))
+  && $marked["note"] === NULL, 'A recording comes with its regions of interest');
+$db->annotations = array_map($region, range(1, 4000));
+$crowdedRecording = tool("get_record", array("uri" => $recordingURI))["structuredContent"];
+check($crowdedRecording["linked_data"] === NULL && strpos($crowdedRecording["note"], "query_module on links") !== FALSE,
+  'A recording with too many regions to give at once comes without its linked data');
+check(strpos($crowdedRecording["note"], "query_module on annomate, filtered by recording_source `fixture` and source_id `rec1`") !== FALSE,
+  'and says its regions are annotations, and how to find them');
+$db->annotations = array();
 $db->fail = TRUE;
 check(toolError(mcpCallTool("get_record", array("uri" => $uri))) === "The query failed on the database.", 'A failed lookup is not a missing record');
 $db->fail = FALSE;
+
+// Corpora: the instructions say how to find them and their regions with the tools, after everything else, so that a client
+// that cuts the instructions short keeps what it needs for every other record.
+$corpora = mcpCorporaInstructions();
+check(endsWith(mcpInstructions(), "\n\n".$corpora), 'Corpora come last in the instructions');
+foreach (array(MCP_CORPUS_TYPE, "http://purl.org/dc/terms/type", "http://purl.org/dc/terms/isPartOf", "http://purl.org/dc/terms/source") as $iri) {
+  check(strpos($corpora, $iri) !== FALSE, 'The instructions name '.$iri);
+}
+check(strpos($tools[4]["description"], "corpus") !== FALSE, 'get_record says a corpus comes without its regions');
+$naming = array();
+foreach (array_merge(glob("core/*.php"), glob("modules/*/module.php")) as $file) {
+  if (strpos(file_get_contents($file), MCP_CORPUS_TYPE) !== FALSE) {$naming[] = $file;}
+}
+check($naming === array("core/mcp-tools.php"), 'The placeholder address of the corpus term is in one place: '.implode(", ", $naming));
+// Each filter the instructions name is one its module has, matching exactly, and taking a list where a list of ids is given.
+$named = array(
+  "links" => array("predicate" => FALSE, "object_id" => FALSE, "object_type" => FALSE, "object_source" => FALSE, "qualifier" => FALSE),
+  "annomate" => array("annotation_id" => TRUE, "recording_source" => FALSE, "source_id" => FALSE),
+  "details" => array("type" => FALSE, "record_source" => FALSE, "id" => TRUE)
+);
+foreach ($named as $name => $filters) {
+  $described = array_column(tool("describe_module", array("module" => $name))["structuredContent"]["filters"], NULL, "name");
+  foreach ($filters as $filter => $list) {
+    check(strpos($corpora, $filter) !== FALSE, "The instructions name $filter");
+    check(($described[$filter]["match"] ?? NULL) === "exact" && (!$list || $described[$filter]["multiple"]),
+      "$name has the filter $filter, matching exactly".($list ? " and taking a list" : ""));
+  }
+}
+// The steps, as the database gets them.
+$where = function($sql, $conditions, $message) {
+  foreach ($conditions as $condition) {check(strpos($sql, $condition) !== FALSE, $message.": ".$condition);}
+};
+$db->queries = array(); $db->rows = array();
+tool("query_module", array("module" => "links", "filters" => array("predicate" => "http://purl.org/dc/terms/type", "object_id" => MCP_CORPUS_TYPE)));
+$where($db->queries[0], array("`predicate` = 'http://purl.org/dc/terms/type'", "`object_id` = '".MCP_CORPUS_TYPE."'"), 'Corpora found by their type');
+$db->queries = array();
+$db->rows = array(array('source' => 'corpus', 'id' => 'l1', 'subject_type' => 'annomate', 'subject_source' => 'corpus', 'subject_id' => 'corpus-v2-12-1',
+  'predicate' => 'http://purl.org/dc/terms/isPartOf', 'object_type' => 'references', 'object_source' => 'corpus', 'object_id' => 'corpus-v2',
+  'qualifier' => 'Validation', 'remarks' => NULL));
+$parts = tool("query_module", array("module" => "links", "page_size" => MCP_PAGE_MAX, "filters" => array("predicate" => "http://purl.org/dc/terms/isPartOf",
+  "object_type" => "references", "object_source" => "corpus", "object_id" => "corpus-v2", "qualifier" => "Validation")))["structuredContent"];
+$where($db->queries[0], array("`predicate` = 'http://purl.org/dc/terms/isPartOf'", "`object_type` = 'references'", "`object_source` = 'corpus'",
+  "`object_id` = 'corpus-v2'", "`qualifier` = 'Validation'"), "A split of a corpus's regions");
+check($parts["rows"][0]["subject_id"] === "corpus-v2-12-1" && $parts["rows"][0]["qualifier"] === "Validation", "Each link names a region and its split");
+$ids = array();
+for ($i = 1; $i <= MAX_FILTER_VALUES; $i++) {$ids[] = "corpus-v2-12-".$i;}
+$db->queries = array(); $db->rows = array();
+tool("query_module", array("module" => "annomate", "page_size" => MCP_PAGE_MAX, "filters" => array("annotation_id" => $ids)));
+check(strpos($db->queries[0], "`annotation_id` IN ('corpus-v2-12-1', 'corpus-v2-12-2', ") !== FALSE && endsWith($db->queries[0], " LIMIT 0, 101;"),
+  "A page of a corpus's regions by their ids");
+$ids[] = "one too many";
+check(strpos((string)toolError(mcpCallTool("query_module", array("module" => "annomate", "filters" => array("annotation_id" => $ids)))),
+  "takes at most ".MAX_FILTER_VALUES.".") !== FALSE && strpos($corpora, "up to ".MAX_FILTER_VALUES." of those ids") !== FALSE,
+  'The instructions give as many ids at once as annomate takes');
+$db->queries = array();
+tool("query_module", array("module" => "details", "filters" => array("type" => "annomate", "record_source" => "corpus", "id" => array("corpus-v2-12-1", "corpus-v2-12-2"))));
+$where($db->queries[0], array("`type` = 'annomate'", "`record_source` = 'corpus'", "`id` IN ('corpus-v2-12-1', 'corpus-v2-12-2')"), "The regions' other values");
+$regionFields = tool("describe_module", array("module" => "annomate"))["structuredContent"]["fields"];
+check(in_array("freq_low", $regionFields) && in_array("freq_high", $regionFields) && strpos($corpora, "are its freq_low and freq_high") !== FALSE,
+  "A region's frequency bounds are its own");
+$db->queries = array();
+tool("query_module", array("module" => "annomate", "filters" => array("recording_source" => "xeno-canto", "source_id" => "280667")));
+$where($db->queries[0], array("`recording_source` = 'xeno-canto'", "`source_id` = '280667'"), 'Every annotation of a recording, whichever source gave it');
+// A corpus's thousands of regions are more than get_record gives, and its note says how to page through them instead.
+$corpus = array('source' => 'corpus', 'id' => 'corpus-v2', 'type' => 'misc', 'title' => 'A corpus');
+$db->hold($corpus);
+for ($i = 0; $i < 1000; $i++) {
+  $db->links[] = array('source' => 'corpus', 'id' => 'part'.$i, 'subject_type' => 'annomate', 'subject_source' => 'corpus', 'subject_id' => 'corpus-v2-12-'.$i,
+    'predicate' => 'http://purl.org/dc/terms/isPartOf', 'object_type' => 'references', 'object_source' => 'corpus', 'object_id' => 'corpus-v2',
+    'qualifier' => 'Training', 'remarks' => NULL);
+}
+$got = tool("get_record", array("module" => "references", "source" => "corpus", "id" => "corpus-v2"))["structuredContent"];
+check($got["record"] === $corpus && $got["linked_data"] === NULL && strpos($got["note"], "object_type, object_source and object_id") !== FALSE,
+  'A corpus comes without its regions, and a note on paging through them');
+$db->links = array();
+
+// Reading the data: what the instructions, the tools and the modules' notes tell a model is true of what the tools do.
+$data = mcpDataInstructions();
+check(strpos(mcpInstructions(), "\n\n".$data."\n\n".$corpora) !== FALSE, 'How to read the records comes before corpora');
+$described = array();
+foreach (array("taxa", "traits", "recordings", "recordingstaxa", "annomate", "links", "details") as $name) {
+  $described[$name] = tool("describe_module", array("module" => $name))["structuredContent"];
+  $described[$name]["filters"] = array_column($described[$name]["filters"], NULL, "name");
+}
+// Names: exact filters match one form of a name, so other forms are looked for as suggest_values can.
+check($described["taxa"]["filters"]["taxon"]["match"] === "exact" && $described["traits"]["filters"]["taxon"]["match"] === "exact"
+  && $described["recordingstaxa"]["filters"]["species"]["match"] === "exact", 'Taxa are filtered by one form of their name');
+check(strpos($data, "Gryllus Gryllus campestris") !== FALSE && strpos($data, "contains as the match") !== FALSE
+  && in_array("contains", $tools[3]["inputSchema"]["properties"]["match"]["enum"], TRUE), 'Other forms of a name are looked for with suggest_values');
+// Taxa of every source are gathered by their links to CoL, and recordings' links to their taxa say which are in the background.
+foreach (array("http://www.w3.org/2004/02/skos/core#exactMatch", "http://purl.obolibrary.org/obo/IAO_0000136",
+  "https://vocab.audioblast.org/cv/recordingContent#NonFocalTaxa", "source CoL") as $named) {
+  check(strpos($data, $named) !== FALSE, 'The instructions name '.$named);
+}
+check($described["links"]["filters"]["qualifier"]["match"] === "exact", "A link's qualifier is chosen exactly");
+check(strpos(mcpInstructions(), "an empty license field means the licence is unknown") !== FALSE && in_array("license", $described["recordings"]["fields"]),
+  'An empty licence is unknown');
+check(strpos(mcpInstructions(), "Most predicates of links come from IAO, Dublin Core, Darwin Core and SKOS") !== FALSE
+  && strpos(mcpInstructions(), "https://vocab.audioblast.org/api/mcp") !== FALSE, 'Where the terms of links are defined');
+// Words: any one of them, only the last as the start of a word.
+$db->queries = array(); $db->rows = array();
+tool("query_module", array("module" => "recordings", "filters" => array("taxon" => "Gryllus campestris")));
+check(strpos($db->queries[0], "MATCH(`taxon`) AGAINST ('Gryllus campestris*' IN BOOLEAN MODE)") !== FALSE
+  && strpos(mcpMatches()["words"], "the last of them as the start of a word") !== FALSE
+  && strpos(mcpMatches()["words"], "every other campestris") !== FALSE, 'Words match as the explanation says');
+// suggest_values: no order, and contains on a name matches by words, even where its filter matches exactly.
+$db->queries = array();
+tool("suggest_values", array("module" => "taxa", "field" => "taxon", "text" => "campestris", "match" => "contains"));
+check(strpos($db->queries[0], "ORDER BY") === FALSE && strpos($tools[3]["description"], "no particular order") !== FALSE, 'Values in no particular order');
+check(strpos($db->queries[0], "MATCH(`taxon`) AGAINST ('campestris*' IN BOOLEAN MODE)") !== FALSE
+  && strpos($tools[3]["description"], "such as the names of taxa and recordings, contains matches as the words match does") !== FALSE,
+  "Contains on a taxon's name matches by words");
+// A comma is part of the value of a filter that takes one.
+$db->queries = array();
+tool("query_module", array("module" => "recordings", "filters" => array("country" => "GB,FR")));
+check($described["recordings"]["filters"]["country"]["multiple"] === FALSE && strpos($db->queries[0], "`country` = 'GB,FR'") !== FALSE
+  && strpos($tools[2]["inputSchema"]["properties"]["filters"]["description"], "country GB,FR finds nothing") !== FALSE, 'A comma in a value of its own');
+// get_record never gives details, which have no linked data, and says how to find them.
+check(!isset(loadModule("details")["rdf"]) && strpos($tools[4]["description"], "details") !== FALSE
+  && isset($described["details"]["filters"]["record_source"], $described["details"]["filters"]["type"], $described["details"]["filters"]["id"]),
+  "A record's details are found apart from it");
+// The modules' notes, and the fields and filters they name.
+$notes = function($name, $words, $message) use ($described) {
+  foreach ($words as $word) {check(strpos((string)$described[$name]["source_notes"], $word) !== FALSE, $message.': '.$word);}
+};
+$notes("recordings", array("recording_type Soundscape", "Sounds of Norway", "empty license", "Animal Sound Archive (TSA)", "calculated_hash"), 'Recordings notes');
+check(isset($described["recordings"]["filters"]["recording_type"], $described["recordings"]["filters"]["calculated_hash"]), 'Soundscapes and shared files can be filtered');
+$notes("recordingstaxa", array("several rows", "source and id"), 'Recordings-taxa notes');
+$notes("traits", array("Peak Frequency (kHz)", "value_min and value_max", "inference_notes", "type traits, record_source bio.acousti.ca"), 'Traits notes');
+check($described["traits"]["filters"]["value"]["match"] === "exact" && $described["traits"]["filters"]["value_min"]["match"] === "range"
+  && isset($described["details"]["filters"]["name"]), 'Trait values are text, their ranges numbers, and their notes details');
+$notes("annomate", array("BirdNet-Lite", "source_id is the id of the recording", "seconds", "freq_low and freq_high", "matched as text"), 'Annotation notes');
+foreach (array("time_start", "time_end", "freq_low", "freq_high") as $bound) {
+  check($described["annomate"]["filters"][$bound]["match"] === "exact", 'An annotation\'s '.$bound.' is matched as text');
+}
+check(isset($described["annomate"]["filters"]["annotator"]), 'Annotations can be filtered by annotator');
 
 // Through the protocol, a tool's result is the result of tools/call.
 list($status, , $response) = testMCPResponse(array("jsonrpc" => "2.0", "id" => 8, "method" => "tools/call",

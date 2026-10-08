@@ -22,8 +22,7 @@ $details = loadModule("details");
 /*
 A detail is served with the source that gave it and the source of the record it
 belongs to, which differ where a source gives details of another's records: a
-corpus giving the frequencies of the regions it marked on xeno-canto's
-recordings, say.
+corpus giving details of the xeno-canto recordings it marked regions of, say.
 */
 $select = SELECTclause($details, NULL, "table", "internal");
 check(strpos($select, "`source` as `source`") !== FALSE, "A detail says which source gave it");
@@ -47,8 +46,8 @@ check(strpos($where, "`source`") === FALSE, "whichever source gave them");
 
 //What a source gave is still asked for by source, of whatever records
 $where = WHEREclause(generateParams($details, array("source" => "jeantet-dufourq-2023")));
-check(strpos($where, "`source` LIKE '%jeantet-dufourq-2023%'") !== FALSE,
-  "The giving source is matched as it always was");
+check(strpos($where, "`source` = 'jeantet-dufourq-2023'") !== FALSE,
+  "The giving source is matched exactly, as every source is");
 check(strpos($where, "`record_source`") === FALSE, "and says nothing of whose records they are");
 
 check(in_array("record_source", listFilterParams($details)), "record_source is a filter");

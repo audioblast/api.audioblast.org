@@ -24,7 +24,7 @@ define("MCP_BODY_LIMIT", 65536);
 define("MCP_CACHE_SECONDS", 300);
 
 //The version of the server, which changes when its tools do
-define("MCP_SERVER_VERSION", "1.0.0");
+define("MCP_SERVER_VERSION", "1.0.1");
 
 //The protocol versions the server supports, newest first
 function mcpVersions() {
@@ -284,14 +284,17 @@ function mcpServerInfo() {
 }
 
 //The instructions AI applications give their models: what audioBLAST! holds, then how to use the tools and how to cite what they
-//give. What audioBLAST! is comes first, as some clients cut long instructions short.
+//give, how to read the records rightly (see mcpDataInstructions()), and last how to find corpora (see mcpCorporaInstructions()).
+//What audioBLAST! is comes first, as some clients cut long instructions short.
 function mcpInstructions() {
   $about  = "audioBLAST!: sound recordings of animals, and the taxa, traits, references, specimens, locations and other records that ";
   $about .= "describe them, gathered from sound archives and databases.";
   $usage  = "Use list_modules to see the kinds of record, describe_module for the filters and fields of one, query_module to find ";
   $usage .= "records, suggest_values for the values a filter takes (such as the exact name of a taxon), and get_record for one record ";
   $usage .= "with the records linked to it. Each record is identified by its URI: when you use a record, give its URI, and for a ";
-  $usage .= "recording also its author and license. The predicates and other IRIs of links are defined at vocab.audioblast.org, ";
-  $usage .= "which has an MCP server of its own at https://vocab.audioblast.org/api/mcp.";
-  return($about."\n\n".$usage);
+  $usage .= "recording also its author and licence, or say that it gives none: an empty license field means the licence is unknown, ";
+  $usage .= "not that the recording is free to use. Most predicates of links come from IAO, Dublin Core, Darwin Core and SKOS. Terms ";
+  $usage .= "at vocab.audioblast.org, such as the types of traits and of calls, are defined there, and it has an MCP server of its ";
+  $usage .= "own at https://vocab.audioblast.org/api/mcp, though some of its addresses that qualify links are not defined yet.";
+  return($about."\n\n".$usage."\n\n".mcpDataInstructions()."\n\n".mcpCorporaInstructions());
 }

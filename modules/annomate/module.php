@@ -8,15 +8,16 @@ function annomate_info() {
     "table" => "annomate",
     "hname" => "ann-o-mate",
     "desc" => "Query annotations, including JSON-LD and Turtle descriptions as Audiovisual Core regions of interest. Individual annotations are available at /annotation/{source}/{annotation_id}.",
+    "source_notes" => "Annotations are of three kinds: those people made, such as xeno-canto's; the regions of interest of a corpus, which are linked to it (see Links); and Sounds of Norway's, which are detections by BirdNET-Lite, with BirdNet-Lite as their annotator. source_id is the id of the recording an annotation marks, at recording_source, and annotation_id the annotation's own. time_start and time_end are seconds from the start of the recording, and freq_low and freq_high the frequencies that bound a region in Hz, where it has them. All four are matched as text, not as numbers.",
     "rdf" => array("path" => "annotation", "id" => "annotation_id",
       "links" => TRUE, "node" => "annomate_rdf_node", "related" => "annomate_rdf_related"),
     "params" => array(
       "source" => array(
-        "desc" => "Source of the annotation",
+        "desc" => "Source of the annotation, by its exact name (letter case aside)",
         "type" => "string",
         "default" => "",
         "column" => "source",
-        "op" => "contains",
+        "op" => "=",
         "autocomplete" => TRUE
       ),
       "source_id" => array(
@@ -95,6 +96,24 @@ function annomate_info() {
         "op" => "=",
         "autocomplete" => FALSE,
         "ac" => "ac:endTime"
+      ),
+      "freq_low" => array(
+        "desc" => "Lowest frequency of the region, in Hz",
+        "type" => "string",
+        "default" => "",
+        "column" => "freq_low",
+        "op" => "=",
+        "autocomplete" => FALSE,
+        "ac" => "ac:freqLow"
+      ),
+      "freq_high" => array(
+        "desc" => "Highest frequency of the region, in Hz",
+        "type" => "string",
+        "default" => "",
+        "column" => "freq_high",
+        "op" => "=",
+        "autocomplete" => FALSE,
+        "ac" => "ac:freqHigh"
       ),
       "taxon" => array(
         "desc" => "Taxon",
@@ -181,6 +200,7 @@ function annomate_rdf_node($annotation, $uri) {
   $recording = annomate_rdf_recording($annotation);
   if ($recording !== NULL) {$node["ac:isROIOf"] = rdfIRI($recording);}
   foreach (array("time_start" => "ac:startTime", "time_end" => "ac:endTime",
+    "freq_low" => "ac:freqLow", "freq_high" => "ac:freqHigh",
     "lat" => "dwc:decimalLatitude", "lon" => "dwc:decimalLongitude") as $field => $property) {
     $value = $annotation[$field] ?? NULL;
     rdfAdd($node, $property, rdfDecimal($value) ?? $value);

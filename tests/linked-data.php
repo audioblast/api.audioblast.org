@@ -123,10 +123,33 @@ class EmbedFixtureStatement {
   function get_result() {return(new LinkFixtureResult($this->db->embedded));}
   function close() {}
 }
+// The annotations of a page of recordings, read by the recording each marks.
+// Only those of the recordings bound come back, compared regardless of case,
+// as the database compares them.
+class AnnotationFixtureStatement {
+  private $db;
+  private $pairs = array();
+  function __construct($db) {$this->db = $db;}
+  function bind_param($types, &...$values) {
+    check(strlen($types) === count($values), 'All annotation lookup values are bound');
+    $this->db->bound[] = $values;
+    foreach (array_chunk($values, 2) as $pair) {$this->pairs[] = strtolower(json_encode($pair));}
+    return(TRUE);
+  }
+  function execute() {return(!$this->db->fail);}
+  function get_result() {
+    $pairs = $this->pairs;
+    return(new LinkFixtureResult(array_values(array_filter($this->db->annotations, function($row) use ($pairs) {
+      return(in_array(strtolower(json_encode(array($row['recording_source'], $row['source_id']))), $pairs, TRUE));
+    }))));
+  }
+  function close() {}
+}
 class FixtureDB {
   private $row;
   public $links = array();
   public $embedded = array();
+  public $annotations = array();
   public $bound = array();
   public $queries = array();
   public $fail = FALSE;
@@ -134,6 +157,7 @@ class FixtureDB {
   function prepare($sql) {
     $this->queries[] = $sql;
     if (strpos($sql, 'FROM links WHERE') !== FALSE) {return(new LinkFixtureStatement($this));}
+    if (strpos($sql, 'WHERE (`recording_source`, `source_id`) IN (') !== FALSE) {return(new AnnotationFixtureStatement($this));}
     //An embed reads many records by (source, id); a record route reads one
     if (strpos($sql, '(`source`, `id`) IN (') !== FALSE) {return(new EmbedFixtureStatement($this));}
     check(preg_match('/WHERE `source` = \? AND `(id|traitID|annotation_id)` = \? LIMIT 1/', $sql) === 1, 'Exact prepared lookup using module ID column');
@@ -759,7 +783,7 @@ $nodes = array_merge($nodes, array($describedNode));
 // Annotations use their own ID, never the recording ID, and retain ordinary JSON.
 $annotationModule = loadModule('annomate');
 $annotation = array('source' => 'fixture', 'annotation_id' => $ref['id'], 'source_id' => 'rec1',
-  'time_start' => '0', 'time_end' => '1.25', 'annotator' => 'Observer',
+  'time_start' => '0', 'time_end' => '1.25', 'freq_low' => '0', 'freq_high' => '7309.05', 'annotator' => 'Observer',
   'annotation_date' => '2026-09-19', 'annotation_info_url' => 'https://example.org/annotation',
   'recording_url' => 'https://example.org/audio.wav', 'taxon' => 'Example species',
   'type' => 'Call', 'lat' => '0', 'lon' => '-1.5', 'contact' => 'Unmapped');
@@ -767,6 +791,12 @@ $annotationURI = rdfRecordURI($annotationModule, 'fixture', $annotation['annotat
 $annotationNodes = rdfNodes($annotationModule, array($annotation));
 check($annotationNodes[0]['@id'] === $annotationURI, 'Annotation identity uses annotation_id');
 check($annotationNodes[0]['ac:startTime'] === rdfTyped('0', 'xsd:decimal'), 'Zero time preserved');
+check($annotationNodes[0]['ac:freqLow'] === rdfTyped('0', 'xsd:decimal'), 'Zero frequency preserved');
+check($annotationNodes[0]['ac:freqHigh'] === rdfTyped('7309.05', 'xsd:decimal'), 'Frequency bounds in Hz as decimals');
+// Audiovisual Core lets either bound be given without the other
+$lowOnly = $annotation; $lowOnly['freq_high'] = NULL;
+$lowOnlyNode = annomate_rdf_node($lowOnly, 'https://example.org/roi');
+check(isset($lowOnlyNode['ac:freqLow']) && !isset($lowOnlyNode['ac:freqHigh']), 'A missing bound is omitted, not invented');
 check(!isset($annotationNodes[0]['ac:accessURI']), 'Access URL belongs to recording');
 $sparseAnnotation = array('source' => 'fixture', 'annotation_id' => 'sparse');
 check(count(rdfNodes($annotationModule, array($sparseAnnotation))) === 1, 'Missing recording creates no invented target');
@@ -799,6 +829,76 @@ $annotationDB->links = array($annotationLink); $annotationDB->bound = array();
 $linkedAnnotations = rdfResponseNodes($annotationDB, $annotationModule, array($annotation));
 check($annotationDB->bound[0] === array('annomate', 'fixture', $annotation['annotation_id']), 'Link lookup uses annotation identity');
 $nodes = array_merge($nodes, $linkedAnnotations);
+
+// A recording carries the regions of interest that annotations mark on it, as
+// ac:hasROI, whoever gave them: an annotation names the recording it is of by
+// recording_source and source_id, so a corpus marking another source's
+// recordings is found as the recording's own source is. A page of recordings
+// reads them in one query, and a recording nothing marks is as it was.
+$ownRegion = $annotation; $ownRegion['recording_source'] = 'fixture';
+$corpusRegion = $annotation;
+$corpusRegion['source'] = 'corpus'; $corpusRegion['annotation_id'] = 'roi-7';
+$corpusRegion['recording_source'] = 'fixture';
+//The database compares text regardless of case, so a region naming its
+//recording in another case is still of it
+$casedRegion = $corpusRegion; $casedRegion['annotation_id'] = 'roi-8';
+$casedRegion['recording_source'] = 'Fixture'; $casedRegion['source_id'] = 'REC1';
+//A region of another source's recording with the same id is not of this one
+$elsewhere = $corpusRegion; $elsewhere['annotation_id'] = 'roi-9';
+$elsewhere['recording_source'] = 'other-source';
+$markedURI = rdfRecordURI($recordingModule, 'fixture', 'rec1');
+$unmarked = $recording; $unmarked['id'] = 'rec2';
+$unmarkedURI = rdfRecordURI($recordingModule, 'fixture', 'rec2');
+$roiDB = new FixtureDB(NULL);
+$roiDB->annotations = array($ownRegion, $corpusRegion, $casedRegion, $elsewhere);
+$roiNodes = rdfResponseNodes($roiDB, $recordingModule, array($recording, $unmarked));
+$roiByID = array_column($roiNodes, NULL, '@id');
+$regionURIs = array();
+foreach (array($ownRegion, $corpusRegion, $casedRegion) as $region) {
+  $regionURIs[] = rdfRecordURI($annotationModule, $region['source'], $region['annotation_id']);
+}
+check(count($roiDB->queries) === 3, 'A page reads its regions in one query, beside its two link lookups');
+check(strpos($roiDB->queries[0], 'FROM annomate WHERE (`recording_source`, `source_id`) IN ((?, ?), (?, ?))') !== FALSE,
+  "Regions are found by the recording they mark, not by the annotation's own source");
+check($roiDB->bound[0] === array('fixture', 'rec1', 'fixture', 'rec2'), 'Every recording of the page is bound, never interpolated');
+check($roiByID[$markedURI]['ac:hasROI'] === array_map('rdfIRI', $regionURIs),
+  'A recording has the regions its own source and another source marked on it, and no others');
+$corpusSide = rdfNodes($annotationModule, array($corpusRegion));
+check($corpusSide[0]['@id'] === $regionURIs[1] && $corpusSide[0]['ac:isROIOf'] === rdfIRI($markedURI),
+  'Each region is its annotation, which says it is of the recording');
+check(!isset($roiByID[$unmarkedURI]['ac:hasROI']) && $roiByID[$unmarkedURI] === rdfNodes($recordingModule, array($unmarked))[0],
+  'A recording nothing marks has no regions, beside one that has');
+check(rdfResponseNodes(new FixtureDB(NULL), $recordingModule, array($unmarked)) === rdfNodes($recordingModule, array($unmarked)),
+  'A recording nothing marks or links to is described as before');
+check(strpos(rdfTurtle($roiNodes), 'ac:hasROI <'.implode('>, <', $regionURIs).'>') !== FALSE, 'Turtle gives every region');
+$roiPage = array();
+for ($i = 0; $i < 101; $i++) {$row = $recording; $row['id'] = 'page'.$i; $roiPage[] = $row;}
+$pageDB = new FixtureDB(NULL);
+rdfResponseNodes($pageDB, $recordingModule, $roiPage);
+check(count(preg_grep('/FROM annomate WHERE/', $pageDB->queries)) === 2, '101 recordings read their regions in two queries, not 101');
+$pageDB->queries = array();
+check(rdfResponseNodes($pageDB, $recordingModule, array()) === array() && !$pageDB->queries, 'An empty page reads no regions');
+$roiDB->fail = TRUE;
+check(rdfResponseNodes($roiDB, $recordingModule, array($recording)) === FALSE, 'A failed region lookup is not a recording with no regions');
+$roiDB->fail = FALSE;
+// At its own URI, a recording gives its regions as RDF and its JSON as before.
+$atURI = $recording; $atURI['id'] = $ref['id'];
+$atRegion = $corpusRegion; $atRegion['source_id'] = $ref['id'];
+$atDB = new FixtureDB($atURI); $atDB->annotations = array($atRegion);
+$_SERVER['REQUEST_URI'] = '/recording/fixture/book/a%20%231';
+$_GET = array('output' => 'JSON');
+ob_start(); recordAPI($atDB); $atJSON = json_decode(ob_get_clean(), TRUE);
+check($atJSON['data'][0] === $atURI && count($atDB->queries) === 1, 'Recording JSON unchanged, with no region lookup');
+$atNodes = rdfResponseNodes($atDB, $recordingModule, array($atURI), TRUE);
+check(array_column($atNodes, NULL, '@id')[rdfRecordURI($recordingModule, 'fixture', $ref['id'])]['ac:hasROI'] === rdfIRI($regionURIs[1]),
+  'A recording at its own URI has its region');
+$_GET = array(); $_SERVER['HTTP_ACCEPT'] = 'application/ld+json';
+ob_start(); recordAPI($atDB); $atLD = json_decode(ob_get_clean(), TRUE);
+check($atLD['@graph'] === $atNodes, 'Recording URI negotiates JSON-LD with its regions');
+$_SERVER['HTTP_ACCEPT'] = 'text/turtle';
+ob_start(); recordAPI($atDB); $atTTL = ob_get_clean();
+check($atTTL === rdfTurtle($atNodes), 'Recording URI negotiates Turtle with its regions');
+$nodes = array_merge($nodes, $roiNodes);
 
 // Access metadata describes representations, shared by recording and ROI graphs.
 $accessRecording = $recording;
@@ -892,6 +992,45 @@ $peaksOnlyNodes = rdfNodes($recordingModule, array($peaksOnly));
 check(count($peaksOnlyNodes) === 2 && $peaksOnlyNodes[0]['ac:hasServiceAccessPoint'] === rdfIRI($peaksService['@id']),
   'Peaks alone are one access point');
 $nodes = array_merge($nodes, array($peaksService));
+
+// Spectrogram tiles made from the file are a third access point.
+check(isset($recordingModule['params']['spectrogram_url']), 'spectrogram_url is a field recordings are served with');
+$tiled = $peaked;
+$tiled['spectrogram_url'] = 'https://example.org/spectrograms/rec1/index.json';
+$tiledNodes = rdfNodes($recordingModule, array($tiled));
+check(count($tiledNodes) === 4 && $tiledNodes[1] === $service && $tiledNodes[2] === $peaksService,
+  'The file and the peaks keep their access points beside the tiles');
+$tilesService = $tiledNodes[3];
+check(!in_array($tilesService['@id'], array($service['@id'], $peaksService['@id']), TRUE), 'Tiles have an access point of their own');
+check($tiledNodes[0]['ac:hasServiceAccessPoint'] === array(rdfIRI($service['@id']), rdfIRI($peaksService['@id']), rdfIRI($tilesService['@id'])),
+  'Recording points to all three access points');
+check($tilesService['ac:accessURI'] === rdfIRI($tiled['spectrogram_url']) && $tilesService['dc:format'] === 'application/json',
+  'Tiles manifest and its format');
+check($tilesService['ac:variant'] === array(rdfIRI('http://rs.tdwg.org/acvariant/values/v008'),
+  rdfIRI('https://vocab.audioblast.org/cv/variant#SpectrogramTiles')), 'Tiles are a visual variant, of the spectrogram tiles kind');
+check(!isset($tilesService['dcterms:conformsTo']), 'Tiles say what they conform to only once there is a published spec');
+// The manifest says how the tiles were made, and the peaks file how the peaks
+// were, so neither access point names a resolution of its own
+check(array_keys($tilesService) === array('@id', '@type', 'ac:accessURI', 'dc:format', 'ac:variant'),
+  'Nothing more is said of the tiles');
+check(array_keys($peaksService) === array('@id', '@type', 'ac:accessURI', 'dc:format', 'ac:variant', 'dcterms:conformsTo'),
+  'Nothing more is said of the peaks');
+// Both addresses are held with what was measured of the file, and the
+// measurements are still said of the file alone
+$measuredTiled = $measured;
+$measuredTiled['peaks_url'] = $peaked['peaks_url']; $measuredTiled['spectrogram_url'] = $tiled['spectrogram_url'];
+$measuredTiledNodes = rdfNodes($recordingModule, array($measuredTiled));
+check(count($measuredTiledNodes) === 4 && $measuredTiledNodes[1] === $measuredService
+  && $measuredTiledNodes[2] === $peaksService && $measuredTiledNodes[3] === $tilesService,
+  'What was measured of the file is not said of the peaks or the tiles');
+foreach (array(NULL, '', 'not a url') as $none) {
+  $untiled = $peaked; $untiled['spectrogram_url'] = $none;
+  check(rdfNodes($recordingModule, array($untiled)) === $peakedNodes, 'No tiles access point without a URL');
+}
+$tilesOnly = $accessRecording; $tilesOnly['spectrogram_url'] = $tiled['spectrogram_url'];
+check(rdfNodes($recordingModule, array($tilesOnly))[0]['ac:hasServiceAccessPoint'] === array(rdfIRI($service['@id']), rdfIRI($tilesService['@id'])),
+  'Tiles without peaks are a second access point');
+$nodes = array_merge($nodes, array($tilesService));
 
 // Framing must retain every triple, including when both ends are requested.
 $recordingURI = 'https://api.audioblast.org/recording/fixture/rec1';

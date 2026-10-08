@@ -14,6 +14,9 @@ requests with, so that a tool gives the answer the endpoint it stands for gives:
 Only data modules are reached: the analysis modules' tables hold a row for every
 few seconds of every recording, and the standalone modules are answered by
 callbacks of their own. None of the tools change anything.
+
+Corpora have no tool of their own: they are found with these tools, as the
+server's instructions say (see mcpCorporaInstructions()).
 */
 
 //How many records query_module gives at once unless asked for another number, and the most it gives
@@ -24,8 +27,13 @@ define("MCP_PAGE_MAX", 100);
 define("MCP_SUGGEST_LIMIT", 20);
 
 //The most bytes of linked data get_record gives. A taxon with thousands of recordings has thousands of links, which are better
-//read a page at a time from the links module than all at once.
+//read a page at a time from the links module than all at once, and a recording can have thousands of regions of interest,
+//which are better read from annomate.
 define("MCP_LINKED_DATA_LIMIT", 200000);
+
+//The term a references record is linked to by dcterms:type to say that it is a corpus. The address is a placeholder until the term
+//is defined at vocab.audioblast.org, so the code names it here and nowhere else.
+define("MCP_CORPUS_TYPE", "https://vocab.audioblast.org/Corpus");
 
 //The tools the server has, always in this order. None of them change anything.
 function mcpTools() {
@@ -36,7 +44,8 @@ function mcpTools() {
   $value = array("type" => array("string", "number"));
   $filters = array("type" => "object",
     "description" => "The module's filters, as describe_module gives them, each with its value. Every filter given must match. "
-      ."A filter that takes several values is given them as a list, or joined with commas, and matches any of them.",
+      ."A filter that takes several values (describe_module marks it multiple) is given them as a list, or joined with commas, and "
+      ."matches any of them. Any other filter takes a comma as part of its value, so country GB,FR finds nothing.",
     "additionalProperties" => array("anyOf" => array($value, array("type" => "array", "items" => $value))));
   $text = array("type" => "string");
   $nullableText = array("type" => array("string", "null"));
@@ -116,8 +125,9 @@ function mcpTools() {
       "title" => "Suggest values",
       "description" => "Give the values a field of a data module holds that start with, or contain, some text: the exact names of "
         ."taxa starting with \"Gryllus\", say, or the countries recordings were made in, or the licenses they are under. Use it to "
-        ."find the value an exact filter needs. Without text, values are given from the first. Only fields describe_module marks "
-        ."suggest have values to suggest, and filters narrow the records the values are taken from.",
+        ."find the value an exact filter needs. Values come in no particular order, with or without text. On a field with a "
+        ."full-text index, such as the names of taxa and recordings, contains matches as the words match does. Only fields "
+        ."describe_module marks suggest have values to suggest, and filters narrow the records the values are taken from.",
       "inputSchema" => array("type" => "object", "properties" => array(
         "module" => $module,
         "field" => $text,
@@ -139,8 +149,12 @@ function mcpTools() {
       "title" => "Get a record",
       "description" => "Get one record by its URI (https://api.audioblast.org/{kind}/{source}/{id}, as query_module gives it), or by "
         ."its module, source and id, as a link gives them. The record comes with its linked data, as JSON-LD: the links to and from "
-        ."it (what a recording is of, what a reference is about, which specimen a recording was made of), and for a taxon its whole "
-        ."classification.",
+        ."it (what a recording is of, what a reference is about, which specimen a recording was made of), for a recording the "
+        ."regions of interest annotations mark on it, as ac:hasROI, and for a taxon its whole classification. A record with too "
+        ."many links or regions to give at once, such as a corpus with thousands of regions, comes without its linked data, and "
+        ."with a note on finding them a page at a time with query_module. A record's details, such as "
+        ."the tape a recording was made on, are never included: find them with query_module on details, with the record's source "
+        ."as record_source, its module as type, and its id.",
       "inputSchema" => array("type" => "object", "properties" => array(
         "uri" => array("type" => "string", "description" => "The record's URI. Give this, or the module, source and id."),
         "module" => $module,
@@ -175,8 +189,9 @@ function mcpMatches() {
   return(array(
     "exact" => "The field is the value, letter case aside.",
     "contains" => "The field contains the value.",
-    "words" => "Full-text search: records with a word starting with any one of the words given, so Gryllus campestris also "
-      ."finds every other Gryllus. Check the records, or filter a module that matches names exactly.",
+    "words" => "Full-text search: records with any one of the words given, the last of them as the start of a word, so Gryllus "
+      ."campestris also finds every other Gryllus, and every other campestris, such as Anthus campestris. Check the records, or "
+      ."filter a module that matches names exactly.",
     "starts" => "The field starts with the value.",
     "range" => "A number: min:max (both ends included), >=x, <=x, >x, <x, or a number alone."
   ));
@@ -196,6 +211,49 @@ function mcpMatch($info) {
 //The text of a module's description or notes, which are written for the API's HTML documentation
 function mcpPlainText($html) {
   return(trim(preg_replace('/\s+/u', " ", html_entity_decode(strip_tags((string)$html), ENT_QUOTES, "UTF-8"))));
+}
+
+/*
+What to know to read the records rightly, for the server's instructions (see
+mcpInstructions()): the things that would otherwise give a model a wrong answer
+whichever module it queries. What is true of one module's records is in its own
+source_notes, which describe_module gives.
+*/
+function mcpDataInstructions() {
+  $text  = "Names are written as each source writes them, and an exact filter matches only that form: bio.acousti.ca writes a ";
+  $text .= "subgenus without brackets, as Gryllus Gryllus campestris, so a filter for Gryllus campestris misses its records. Before ";
+  $text .= "saying that audioBLAST! holds nothing, look for other forms of a name with suggest_values, giving its last word as the ";
+  $text .= "text and contains as the match. Each source that names a taxon has a taxa record of its own, and a link points at one ";
+  $text .= "source's record. Taxa are matched to those of the Catalogue of Life, held as the source CoL, by ";
+  $text .= "http://www.w3.org/2004/02/skos/core#exactMatch links, so the links with that predicate to a CoL taxon give each ";
+  $text .= "source's record of it; a name that wasn't matched has no such link. A recording is linked to the taxa it is of by ";
+  $text .= "http://purl.obolibrary.org/obo/IAO_0000136 (is about), and where the link's qualifier is ";
+  $text .= "https://vocab.audioblast.org/cv/recordingContent#NonFocalTaxa, the taxon is only heard in the background. What else ";
+  $text .= "to know of a module's records is in the source_notes that describe_module gives.";
+  return($text);
+}
+
+/*
+How to find corpora and their regions, for the server's instructions (see
+mcpInstructions()). Each step is a query of the filters the links, annomate and
+details modules have, and tests/mcp.php checks that they still have them, with
+the matching the steps need.
+*/
+function mcpCorporaInstructions() {
+  $text  = "A corpus, such as a set of regions marked in recordings to train classifiers, is a references record linked to ";
+  $text .= MCP_CORPUS_TYPE." by http://purl.org/dc/terms/type: query_module on links with that predicate and object_id finds ";
+  $text .= "them, and each link's subject_source and subject_id name one. A corpus's regions of interest are annomate records linked ";
+  $text .= "to it by http://purl.org/dc/terms/isPartOf. There can be thousands, more than get_record gives, so page through them ";
+  $text .= "with query_module on links, with that predicate, object_type references, and the corpus's source and id as ";
+  $text .= "object_source and object_id. Each link's subject_id is a region's annotation_id, and its qualifier is the split the ";
+  $text .= "region is in, such as Training or Validation, which the qualifier filter chooses. To get the regions, give annomate up ";
+  $text .= "to ".MAX_FILTER_VALUES." of those ids at once as annotation_id; annomate's source filter gives every region a source ";
+  $text .= "holds, of whichever corpus. A region's recording is its recording_source and source_id, and its frequency bounds, in ";
+  $text .= "Hz, are its freq_low and freq_high. Its other values, such as svl_label, are details: type annomate, record_source the ";
+  $text .= "region's source, id its annotation_id. A later version of a corpus links to the one it came from by ";
+  $text .= "http://purl.org/dc/terms/source, and has its own regions. Every annotation of a recording, whichever source gave it, is ";
+  $text .= "found with annomate's recording_source and source_id.";
+  return($text);
 }
 
 //The result of a tools/call request as array("result" => the result), or array("error" => array("code" => ..., "message" => ...))
@@ -550,6 +608,12 @@ function mcpGetRecord($db, $arguments) {
     $note = "The record has too many links to give here. Find them a page at a time with query_module on links, filtered by "
       ."subject_type, subject_source and subject_id for the links from it, or by object_type, object_source and object_id for "
       ."the links to it, with the type being ".mcpModuleName($module).".";
+    //A recording's regions of interest are annotations rather than links (see
+    //recordings_rdf_rois()), and can be most of what made it too much
+    if (mcpHasRegions($nodes, $uri)) {
+      $note .= " Its regions of interest are annotations, not links: find them with query_module on annomate, filtered by "
+        ."recording_source `".$record["source"]."` and source_id `".$record[$module["rdf"]["id"] ?? "id"]."`.";
+    }
   }
   return(mcpToolResult(array(
     "uri" => $uri,
@@ -558,4 +622,12 @@ function mcpGetRecord($db, $arguments) {
     "linked_data" => $linked,
     "note" => $note
   )));
+}
+
+//Whether the linked data of the record at a URI gives it regions of interest
+function mcpHasRegions($nodes, $uri) {
+  foreach ($nodes as $node) {
+    if (($node["@id"] ?? NULL) === $uri && isset($node["ac:hasROI"])) {return(TRUE);}
+  }
+  return(FALSE);
 }
