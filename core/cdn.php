@@ -11,7 +11,7 @@
 function cdn() {
   $ret = array(
     "zcjs" => "https://cdn.audioblast.org/zcjs/1.0/zcjs.js",
-    "plotly" => "https://cdn.plot.ly/plotly-latest.min.js"
+    "plotly" => "https://cdn.audioblast.org/plotly.js/1.57.1/dist/plotly.min.js"
   );
   return($ret);
 }
