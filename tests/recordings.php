@@ -36,4 +36,12 @@ foreach (array("peaks_url", "spectrogram_url") as $field) {
   check(strpos((string)$problem, "cannot be filtered on") !== FALSE, $field." is not a filter");
 }
 
+/*
+The peaks were also served by a module of their own, /analysis/audiowaveform/,
+from a table of their own. They are now the recording's alone. moduleAPI()
+refuses, with a 400, a module that listModules() does not list.
+*/
+check(!in_array("audiowaveform", listModules()), "There is no audiowaveform module to ask");
+check(loadModule("audiowaveform") === NULL, "nor one to load");
+
 print("recordings: all checks passed\n");
