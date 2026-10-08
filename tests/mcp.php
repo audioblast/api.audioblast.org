@@ -280,6 +280,7 @@ check($filters["id"]["match"] === "exact" && $filters["id"]["multiple"] === TRUE
 check($filters["locality"]["match"] === "contains" && $filters["duration"]["match"] === "range", 'Contains and range filters');
 check($filters["source"]["match"] === "exact", "A recording's source is matched exactly, as the key on source and id needs");
 check(!isset($filters["peaks_url"]) && in_array("peaks_url", $described["fields"]), 'A field that is not a filter is still a field');
+check(!isset($filters["spectrogram_url"]) && in_array("spectrogram_url", $described["fields"]), "A recording's spectrogram tiles are a field too");
 check(!in_array("output", $described["fields"]) && !isset($filters["output"]) && !isset($filters["format"]), 'Output and format are not the tools\' to give');
 check(isset($described["matches"]["words"]) && strpos($described["matches"]["words"], "Gryllus") !== FALSE, 'The ways of matching are explained');
 $taxa = tool("describe_module", array("module" => "taxa"))["structuredContent"];

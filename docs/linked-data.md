@@ -603,10 +603,14 @@ spectrograms and thumbnails can each have their own access point, including
 several representations with the same MIME type. No future representations or
 quality labels are fabricated.
 
-Waveform peaks that audioBlastAnalyse has made from the file (`peaks_url`, from
-the `analysis-audiowaveform` table) are the first such representation: a
-second access point, so a recording with peaks has two
-`ac:hasServiceAccessPoint` values.
+What audioBlastAnalyse makes from the file, so that it can be shown without the
+audio, is given as further access points. Their addresses, `peaks_url` and
+`spectrogram_url`, are held with what was measured of the file, in
+`recordings-calculated` (see below), and each is empty until it is made.
+
+Waveform peaks (`peaks_url`) are the first such representation: a second
+access point, so a recording with peaks has two `ac:hasServiceAccessPoint`
+values.
 - Its `ac:accessURI` is the peaks file, and its `dc:format` is
   `application/json`.
 - It has two `ac:variant` values:
@@ -622,6 +626,21 @@ second access point, so a recording with peaks has two
 
 Nothing measured of the audio is said of the peaks. A recording without peaks
 is described exactly as before.
+
+Spectrogram tiles (`spectrogram_url`) are another access point of the same
+kind, so a recording with peaks and tiles has three.
+- Its `ac:accessURI` is the tiles' manifest, `index.json`, and its `dc:format`
+  is `application/json`. The manifest and the image tiles it lists are in the
+  format of wavesurfer-tiled-spectrogram's
+  [SPEC.md](https://github.com/edwbaker/wavesurfer-tiled-spectrogram/blob/main/SPEC.md).
+  The manifest says where the tiles are, what stretch of the recording and
+  which frequencies each shows, and how they were made. The access point says
+  none of that, so it does not tie the tiles to one resolution.
+- Its `ac:variant` values are `acvariant:v008`, which gives a sonogram among
+  its examples, and the placeholder
+  `https://vocab.audioblast.org/cv/variant#SpectrogramTiles`.
+- It gains a `dcterms:conformsTo` once the manifest's format has a published,
+  versioned address.
 
 Recording-level title, creator, taxon, capture
 date, duration, rights and information page stay on the recording: the current

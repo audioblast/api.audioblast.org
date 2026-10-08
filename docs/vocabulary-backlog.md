@@ -62,6 +62,7 @@ This is an export inventory, not a check of the current production database.
 | https://vocab.audioblast.org/cv/renderingType#Mnemonic | kind of a rendering |
 | https://vocab.audioblast.org/cv/renderingType#MusicalNotation | kind of a rendering |
 | https://vocab.audioblast.org/cv/variant#WaveformPeaks | service access point variant (`ac:variant`) |
+| https://vocab.audioblast.org/cv/variant#SpectrogramTiles | service access point variant (`ac:variant`) |
 
 ## Curation notes
 
@@ -136,7 +137,7 @@ not model. Reconsider if images ever grow variants, and note that
 `rdfContext()` in `core/rdf.php` has no `acvariant` prefix yet. Variant values
 are written as full IRIs, as `acsubtype` values are.
 
-## Waveform peaks, which need a term
+## Waveform peaks and spectrogram tiles, which need terms
 
 Recordings now have a second service access point, for the waveform peaks
 audioBlastAnalyse makes from the file (see "Recording representations and
@@ -147,7 +148,8 @@ so the access point also gives the placeholder
 
 The vocabulary server was checked on 2026-10-01. It has no `variant`
 vocabulary, and searches for waveform, oscillogram and peak found no matching
-term.
+term. It was checked again on 2026-10-08: still no `variant` vocabulary, and
+nothing for waveform or spectrogram.
 
 Draft definition, for when it is published:
 
@@ -159,6 +161,19 @@ Draft definition, for when it is published:
 
 Its broader term is `acvariant:v008`. A `variant` vocabulary could later hold
 other representations made from a recording, such as spectrogram tiles.
+
+Spectrogram tiles are now one, with the placeholder
+`https://vocab.audioblast.org/cv/variant#SpectrogramTiles` on their access
+point beside `acvariant:v008`. Draft definition:
+
+> *Spectrogram tiles:* a spectrogram of an audio recording made in advance and
+> cut along time into images, each covering a fixed stretch of the recording
+> and all of its frequencies, with a manifest saying where they are and what
+> they show, so that the spectrogram can be shown without the audio. The
+> manifest's format is wavesurfer-tiled-spectrogram's
+> [SPEC.md](https://github.com/edwbaker/wavesurfer-tiled-spectrogram/blob/main/SPEC.md).
+
+Its broader term is `acvariant:v008`.
 
 The `referenceContent#Sonagram` and `#Oscillogram` terms above are a different
 concept and should not be conflated with this: they say what a *reference*

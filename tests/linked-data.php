@@ -993,6 +993,45 @@ check(count($peaksOnlyNodes) === 2 && $peaksOnlyNodes[0]['ac:hasServiceAccessPoi
   'Peaks alone are one access point');
 $nodes = array_merge($nodes, array($peaksService));
 
+// Spectrogram tiles made from the file are a third access point.
+check(isset($recordingModule['params']['spectrogram_url']), 'spectrogram_url is a field recordings are served with');
+$tiled = $peaked;
+$tiled['spectrogram_url'] = 'https://example.org/spectrograms/rec1/index.json';
+$tiledNodes = rdfNodes($recordingModule, array($tiled));
+check(count($tiledNodes) === 4 && $tiledNodes[1] === $service && $tiledNodes[2] === $peaksService,
+  'The file and the peaks keep their access points beside the tiles');
+$tilesService = $tiledNodes[3];
+check(!in_array($tilesService['@id'], array($service['@id'], $peaksService['@id']), TRUE), 'Tiles have an access point of their own');
+check($tiledNodes[0]['ac:hasServiceAccessPoint'] === array(rdfIRI($service['@id']), rdfIRI($peaksService['@id']), rdfIRI($tilesService['@id'])),
+  'Recording points to all three access points');
+check($tilesService['ac:accessURI'] === rdfIRI($tiled['spectrogram_url']) && $tilesService['dc:format'] === 'application/json',
+  'Tiles manifest and its format');
+check($tilesService['ac:variant'] === array(rdfIRI('http://rs.tdwg.org/acvariant/values/v008'),
+  rdfIRI('https://vocab.audioblast.org/cv/variant#SpectrogramTiles')), 'Tiles are a visual variant, of the spectrogram tiles kind');
+check(!isset($tilesService['dcterms:conformsTo']), 'Tiles say what they conform to only once there is a published spec');
+// The manifest says how the tiles were made, and the peaks file how the peaks
+// were, so neither access point names a resolution of its own
+check(array_keys($tilesService) === array('@id', '@type', 'ac:accessURI', 'dc:format', 'ac:variant'),
+  'Nothing more is said of the tiles');
+check(array_keys($peaksService) === array('@id', '@type', 'ac:accessURI', 'dc:format', 'ac:variant', 'dcterms:conformsTo'),
+  'Nothing more is said of the peaks');
+// Both addresses are held with what was measured of the file, and the
+// measurements are still said of the file alone
+$measuredTiled = $measured;
+$measuredTiled['peaks_url'] = $peaked['peaks_url']; $measuredTiled['spectrogram_url'] = $tiled['spectrogram_url'];
+$measuredTiledNodes = rdfNodes($recordingModule, array($measuredTiled));
+check(count($measuredTiledNodes) === 4 && $measuredTiledNodes[1] === $measuredService
+  && $measuredTiledNodes[2] === $peaksService && $measuredTiledNodes[3] === $tilesService,
+  'What was measured of the file is not said of the peaks or the tiles');
+foreach (array(NULL, '', 'not a url') as $none) {
+  $untiled = $peaked; $untiled['spectrogram_url'] = $none;
+  check(rdfNodes($recordingModule, array($untiled)) === $peakedNodes, 'No tiles access point without a URL');
+}
+$tilesOnly = $accessRecording; $tilesOnly['spectrogram_url'] = $tiled['spectrogram_url'];
+check(rdfNodes($recordingModule, array($tilesOnly))[0]['ac:hasServiceAccessPoint'] === array(rdfIRI($service['@id']), rdfIRI($tilesService['@id'])),
+  'Tiles without peaks are a second access point');
+$nodes = array_merge($nodes, array($tilesService));
+
 // Framing must retain every triple, including when both ends are requested.
 $recordingURI = 'https://api.audioblast.org/recording/fixture/rec1';
 $frameInput = rdfMergeNodes(array_merge(rdfNodes($module, array($ref)),
