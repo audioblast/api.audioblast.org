@@ -153,11 +153,13 @@ function analysis_agents($params) {
 }
 
 function analysis_list($params) {
+  //moduleAPI() passes on only what a callback returns under "data". The names
+  //used to be returned as a bare list, and the reply held no list at all.
   $modules = loadModules();
-  $ret = array();
+  $ret = array("data" => array());
   foreach ($modules as $name => $info) {
     if ($info["category"] != "analysis") {continue;}
-    $ret[] = $name;
+    $ret["data"][] = $name;
   }
   return($ret);
 }
