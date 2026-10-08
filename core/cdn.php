@@ -10,7 +10,7 @@
  */
 function cdn() {
   $ret = array(
-    "zcjs" => "https://cdn.audioblast.org/zcjs/zcjs.js",
+    "zcjs" => "https://cdn.audioblast.org/zcjs/1.0/zcjs.js",
     "plotly" => "https://cdn.plot.ly/plotly-latest.min.js"
   );
   return($ret);
