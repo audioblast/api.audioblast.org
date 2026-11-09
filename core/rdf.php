@@ -239,7 +239,9 @@ function turtleString($text) {
 //is one (RFC 8288), so that they can be harvested page by page
 function printRDF($nodes, $output, $nextPage = NULL) {
   if ($nextPage !== NULL) {
-    header("Link: <".pageURI($_SERVER["REQUEST_URI"], $nextPage).">; rel=\"next\"");
+    //`false` so this sits alongside the llms.txt Link header (core/llms.php)
+    //rather than replacing it
+    header("Link: <".pageURI($_SERVER["REQUEST_URI"], $nextPage).">; rel=\"next\"", false);
   }
   if ($output == "Turtle") {
     header("Content-Type: text/turtle; charset=utf-8");

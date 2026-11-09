@@ -106,6 +106,36 @@ function analysis_info() {
   return($info);
 }
 
+/*
+Which of the given tables the schema has. The counts below are one statement,
+one subquery per analysis table, so a single dropped table made mysqli throw
+and the endpoint answered HTTP 500 with an empty body rather than counting the
+tables that were still there.
+
+The names come from the modules' own definitions rather than from a caller, but
+they are bound as parameters all the same.
+*/
+function analysis_tablesPresent($tables) {
+  global $db;
+  if (count($tables) == 0) {return(array());}
+  $sql  = "SELECT `TABLE_NAME` FROM `information_schema`.`TABLES` ";
+  $sql .= "WHERE `TABLE_SCHEMA` = 'audioblast' ";
+  $sql .= "AND `TABLE_NAME` IN (".implode(", ", array_fill(0, count($tables), "?")).");";
+  $stmt = $db->prepare($sql);
+  if (!$stmt) {return(array());}
+  $stmt->bind_param(str_repeat("s", count($tables)), ...$tables);
+  $stmt->execute();
+  $res = $stmt->get_result();
+  $present = array();
+  while ($row = $res->fetch_assoc()) {
+    $present[] = $row["TABLE_NAME"];
+  }
+  $stmt->close();
+  //Report the counts in the order the modules are defined in, not the order the
+  //schema happens to list them in.
+  return(array_values(array_intersect($tables, $present)));
+}
+
 function analysis_counts($params) {
   // Only this module's endpoint definition is needed to build the cache key,
   // so avoid loading every module until we know we have a cache miss.
@@ -118,25 +148,42 @@ function analysis_counts($params) {
       return($ret);
     }
   }
-  $modules = loadModules();
-  $sql = "SELECT ";
-  $i = 0;
-  
-  foreach ($modules as $name => $info) {
-    if ($info["category"] != "analysis") {continue;}
-    if ($i > 0) { $sql .= ", ";}
-    $sql .= "(SELECT COUNT(*) as `total` FROM `audioblast`.`".$info["table"]."` ".$wc.") AS `".$info["table"]."`";
-    $i++;
-  }
-  $sql .= " FROM DUAL;";
 
-  global $db;
-  $res = $db->query($sql);
+  $tables = array();
+  foreach (loadModules() as $name => $info) {
+    if ($info["category"] != "analysis") {continue;}
+    $tables[] = $info["table"];
+  }
+  $present = analysis_tablesPresent($tables);
+  $missing = array_values(array_diff($tables, $present));
+
   $ret = array();
-  while ($row = $res->fetch_assoc()) {
-    $ret["data"]["counts"] = $row;
+  $ret["data"]["counts"] = array();
+  if (count($present) > 0) {
+    $sql = "SELECT ";
+    $i = 0;
+    foreach ($present as $table) {
+      if ($i > 0) { $sql .= ", ";}
+      $sql .= "(SELECT COUNT(*) as `total` FROM `audioblast`.`".$table."` ".$wc.") AS `".$table."`";
+      $i++;
+    }
+    $sql .= " FROM DUAL;";
+
+    global $db;
+    $res = $db->query($sql);
+    while ($row = $res->fetch_assoc()) {
+      $ret["data"]["counts"] = $row;
+    }
   }
   $ret["data"]["total"] = array_sum($ret["data"]["counts"]);
+  //A missing table is said rather than passed over, so that a total short of
+  //the analysis modules on offer can be told from a total that is simply low.
+  if (count($missing) > 0) {
+    $ret["data"]["unavailable"] = $missing;
+    //A count taken while a table was missing is not kept: a cache entry has no
+    //expiry, so it would be served as the total long after the table came back.
+    return($ret);
+  }
   speedbird_put($speedbird_hash, serialize($ret));
   return($ret);
 }
